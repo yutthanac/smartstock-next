@@ -1,0 +1,362 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import {
+  Users,
+  UserPlus,
+  LayoutGrid,
+  List as ListIcon,
+  Search,
+  CheckCircle2,
+  AlertCircle,
+  X,
+  Shield,
+  Filter,
+} from 'lucide-react';
+import { Topbar } from '@/components/Topbar';
+import { useAuth } from '@/lib/AuthContext';
+import { RoleOption, PermissionOption, StaffUser } from './components/types';
+import { StaffCardView } from './components/StaffCardView';
+import { StaffTableView } from './components/StaffTableView';
+import { StaffModal } from './components/StaffModal';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+
+export default function StaffPage() {
+  const { token, user: currentUser } = useAuth();
+
+  const [staffList, setStaffList] = useState<StaffUser[]>([]);
+  const [roles, setRoles] = useState<RoleOption[]>([]);
+  const [permissions, setPermissions] = useState<PermissionOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // View Mode: 'card' or 'table'
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('table');
+
+  // Search and Filter
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedRoleFilter, setSelectedRoleFilter] = useState<string>('all');
+
+  // Modal State
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    mode: 'create' | 'edit';
+    selectedStaff: StaffUser | null;
+  }>({
+    isOpen: false,
+    mode: 'create',
+    selectedStaff: null,
+  });
+
+  // Form State
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    roles: [] as string[],
+  });
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const activeToken = token || (typeof window !== 'undefined' ? localStorage.getItem('smartstock_auth_token') : null);
+      const res = await fetch(`${API_BASE_URL}/users`, {
+        headers: {
+          ...(activeToken ? { Authorization: `Bearer ${activeToken}` } : {}),
+          Accept: 'application/json',
+        },
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || 'ไม่สามารถโหลดข้อมูลผู้ใช้งานได้ (กรุณาเข้าสู่ระบบใหม่)');
+      }
+
+      const data = await res.json();
+      setStaffList(data.users || []);
+      setRoles(data.roles || []);
+      setPermissions(data.permissions || []);
+    } catch (err: any) {
+      console.error('API fetch error in StaffPage:', err);
+      setError(err.message || 'ไม่สามารถเชื่อมต่อกับ Backend API ได้');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, [token]);
+
+  const handleOpenEdit = (staff: StaffUser) => {
+    setFormData({
+      name: staff.name,
+      email: staff.email,
+      password: '',
+      roles: staff.roles.map((r) => r.name),
+    });
+    setModalState({
+      isOpen: true,
+      mode: 'edit',
+      selectedStaff: staff,
+    });
+  };
+
+  const handleOpenCreate = () => {
+    setFormData({
+      name: '',
+      email: '',
+      password: '',
+      roles: ['cashier'],
+    });
+    setModalState({
+      isOpen: true,
+      mode: 'create',
+      selectedStaff: null,
+    });
+  };
+
+  const handleToggleRole = (roleName: string) => {
+    setFormData((prev) => {
+      const exists = prev.roles.includes(roleName);
+      if (exists) {
+        if (prev.roles.length === 1) return prev;
+        return { ...prev, roles: prev.roles.filter((r) => r !== roleName) };
+      } else {
+        return { ...prev, roles: [...prev.roles, roleName] };
+      }
+    });
+  };
+
+  const handleFormChange = (field: string, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const isEdit = modalState.mode === 'edit';
+
+    try {
+      const url = isEdit
+        ? `${API_BASE_URL}/users/${modalState.selectedStaff?.id}`
+        : `${API_BASE_URL}/users`;
+
+      const method = isEdit ? 'PUT' : 'POST';
+
+      const payload = isEdit
+        ? {
+            name: formData.name,
+            email: formData.email,
+            roles: formData.roles,
+            password: formData.password || undefined,
+          }
+        : formData;
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.message || 'บันทึกข้อมูลไม่สำเร็จ');
+      }
+
+      setSuccessMsg(isEdit ? 'อัปเดตสิทธิ์พนักงานเรียบร้อยแล้ว' : 'เพิ่มพนักงานใหม่สำเร็จ');
+      setModalState((prev) => ({ ...prev, isOpen: false }));
+      fetchUsers();
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  const handleDeleteUser = async (id: string, name: string) => {
+    if (!confirm(`คุณต้องการลบผู้ใช้งาน "${name}" หรือไม่?`)) return;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/users/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      });
+
+      if (!res.ok) throw new Error('ลบผู้ใช้ไม่สำเร็จ');
+
+      setSuccessMsg('ลบผู้ใช้งานเรียบร้อยแล้ว');
+      fetchUsers();
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  // Filtered List
+  const filteredStaff = staffList.filter((staff) => {
+    const matchesSearch =
+      staff.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      staff.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      staff.id.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesRole =
+      selectedRoleFilter === 'all' ||
+      staff.roles.some((r) => r.name === selectedRoleFilter);
+
+    return matchesSearch && matchesRole;
+  });
+
+  return (
+    <div className="flex-1 flex flex-col min-h-screen bg-slate-50/70">
+      <Topbar
+        title="จัดการพนักงาน & สิทธิ์ (Staff & RBAC)"
+        subtitle="ดูรายชื่อพนักงานในรูปแบบตาราง (Table) หรือการ์ด (Cards) พร้อมจัดการสิทธิ์"
+      />
+
+      <main className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
+        {/* Notifications */}
+        {successMsg && (
+          <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-between text-sm animate-fade-in">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+              <span>{successMsg}</span>
+            </div>
+            <button onClick={() => setSuccessMsg(null)} className="text-emerald-500 hover:text-emerald-700">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {error && (
+          <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+              <span>{error}</span>
+            </div>
+            <button onClick={() => setError(null)} className="text-rose-500 hover:text-rose-700">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Toolbar: Search, Filters, View Mode Toggle, and Add Button */}
+        <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm">
+          {/* Search & Filter */}
+          <div className="flex flex-wrap items-center gap-3 flex-1">
+            <div className="relative flex-1 min-w-[220px]">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="ค้นหาชื่อ, อีเมล หรือรหัส UUID..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 text-xs rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4fb0a5]/30 focus:border-[#4fb0a5] transition-all"
+              />
+            </div>
+
+            {/* Role Filter Dropdown */}
+            <div className="flex items-center gap-1.5">
+              <Filter className="w-4 h-4 text-slate-400 shrink-0" />
+              <select
+                value={selectedRoleFilter}
+                onChange={(e) => setSelectedRoleFilter(e.target.value)}
+                className="py-2.5 px-3 text-xs rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4fb0a5]/30 text-slate-700 font-medium"
+              >
+                <option value="all">ทุกบทบาท (All Roles)</option>
+                {roles.map((r) => (
+                  <option key={r.id || r.name} value={r.name}>
+                    {r.display_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* View Mode Toggle & Add Button */}
+          <div className="flex items-center justify-between lg:justify-end gap-3 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+            {/* Toggle Card/Table */}
+            <div className="bg-slate-100 p-1 rounded-2xl flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setViewMode('table')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  viewMode === 'table'
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`}
+                title="มุมมองตาราง (Table View)"
+              >
+                <ListIcon className="w-4 h-4" />
+                <span className="hidden sm:inline">ตาราง</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setViewMode('card')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  viewMode === 'card'
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`}
+                title="มุมมองการ์ด (Card View)"
+              >
+                <LayoutGrid className="w-4 h-4" />
+                <span className="hidden sm:inline">การ์ด</span>
+              </button>
+            </div>
+
+            <button
+              onClick={handleOpenCreate}
+              className="px-4 py-2.5 rounded-2xl bg-[#4fb0a5] hover:bg-[#439e94] text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-[#4fb0a5]/20 transition-all transform active:scale-95 shrink-0"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>เพิ่มพนักงาน</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Content Section: Table View or Card View */}
+        {loading ? (
+          <div className="p-12 text-center text-slate-400 text-sm">กำลังโหลดข้อมูลพนักงาน...</div>
+        ) : filteredStaff.length === 0 ? (
+          <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 text-slate-400 text-sm">
+            ไม่พบข้อมูลพนักงานที่ตรงกับเงื่อนไขการค้นหา
+          </div>
+        ) : viewMode === 'table' ? (
+          <StaffTableView
+            staffList={filteredStaff}
+            currentUserId={currentUser?.id}
+            onEdit={handleOpenEdit}
+            onDelete={handleDeleteUser}
+          />
+        ) : (
+          <StaffCardView
+            staffList={filteredStaff}
+            currentUserId={currentUser?.id}
+            onEdit={handleOpenEdit}
+            onDelete={handleDeleteUser}
+          />
+        )}
+
+        {/* Reusable Modal Component */}
+        <StaffModal
+          isOpen={modalState.isOpen}
+          mode={modalState.mode}
+          formData={formData}
+          roles={roles}
+          onClose={() => setModalState((prev) => ({ ...prev, isOpen: false }))}
+          onSubmit={handleFormSubmit}
+          onChange={handleFormChange}
+          onToggleRole={handleToggleRole}
+        />
+      </main>
+    </div>
+  );
+}
