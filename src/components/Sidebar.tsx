@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -21,6 +21,8 @@ import {
   AlertTriangle,
   LogOut,
   User as UserIcon,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { useStock } from '@/lib/StockContext';
 import { useAuth } from '@/lib/AuthContext';
@@ -48,6 +50,22 @@ export const Sidebar: React.FC<SidebarProps> = () => {
   const pathname = usePathname();
   const { dashboard } = useStock();
   const { user, logout, hasPermission, hasRole } = useAuth();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('sidebar_collapsed');
+    if (saved !== null) {
+      setIsCollapsed(saved === 'true');
+    }
+  }, []);
+
+  const toggleCollapse = () => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem('sidebar_collapsed', String(next));
+      return next;
+    });
+  };
 
   const menuSections: NavSection[] = [
     {
@@ -59,7 +77,7 @@ export const Sidebar: React.FC<SidebarProps> = () => {
     {
       title: 'การขาย (Sales)',
       items: [
-        { label: 'ขายหน้าร้าน (POS)', href: '/sales/pos', icon: Store, badge: 'Active', requiredPermission: 'access_pos' },
+        { label: 'ขายหน้าร้าน', href: '/sales/pos', icon: Store, badge: 'Active', requiredPermission: 'access_pos' },
         { label: 'ประวัติออเดอร์', href: '/sales/orders', icon: Receipt, requiredPermission: 'access_pos' },
       ],
     },
@@ -74,13 +92,13 @@ export const Sidebar: React.FC<SidebarProps> = () => {
           requiredPermission: 'view_stock',
         },
         { label: 'วัตถุดิบทั้งหมด', href: '/stock/ingredients', icon: Carrot, requiredPermission: 'view_stock' },
-        { label: 'ใบสั่งซื้อ / ซัพพลายเออร์', href: '/stock/purchase-orders', icon: FileSpreadsheet, requiredPermission: 'view_stock' },
+        { label: 'ใบสั่งซื้อ', href: '/stock/purchase-orders', icon: FileSpreadsheet, requiredPermission: 'view_stock' },
       ],
     },
     {
       title: 'เมนู & สูตรอาหาร',
       items: [
-        { label: 'สูตร/เมนู (Recipe BOM)', href: '/menu', icon: UtensilsCrossed, requiredPermission: 'view_menu' },
+        { label: 'จัดการเมนู', href: '/menu', icon: UtensilsCrossed, requiredPermission: 'view_menu' },
         { label: 'AI แนะนำเมนู', href: '/menu/ai-insights', icon: Sparkles, highlight: true, requiredPermission: 'view_menu' },
       ],
     },
@@ -102,28 +120,43 @@ export const Sidebar: React.FC<SidebarProps> = () => {
   ];
 
   return (
-    <aside className="w-72 bg-[#12312d] text-slate-200 flex flex-col h-screen sticky top-0 border-r border-[#1a423d] select-none z-30 transition-all duration-300">
+    <aside
+      className={`${
+        isCollapsed ? 'w-20' : 'w-72'
+      } bg-white text-slate-700 flex flex-col h-screen sticky top-0 border-r border-slate-200/80 select-none z-30 shadow-xs transition-all duration-300 relative group/sidebar`}
+    >
       {/* Brand Header */}
-      <div className="p-5 border-b border-[#1a423d] flex items-center justify-between">
-        <Link href="/dashboard" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-2xl bg-white p-1.5 flex items-center justify-center shadow-lg shadow-[#4fb0a5]/20 group-hover:scale-105 transition-transform overflow-hidden">
-            <img
-              src="/images/logo_ss.png"
-              alt="SmartStock Logo"
-              className="w-full h-full object-contain"
-            />
-          </div>
-          <div>
-            <div className="font-bold text-white tracking-wide text-lg flex items-center gap-1.5">
-              SmartStock
+      <div className={`p-3.5 border-b border-slate-100 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+        {!isCollapsed && (
+          <Link href="/dashboard" className="flex items-center gap-2.5 overflow-hidden">
+            <div className="w-9 h-9 rounded-2xl bg-emerald-50 p-1.5 flex items-center justify-center border border-emerald-100 shadow-xs shrink-0 hover:scale-105 transition-transform overflow-hidden">
+              <img
+                src="/images/logo_ss.png"
+                alt="SmartStock Logo"
+                className="w-full h-full object-contain"
+              />
             </div>
-            <div className="text-xs text-slate-400">ระบบจัดการสต็อก & ขาย</div>
-          </div>
-        </Link>
+            <div className="min-w-0 transition-opacity duration-200">
+              <div className="font-bold text-slate-900 tracking-wide text-lg flex items-center gap-1.5 whitespace-nowrap">
+                SmartStock
+              </div>
+              <div className="text-xs text-slate-400 whitespace-nowrap truncate">ระบบจัดการสต็อก & ขาย</div>
+            </div>
+          </Link>
+        )}
+
+        {/* Toggle button */}
+        <button
+          onClick={toggleCollapse}
+          title={isCollapsed ? 'ขยายแถบเมนู' : 'ย่อเมนูเหลือแต่ไอคอน'}
+          className="p-2 rounded-xl text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 border border-slate-200/60 hover:border-emerald-200 transition-all shrink-0"
+        >
+          {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+        </button>
       </div>
 
       {/* Navigation Links */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+      <div className={`flex-1 overflow-y-auto no-scrollbar py-3 space-y-5 ${isCollapsed ? 'px-2' : 'px-3'}`}>
         {menuSections.map((section, idx) => {
           // Filter items based on permission (if any defined)
           const visibleItems = section.items.filter(
@@ -134,10 +167,15 @@ export const Sidebar: React.FC<SidebarProps> = () => {
 
           return (
             <div key={idx} className="space-y-1">
-              <div className="px-3 text-[11px] font-semibold tracking-wider text-[#4fb0a5]/80 uppercase">
-                {section.title}
-              </div>
-              <div className="space-y-0.5 mt-1">
+              {!isCollapsed ? (
+                <div className="px-3 text-[12px] font-normal tracking-wider text-slate-400 uppercase truncate">
+                  {section.title}
+                </div>
+              ) : (
+                <div className="w-6 h-0.5 bg-slate-100 mx-auto my-2 rounded-full" />
+              )}
+
+              <div className="space-y-1 mt-1">
                 {visibleItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = pathname === item.href;
@@ -146,45 +184,64 @@ export const Sidebar: React.FC<SidebarProps> = () => {
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group ${
+                      title={isCollapsed ? item.label : undefined}
+                      className={`flex items-center rounded-xl text-sm font-medium transition-all duration-150 group relative ${
+                        isCollapsed
+                          ? 'justify-center p-2.5'
+                          : 'justify-between px-3 py-2.5'
+                      } ${
                         isActive
-                          ? 'bg-[#4fb0a5] text-slate-950 shadow-md font-semibold shadow-[#4fb0a5]/25'
-                          : 'text-slate-300 hover:bg-[#1a423d] hover:text-white'
+                          ? 'bg-emerald-50 text-emerald-800 font-bold border border-emerald-200/60 shadow-xs'
+                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                       }`}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 min-w-0'}`}>
                         <Icon
-                          className={`w-5 h-5 transition-colors ${
+                          className={`w-5 h-5 shrink-0 transition-colors ${
                             isActive
-                              ? 'text-slate-950'
+                              ? 'text-emerald-700'
                               : item.highlight
-                              ? 'text-[#4fb0a5] group-hover:text-white'
-                              : 'text-slate-400 group-hover:text-slate-200'
+                              ? 'text-emerald-600 group-hover:text-emerald-700'
+                              : 'text-slate-400 group-hover:text-slate-600'
                           }`}
                         />
-                        <span>{item.label}</span>
+                        {!isCollapsed && <span className="truncate">{item.label}</span>}
                       </div>
 
-                      {/* Badges and Alerts */}
-                      <div className="flex items-center gap-1.5">
-                        {item.highlight && !isActive && (
-                          <span className="flex h-2 w-2 relative">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#4fb0a5] opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#4fb0a5]"></span>
-                          </span>
-                        )}
-                        {item.alertCount && (
-                          <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-rose-500/90 text-white font-bold shadow-sm">
-                            <AlertTriangle className="w-3 h-3" />
-                            {item.alertCount}
-                          </span>
-                        )}
-                        {item.badge && !isActive && (
-                          <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#1e4842] text-[#4fb0a5] font-medium border border-[#4fb0a5]/30">
-                            {item.badge}
-                          </span>
-                        )}
-                      </div>
+                      {/* Badges and Alerts for Expanded View */}
+                      {!isCollapsed && (
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {item.highlight && !isActive && (
+                            <span className="flex h-2 w-2 relative">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </span>
+                          )}
+                          {item.alertCount && (
+                            <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-rose-500 text-white font-bold shadow-sm">
+                              <AlertTriangle className="w-3 h-3" />
+                              {item.alertCount}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Small Dot Indicator for Collapsed View */}
+                      {isCollapsed && (item.alertCount || (item.highlight && !isActive)) && (
+                        <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 border-2 border-white rounded-full"></span>
+                      )}
+
+                      {/* Hover Tooltip when Collapsed */}
+                      {isCollapsed && (
+                        <div className="absolute left-full ml-3 px-3 py-1.5 bg-slate-900 text-white text-xs font-medium rounded-lg shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 whitespace-nowrap flex items-center gap-2">
+                          <span>{item.label}</span>
+                          {item.alertCount && (
+                            <span className="px-1.5 py-0.5 bg-rose-500 text-white rounded-full text-[10px] font-bold">
+                              {item.alertCount}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </Link>
                   );
                 })}
@@ -195,25 +252,43 @@ export const Sidebar: React.FC<SidebarProps> = () => {
       </div>
 
       {/* Footer User Info & Logout Button */}
-      <div className="p-3 border-t border-[#1a423d] bg-[#0c221f]/50 space-y-2">
-        <div className="p-2.5 rounded-xl bg-[#173e39] border border-[#235851] flex items-center justify-between">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-7 h-7 rounded-lg bg-[#4fb0a5]/20 text-[#4fb0a5] flex items-center justify-center font-bold text-xs shrink-0">
+      <div className={`p-3 border-t border-slate-100 bg-slate-50/50 ${isCollapsed ? 'flex flex-col items-center gap-2' : 'space-y-2'}`}>
+        {!isCollapsed ? (
+          <div className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-center justify-between shadow-2xs">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-emerald-100/70 text-emerald-800 flex items-center justify-center font-bold text-xs shrink-0 border border-emerald-200/50">
+                <UserIcon className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-slate-800 truncate">{user?.name || 'ผู้ใช้'}</div>
+                <div className="text-[10px] text-slate-400 truncate">{user?.email}</div>
+              </div>
+            </div>
+            <button
+              onClick={() => logout()}
+              title="ออกจากระบบ"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors shrink-0"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-2 py-1">
+            <div
+              title={`${user?.name || 'ผู้ใช้'} (${user?.email || ''})`}
+              className="w-9 h-9 rounded-xl bg-emerald-100/70 text-emerald-800 flex items-center justify-center font-bold text-xs shrink-0 border border-emerald-200/50 cursor-pointer"
+            >
               <UserIcon className="w-4 h-4" />
             </div>
-            <div className="min-w-0">
-              <div className="text-xs font-semibold text-white truncate">{user?.name || 'ผู้ใช้'}</div>
-              <div className="text-[10px] text-slate-400 truncate">{user?.email}</div>
-            </div>
+            <button
+              onClick={() => logout()}
+              title="ออกจากระบบ"
+              className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            onClick={() => logout()}
-            title="ออกจากระบบ"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors shrink-0"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
+        )}
       </div>
     </aside>
   );

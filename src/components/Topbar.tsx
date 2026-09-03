@@ -59,13 +59,13 @@ export const Topbar: React.FC<TopbarProps> = ({ title, subtitle }) => {
 
         {/* User profile & Logout */}
         <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#12312d] to-[#4fb0a5] text-white font-bold flex items-center justify-center text-xs shadow-sm">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold flex items-center justify-center text-xs shadow-xs">
             {getInitials(user?.name)}
           </div>
           <div className="hidden sm:block text-left">
             <div className="text-xs font-bold text-slate-800 flex items-center gap-1">
               {user?.name || 'กำลังโหลด...'}
-              <Shield className="w-3.5 h-3.5 text-[#4fb0a5]" />
+              <Shield className="w-3.5 h-3.5 text-emerald-600" />
             </div>
             <div className="text-[11px] text-slate-400">{getRoleBadge(user?.roles)}</div>
           </div>

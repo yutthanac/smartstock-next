@@ -1,5 +1,6 @@
 import React from 'react';
 import { Plus, X } from 'lucide-react';
+import { Dropdown } from '@/components/Dropdown';
 
 interface AddIngredientModalProps {
   isOpen: boolean;
@@ -73,35 +74,39 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
 
           <div>
             <label className="font-semibold text-slate-700 block mb-1">หมวดหมู่</label>
-            <select
+            <Dropdown
               value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
-            >
-              <option value="เนื้อสัตว์">เนื้อสัตว์</option>
-              <option value="อาหารทะเล">อาหารทะเล</option>
-              <option value="ผักสด">ผักสด</option>
-              <option value="ของแห้ง/เส้น">ของแห้ง/เส้น</option>
-              <option value="ไข่และนม">ไข่และนม</option>
-              <option value="เครื่องปรุง">เครื่องปรุง</option>
-            </select>
+              onChange={(val) => setFormData({ ...formData, category: val })}
+              options={[
+                'เนื้อสัตว์',
+                'อาหารทะเล',
+                'ผักสด',
+                'ของแห้ง/เส้น',
+                'ไข่และนม',
+                'เครื่องปรุง',
+              ]}
+              className="w-full"
+              buttonClassName="py-2.5 px-3 rounded-xl bg-slate-50"
+            />
           </div>
 
           <div>
             <label className="font-semibold text-slate-700 block mb-1">หน่วยนับ</label>
-            <select
+            <Dropdown
               value={formData.unit}
-              onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
-            >
-              <option value="กก.">กิโลกรัม (กก.)</option>
-              <option value="กรัม">กรัม</option>
-              <option value="มล.">มิลลิลิตร (มล.)</option>
-              <option value="ฟอง">ฟอง</option>
-              <option value="กล่อง">กล่อง</option>
-              <option value="ขวด">ขวด</option>
-              <option value="แพ็ค">แพ็ค</option>
-            </select>
+              onChange={(val) => setFormData({ ...formData, unit: val })}
+              options={[
+                { value: 'กก.', label: 'กิโลกรัม (กก.)' },
+                { value: 'กรัม', label: 'กรัม' },
+                { value: 'มล.', label: 'มิลลิลิตร (มล.)' },
+                { value: 'ฟอง', label: 'ฟอง' },
+                { value: 'กล่อง', label: 'กล่อง' },
+                { value: 'ขวด', label: 'ขวด' },
+                { value: 'แพ็ค', label: 'แพ็ค' },
+              ]}
+              className="w-full"
+              buttonClassName="py-2.5 px-3 rounded-xl bg-slate-50"
+            />
           </div>
 
           {/* Smooth Numeric Input: Initial Quantity */}

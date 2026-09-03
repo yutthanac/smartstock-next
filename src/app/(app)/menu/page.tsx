@@ -8,6 +8,7 @@ import { MenuItem, RecipeItem } from '@/types';
 import { MenuCard } from './components/MenuCard';
 import { MenuListView } from './components/MenuListView';
 import { MenuModal } from './components/MenuModal';
+import { Dropdown } from '@/components/Dropdown';
 
 export default function RecipeMenuPage() {
   const { menuItems, ingredients, addMenuItem, updateMenuItem, deleteMenuItem } = useStock();
@@ -158,20 +159,17 @@ export default function RecipeMenuPage() {
               />
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 w-full sm:w-auto">
               <Filter className="w-4 h-4 text-slate-400 shrink-0" />
-              <select
+              <Dropdown
                 value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="py-2.5 px-3 text-xs rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4fb0a5]/30 text-slate-700 font-medium"
-              >
-                <option value="all">ทุกหมวดหมู่ ({menuItems.length})</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
+                onChange={setSelectedCategory}
+                options={[
+                  { value: 'all', label: `ทุกหมวดหมู่ (${menuItems.length})` },
+                  ...categories.map((cat) => ({ value: cat, label: cat })),
+                ]}
+                className="w-full sm:w-48"
+              />
             </div>
           </div>
 

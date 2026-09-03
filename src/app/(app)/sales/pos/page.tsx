@@ -26,6 +26,8 @@ import { useStock } from '@/lib/StockContext';
 import { Topbar } from '@/components/Topbar';
 import { MenuItem } from '@/types';
 import { ItemOptionModal, CartItemOption } from './components/ItemOptionModal';
+import { ItemOptionPanel } from './components/ItemOptionPanel';
+import { Dropdown } from '@/components/Dropdown';
 
 interface CartEntry {
   cartId: string; // Unique ID to support same menu with different notes/options
@@ -460,173 +462,194 @@ export default function POSPage() {
 
         {/* Right Area: Order Cart & Real-time BOM Stock Deduction Preview */}
         <div className="w-full lg:w-96 flex flex-col gap-4 shrink-0">
-          {/* Order Bill Card */}
+          {/* Order Bill Card OR Item Option Panel */}
           <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-5 flex flex-col min-h-[560px]">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <ShoppingCart className="w-5 h-5 text-[#4fb0a5]" />
-                <h3 className="font-bold text-slate-800 text-base">รายการสั่งอาหาร</h3>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-slate-500">โต๊ะ:</span>
-                <select
-                  value={tableNo}
-                  onChange={(e) => setTableNo(e.target.value)}
-                  className="text-xs font-bold bg-slate-100 text-slate-800 rounded-xl px-2.5 py-1 border-none focus:ring-1 focus:ring-[#4fb0a5]"
-                >
-                  <option value="T-01">T-01</option>
-                  <option value="T-02">T-02</option>
-                  <option value="T-03">T-03</option>
-                  <option value="T-04">T-04</option>
-                  <option value="VIP-1">VIP-1</option>
-                  <option value="TakeAway">กลับบ้าน (TakeAway)</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Cart Items List */}
-            <div className="flex-1 overflow-y-auto py-3 space-y-2.5 pr-1 max-h-72">
-              {cartItems.length === 0 ? (
-                <div className="h-full py-12 flex flex-col items-center justify-center text-slate-400 text-xs">
-                  <UtensilsCrossed className="w-10 h-10 mb-2 opacity-30" />
-                  <p>ยังไม่มีรายการในบิล</p>
-                  <p className="text-[11px] text-slate-400">เลือกเมนูจากแถบด้านซ้ายเพื่อสั่ง</p>
+            {optionTargetMenu ? (
+              <ItemOptionPanel
+                item={optionTargetMenu}
+                initialOptions={
+                  editingCartId
+                    ? cartItems.find((c) => c.cartId === editingCartId)?.options
+                    : undefined
+                }
+                onCancel={() => {
+                  setOptionTargetMenu(null);
+                  setEditingCartId(null);
+                }}
+                onConfirm={handleConfirmOptions}
+              />
+            ) : (
+              <>
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <ShoppingCart className="w-5 h-5 text-[#4fb0a5]" />
+                    <h3 className="font-bold text-slate-800 text-base">รายการสั่งอาหาร</h3>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-semibold text-slate-500">โต๊ะ:</span>
+                    <Dropdown
+                      value={tableNo}
+                      onChange={setTableNo}
+                      options={[
+                        { value: 'T-01', label: 'T-01' },
+                        { value: 'T-02', label: 'T-02' },
+                        { value: 'T-03', label: 'T-03' },
+                        { value: 'T-04', label: 'T-04' },
+                        { value: 'VIP-1', label: 'VIP-1' },
+                        { value: 'TakeAway', label: 'กลับบ้าน (TakeAway)' },
+                      ]}
+                      size="sm"
+                      className="w-32"
+                      buttonClassName="py-1 px-2.5 bg-slate-100 border-none rounded-xl text-xs font-bold text-slate-800"
+                    />
+                  </div>
                 </div>
-              ) : (
-                cartItems.map((entry) => {
-                  const effectivePrice = getItemEffectivePrice(entry);
-                  const formattedNote = formatOptionNote(entry.options);
 
-                  return (
-                    <div
-                      key={entry.cartId}
-                      className="p-3 rounded-2xl bg-slate-50 border border-slate-100 text-xs space-y-1.5"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <div className="font-bold text-slate-800 flex items-center gap-1.5">
-                            <span>{entry.item.name}</span>
-                            {entry.options.isSpecial && (
-                              <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded-md font-bold">
-                                พิเศษ
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-[11px] text-slate-400">
-                            ฿{effectivePrice} x {entry.quantity} = <strong className="text-slate-700">฿{effectivePrice * entry.quantity}</strong>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <div className="flex items-center bg-white rounded-xl border border-slate-200 shadow-2xs">
-                            <button
-                              onClick={() => updateQuantity(entry.cartId, -1)}
-                              className="w-6 h-6 flex items-center justify-center text-slate-600 hover:text-[#12312d]"
-                            >
-                              <Minus className="w-3 h-3" />
-                            </button>
-                            <span className="w-6 text-center font-bold text-slate-800">{entry.quantity}</span>
-                            <button
-                              onClick={() => updateQuantity(entry.cartId, 1)}
-                              className="w-6 h-6 flex items-center justify-center text-slate-600 hover:text-[#12312d]"
-                            >
-                              <Plus className="w-3 h-3" />
-                            </button>
-                          </div>
-                          <button
-                            onClick={() => deleteCartItem(entry.cartId)}
-                            className="p-1 text-slate-400 hover:text-rose-600"
-                            title="ลบรายการ"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Display Selected Note/Options */}
-                      <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 text-[11px]">
-                        <span className="text-slate-500 truncate max-w-[200px]" title={formattedNote || 'ไม่มีหมายเหตุ'}>
-                          {formattedNote ? `📝 ${formattedNote}` : '🍽️ ทานที่ร้าน • เผ็ดปกติ'}
-                        </span>
-                        <button
-                          onClick={() => handleOpenOptionModal(entry.item, entry.cartId)}
-                          className="text-[#4fb0a5] hover:text-[#12312d] font-bold text-[10px] shrink-0"
-                        >
-                          แก้ไขตัวเลือก
-                        </button>
-                      </div>
+                {/* Cart Items List */}
+                <div className="flex-1 overflow-y-auto py-3 space-y-2.5 pr-1 max-h-72">
+                  {cartItems.length === 0 ? (
+                    <div className="h-full py-12 flex flex-col items-center justify-center text-slate-400 text-xs">
+                      <UtensilsCrossed className="w-10 h-10 mb-2 opacity-30" />
+                      <p>ยังไม่มีรายการในบิล</p>
+                      <p className="text-[11px] text-slate-400">เลือกเมนูจากแถบด้านซ้ายเพื่อสั่ง</p>
                     </div>
-                  );
-                })
-              )}
-            </div>
+                  ) : (
+                    cartItems.map((entry) => {
+                      const effectivePrice = getItemEffectivePrice(entry);
+                      const formattedNote = formatOptionNote(entry.options);
 
-            {/* Bill Summary & Payment Form */}
-            <div className="pt-3 border-t border-slate-100 space-y-3 mt-auto">
-              <div className="space-y-1 text-xs">
-                <div className="flex justify-between text-slate-500">
-                  <span>ยอดรวมค่าอาหาร (Subtotal)</span>
-                  <span>฿{subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-slate-500">
-                  <span>ภาษีมูลค่าเพิ่ม (VAT 7%)</span>
-                  <span>฿{vat.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between font-extrabold text-sm text-slate-900 pt-1 border-t border-slate-100">
-                  <span>ยอดชำระสุทธิ (Net Total)</span>
-                  <span className="text-base text-[#12312d]">฿{grandTotal.toFixed(2)}</span>
-                </div>
-              </div>
+                      return (
+                        <div
+                          key={entry.cartId}
+                          className="p-3 rounded-2xl bg-slate-50 border border-slate-100 text-xs space-y-1.5"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <div className="font-bold text-slate-800 flex items-center gap-1.5">
+                                <span>{entry.item.name}</span>
+                                {entry.options.isSpecial && (
+                                  <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded-md font-bold">
+                                    พิเศษ
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[11px] text-slate-400">
+                                ฿{effectivePrice} x {entry.quantity} = <strong className="text-slate-700">฿{effectivePrice * entry.quantity}</strong>
+                              </div>
+                            </div>
 
-              {/* Payment Methods */}
-              <div className="grid grid-cols-3 gap-1.5 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('qr_promptpay')}
-                  className={`py-2 rounded-xl text-[11px] font-bold flex flex-col items-center gap-1 transition-all border ${
-                    paymentMethod === 'qr_promptpay'
-                      ? 'bg-[#12312d] text-white border-[#12312d] shadow-sm'
-                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                  }`}
-                >
-                  <QrCode className="w-3.5 h-3.5" />
-                  <span>พร้อมเพย์</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('cash')}
-                  className={`py-2 rounded-xl text-[11px] font-bold flex flex-col items-center gap-1 transition-all border ${
-                    paymentMethod === 'cash'
-                      ? 'bg-[#12312d] text-white border-[#12312d] shadow-sm'
-                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                  }`}
-                >
-                  <Banknote className="w-3.5 h-3.5" />
-                  <span>เงินสด</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('credit_card')}
-                  className={`py-2 rounded-xl text-[11px] font-bold flex flex-col items-center gap-1 transition-all border ${
-                    paymentMethod === 'credit_card'
-                      ? 'bg-[#12312d] text-white border-[#12312d] shadow-sm'
-                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                  }`}
-                >
-                  <CreditCard className="w-3.5 h-3.5" />
-                  <span>บัตรเครดิต</span>
-                </button>
-              </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <div className="flex items-center bg-white rounded-xl border border-slate-200 shadow-2xs">
+                                <button
+                                  onClick={() => updateQuantity(entry.cartId, -1)}
+                                  className="w-6 h-6 flex items-center justify-center text-slate-600 hover:text-[#12312d]"
+                                >
+                                  <Minus className="w-3 h-3" />
+                                </button>
+                                <span className="w-6 text-center font-bold text-slate-800">{entry.quantity}</span>
+                                <button
+                                  onClick={() => updateQuantity(entry.cartId, 1)}
+                                  className="w-6 h-6 flex items-center justify-center text-slate-600 hover:text-[#12312d]"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </button>
+                              </div>
+                              <button
+                                onClick={() => deleteCartItem(entry.cartId)}
+                                className="p-1 text-slate-400 hover:text-rose-600"
+                                title="ลบรายการ"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
 
-              <button
-                disabled={cartItems.length === 0}
-                onClick={handleCheckout}
-                className="w-full py-3 rounded-2xl bg-[#4fb0a5] hover:bg-[#3d9b90] text-slate-950 font-bold text-xs shadow-lg shadow-[#4fb0a5]/20 flex items-center justify-center gap-2 transition-all transform active:scale-95 disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none disabled:cursor-not-allowed"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                ยืนยันออเดอร์ & ตัดสต็อกอัตโนมัติ
-              </button>
-            </div>
+                          {/* Display Selected Note/Options */}
+                          <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 text-[11px]">
+                            <span className="text-slate-500 truncate max-w-[200px]" title={formattedNote || 'ไม่มีหมายเหตุ'}>
+                              {formattedNote ? `📝 ${formattedNote}` : '🍽️ ทานที่ร้าน • เผ็ดปกติ'}
+                            </span>
+                            <button
+                              onClick={() => handleOpenOptionModal(entry.item, entry.cartId)}
+                              className="text-[#4fb0a5] hover:text-[#12312d] font-bold text-[10px] shrink-0"
+                            >
+                              แก้ไขตัวเลือก
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* Bill Summary & Payment Form */}
+                <div className="pt-3 border-t border-slate-100 space-y-3 mt-auto">
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between text-slate-500">
+                      <span>ยอดรวมค่าอาหาร (Subtotal)</span>
+                      <span>฿{subtotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-500">
+                      <span>ภาษีมูลค่าเพิ่ม (VAT 7%)</span>
+                      <span>฿{vat.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between font-extrabold text-sm text-slate-900 pt-1 border-t border-slate-100">
+                      <span>ยอดชำระสุทธิ (Net Total)</span>
+                      <span className="text-base text-[#12312d]">฿{grandTotal.toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  {/* Payment Methods */}
+                  <div className="grid grid-cols-3 gap-1.5 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('qr_promptpay')}
+                      className={`py-2 rounded-xl text-[11px] font-bold flex flex-col items-center gap-1 transition-all border ${
+                        paymentMethod === 'qr_promptpay'
+                          ? 'bg-[#12312d] text-white border-[#12312d] shadow-sm'
+                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      <QrCode className="w-3.5 h-3.5" />
+                      <span>พร้อมเพย์</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('cash')}
+                      className={`py-2 rounded-xl text-[11px] font-bold flex flex-col items-center gap-1 transition-all border ${
+                        paymentMethod === 'cash'
+                          ? 'bg-[#12312d] text-white border-[#12312d] shadow-sm'
+                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      <Banknote className="w-3.5 h-3.5" />
+                      <span>เงินสด</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('credit_card')}
+                      className={`py-2 rounded-xl text-[11px] font-bold flex flex-col items-center gap-1 transition-all border ${
+                        paymentMethod === 'credit_card'
+                          ? 'bg-[#12312d] text-white border-[#12312d] shadow-sm'
+                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      <CreditCard className="w-3.5 h-3.5" />
+                      <span>บัตรเครดิต</span>
+                    </button>
+                  </div>
+
+                  <button
+                    disabled={cartItems.length === 0}
+                    onClick={handleCheckout}
+                    className="w-full py-3 rounded-2xl bg-[#4fb0a5] hover:bg-[#3d9b90] text-slate-950 font-bold text-xs shadow-lg shadow-[#4fb0a5]/20 flex items-center justify-center gap-2 transition-all transform active:scale-95 disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none disabled:cursor-not-allowed"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    ยืนยันออเดอร์ & ตัดสต็อกอัตโนมัติ
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Real-time BOM Stock Deduction Preview */}
@@ -668,21 +691,7 @@ export default function POSPage() {
         </div>
       </main>
 
-      {/* Item Customization Option Modal */}
-      <ItemOptionModal
-        item={optionTargetMenu}
-        initialOptions={
-          editingCartId
-            ? cartItems.find((c) => c.cartId === editingCartId)?.options
-            : undefined
-        }
-        isOpen={!!optionTargetMenu}
-        onClose={() => {
-          setOptionTargetMenu(null);
-          setEditingCartId(null);
-        }}
-        onConfirm={handleConfirmOptions}
-      />
+
 
       {/* Recipe Preview Modal */}
       {previewMenu && (

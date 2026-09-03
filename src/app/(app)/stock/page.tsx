@@ -18,6 +18,8 @@ import {
 import { useStock } from '@/lib/StockContext';
 import { Topbar } from '@/components/Topbar';
 import { Ingredient } from '@/types';
+import { Dropdown } from '@/components/Dropdown';
+import { Pagination } from '@/components/Pagination';
 import { AddIngredientModal } from './components/AddIngredientModal';
 import { AdjustStockModal } from './components/AdjustStockModal';
 
@@ -26,6 +28,8 @@ export default function StockPage() {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<'inventory' | 'movements'>('inventory');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 8;
 
   // Modal States
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -58,6 +62,11 @@ export default function StockPage() {
     const matchStatus = filterStatus === 'all' || ing.status === filterStatus;
     return matchSearch && matchStatus;
   });
+
+  const paginatedIngredients = filteredIngredients.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   const handleCreateIngredient = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,7 +143,7 @@ export default function StockPage() {
           <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-2xs">
             <button
               onClick={() => setActiveTab('inventory')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              className={`px-4 py-2 rounded-xl text-sm font-normal transition-all flex items-center gap-2 ${
                 activeTab === 'inventory'
                   ? 'bg-[#12312d] text-white shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
@@ -145,20 +154,20 @@ export default function StockPage() {
             </button>
             <button
               onClick={() => setActiveTab('movements')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              className={`px-4 py-2 rounded-xl text-sm font-normal transition-all flex items-center gap-2 ${
                 activeTab === 'movements'
                   ? 'bg-[#12312d] text-white shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <History className="w-4 h-4" />
-              ประวัติการเคลื่อนไหว (Movement Log)
+              ประวัติการปรับสต๊อค
             </button>
           </div>
 
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="px-4 py-2.5 rounded-2xl bg-[#4fb0a5] hover:bg-[#3d9b90] text-slate-950 font-bold text-xs shadow-lg shadow-[#4fb0a5]/20 flex items-center gap-2 transition-all transform active:scale-95"
+            className="px-4 py-2.5 rounded-2xl bg-[#4fb0a5] hover:bg-[#3d9b90] text-slate-950 font-normal text-sm shadow-lg shadow-[#4fb0a5]/20 flex items-center gap-2 transition-all transform active:scale-95"
           >
             <Plus className="w-4 h-4" /> เพิ่มวัตถุดิบใหม่
           </button>
@@ -175,7 +184,10 @@ export default function StockPage() {
                   type="text"
                   placeholder="ค้นหาชื่อวัตถุดิบ..."
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   className="w-full pl-10 pr-4 py-2.5 text-xs rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4fb0a5]/30 focus:border-[#4fb0a5]"
                 />
               </div>
@@ -183,41 +195,45 @@ export default function StockPage() {
               {/* Status Filter */}
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <Filter className="w-4 h-4 text-slate-400" />
-                <select
+                <Dropdown
                   value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="text-xs bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2.5 text-slate-700 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4fb0a5]/30"
-                >
-                  <option value="all">สถานะทั้งหมด</option>
-                  <option value="normal">ปกติ (Normal)</option>
-                  <option value="low">ใกล้หมด (Low Stock)</option>
-                  <option value="out">หมดแล้ว (Out of Stock)</option>
-                </select>
+                  onChange={(val) => {
+                    setFilterStatus(val);
+                    setCurrentPage(1);
+                  }}
+                  options={[
+                    { value: 'all', label: 'สถานะทั้งหมด' },
+                    { value: 'normal', label: 'ปกติ (Normal)' },
+                    { value: 'low', label: 'ใกล้หมด (Low Stock)' },
+                    { value: 'out', label: 'หมดแล้ว (Out of Stock)' },
+                  ]}
+                  className="w-full sm:w-48"
+                />
               </div>
             </div>
 
             {/* Table */}
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+              <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-500 uppercase tracking-wider font-semibold">
+                  <tr className="bg-slate-100 border-b border-slate-300  uppercase tracking-wide font-bold text-slate-800">
                     <th className="py-3.5 px-4">ชื่อวัตถุดิบ</th>
                     <th className="py-3.5 px-4">หมวดหมู่</th>
                     <th className="py-3.5 px-4 text-right">ต้นทุน/หน่วย</th>
                     <th className="py-3.5 px-4 text-center">ระดับสต็อก</th>
                     <th className="py-3.5 px-4 text-right">จำนวนคงเหลือ</th>
-                    <th className="py-3.5 px-4 text-right">จุดสั่งซื้อ (Min)</th>
+                    <th className="py-3.5 px-4 text-right">จุดสั่งซื้อ</th>
                     <th className="py-3.5 px-4 text-center">สถานะ</th>
                     <th className="py-3.5 px-4 text-center">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredIngredients.map((item) => {
+                  {paginatedIngredients.map((item) => {
                     const ratio = Math.min(100, Math.round((item.quantity / (item.reorder_point * 2 || 1)) * 100));
 
                     return (
                       <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3.5 px-4 font-bold text-slate-800">
+                        <td className="py-3.5 px-4 font-normal text-slate-800">
                           {item.name}
                           {item.supplier && (
                             <div className="text-[11px] text-slate-400 font-normal">ซัพพลายเออร์: {item.supplier}</div>
@@ -241,7 +257,7 @@ export default function StockPage() {
                             ></div>
                           </div>
                         </td>
-                        <td className="py-3.5 px-4 text-right font-bold text-slate-900 text-sm">
+                        <td className="py-3.5 px-4 text-right font-normal text-slate-900 text-sm">
                           {item.quantity} {item.unit}
                         </td>
                         <td className="py-3.5 px-4 text-right text-slate-500 font-medium">
@@ -291,18 +307,28 @@ export default function StockPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination: only displays if items > 8 */}
+            <div className="p-4 pt-0">
+              <Pagination
+                currentPage={currentPage}
+                totalItems={filteredIngredients.length}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+              />
+            </div>
           </div>
         ) : (
           /* Movement History Log View */
           <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-5 space-y-4">
             <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
               <History className="w-5 h-5 text-[#4fb0a5]" />
-              บันทึกประวัติการเคลื่อนไหวสต็อก (Stock Movements)
+              บันทึกประวัติการปรับสต็อก
             </h3>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold">
+                  <tr className="bg-slate-300 border border-slate-400 rounded-lg uppercase tracking-wider font-bold">
                     <th className="py-3 px-4">วัน-เวลา</th>
                     <th className="py-3 px-4">วัตถุดิบ</th>
                     <th className="py-3 px-4">ประเภท</th>

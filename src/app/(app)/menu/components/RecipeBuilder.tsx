@@ -1,6 +1,7 @@
 import React from 'react';
 import { Layers, Plus, Trash2 } from 'lucide-react';
 import { Ingredient, RecipeItem } from '@/types';
+import { Dropdown } from '@/components/Dropdown';
 
 interface RecipeBuilderProps {
   recipes: RecipeItem[];
@@ -41,17 +42,17 @@ export const RecipeBuilder: React.FC<RecipeBuilderProps> = ({
             <div key={index} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200 shadow-2xs">
               {/* Ingredient select */}
               <div className="flex-1">
-                <select
+                <Dropdown
                   value={row.ingredient_id}
-                  onChange={(e) => onUpdateRow(index, 'ingredient_id', Number(e.target.value))}
-                  className="w-full p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:bg-white"
-                >
-                  {ingredients.map((ing) => (
-                    <option key={ing.id} value={ing.id}>
-                      {ing.name} ({ing.cost_per_unit} ฿/{ing.unit})
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => onUpdateRow(index, 'ingredient_id', Number(val))}
+                  options={ingredients.map((ing) => ({
+                    value: ing.id,
+                    label: `${ing.name} (${ing.cost_per_unit} ฿/${ing.unit})`,
+                  }))}
+                  size="sm"
+                  className="w-full"
+                  buttonClassName="py-1.5 px-2 bg-slate-50 rounded-lg text-xs"
+                />
               </div>
 
               {/* Quantity text input with smooth blank typing */}

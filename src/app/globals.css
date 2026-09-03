@@ -2,13 +2,27 @@
 
 @layer base {
   :root {
-    --primary: #4fb0a5;
-    --primary-hover: #3d9b90;
-    --primary-light: #e6f7f5;
-    --sidebar-bg: #12312d;
-    --sidebar-hover: #1b4540;
-    --sidebar-active: #245751;
-    --sidebar-border: #1a423d;
+    /* 60-30-10 Color System: Clean White & Emerald (ขาว-เขียว สบายตา) */
+    /* 60% Dominant Canvas (ขาว/เทาอ่อน สว่าง สบายตา) */
+    --bg-main: #f8fafc;
+    --bg-card: #ffffff;
+    --border-subtle: #e2e8f0;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+
+    /* 30% Structural / Surfaces (Sidebar ขาว คลีน นุ่มนวล โทนเขียวอ่อนธรรมชาติ) */
+    --sidebar-bg: #ffffff;
+    --sidebar-border: #f1f5f9;
+    --sidebar-card: #f8fafc;
+    --sidebar-text: #64748b;
+    --sidebar-text-active: #065f46;
+
+    /* 10% Brand Accent (เขียวมรกตธรรมชาติ นุ่ม ไม่แสบตา) */
+    --primary: #059669;             /* Emerald 600 */
+    --primary-hover: #047857;       /* Emerald 700 */
+    --primary-light: #ecfdf5;       /* Emerald 50 */
+    --primary-badge: #d1fae5;       /* Emerald 100 */
+    --accent: #10b981;              /* Emerald 500 */
   }
 }
 
@@ -34,6 +48,11 @@ body {
   border-radius: 9999px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+/* Hide scrollbar while maintaining scroll functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }

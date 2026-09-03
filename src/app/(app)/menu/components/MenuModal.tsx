@@ -3,6 +3,7 @@ import { UtensilsCrossed, X, DollarSign, TrendingUp, PieChart } from 'lucide-rea
 import { Ingredient, MenuItem, RecipeItem } from '@/types';
 import { ImageUpload } from './ImageUpload';
 import { RecipeBuilder } from './RecipeBuilder';
+import { Dropdown } from '@/components/Dropdown';
 
 interface MenuModalProps {
   isOpen: boolean;
@@ -100,17 +101,19 @@ export const MenuModal: React.FC<MenuModalProps> = ({
 
             <div>
               <label className="font-semibold text-slate-700 block mb-1">หมวดหมู่</label>
-              <select
+              <Dropdown
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
-              >
-                <option value="อาหารจานเดียว">อาหารจานเดียว</option>
-                <option value="สเต็ก & ย่าง">สเต็ก & ย่าง</option>
-                <option value="พาสต้า & เส้น">พาสต้า & เส้น</option>
-                <option value="พิซซ่า & ของทานเล่น">พิซซ่า & ของทานเล่น</option>
-                <option value="เครื่องดื่ม & ของหวาน">เครื่องดื่ม & ของหวาน</option>
-              </select>
+                onChange={setCategory}
+                options={[
+                  'อาหารจานเดียว',
+                  'สเต็ก & ย่าง',
+                  'พาสต้า & เส้น',
+                  'พิซซ่า & ของทานเล่น',
+                  'เครื่องดื่ม & ของหวาน',
+                ]}
+                className="w-full"
+                buttonClassName="py-2.5 px-3 rounded-xl bg-slate-50"
+              />
             </div>
 
             <div>
@@ -160,33 +163,33 @@ export const MenuModal: React.FC<MenuModalProps> = ({
           />
 
           {/* Live BOM Margin Summary Box */}
-          <div className="p-4 rounded-2xl bg-[#12312d] text-white space-y-2">
-            <div className="flex items-center justify-between text-xs border-b border-[#1a423d] pb-2">
-              <span className="text-[#4fb0a5] font-bold uppercase tracking-wider text-[10px]">
+          <div className="p-4 rounded-2xl bg-slate-900 text-white space-y-2 border border-slate-800">
+            <div className="flex items-center justify-between text-xs border-b border-slate-800 pb-2">
+              <span className="text-teal-400 font-bold uppercase tracking-wider text-[10px]">
                 สรุปต้นทุนและกำไรแบบเรียลไทม์ (Live BOM Calculation):
               </span>
             </div>
 
             <div className="grid grid-cols-3 gap-2 text-center pt-1">
-              <div className="p-2 rounded-xl bg-[#1a423d]/70">
+              <div className="p-2 rounded-xl bg-slate-800/90 border border-slate-700/60">
                 <div className="text-[10px] text-slate-400 flex items-center justify-center gap-1">
                   <PieChart className="w-3 h-3 text-amber-400" /> ต้นทุนสูตร
                 </div>
                 <div className="text-sm font-bold text-amber-300 mt-0.5">฿{calculatedCost.toFixed(2)}</div>
               </div>
 
-              <div className="p-2 rounded-xl bg-[#1a423d]/70">
+              <div className="p-2 rounded-xl bg-slate-800/90 border border-slate-700/60">
                 <div className="text-[10px] text-slate-400 flex items-center justify-center gap-1">
                   <DollarSign className="w-3 h-3 text-emerald-400" /> กำไรต่อจาน
                 </div>
                 <div className="text-sm font-bold text-emerald-300 mt-0.5">฿{calculatedProfit.toFixed(2)}</div>
               </div>
 
-              <div className="p-2 rounded-xl bg-[#1a423d]/70">
+              <div className="p-2 rounded-xl bg-slate-800/90 border border-slate-700/60">
                 <div className="text-[10px] text-slate-400 flex items-center justify-center gap-1">
-                  <TrendingUp className="w-3 h-3 text-[#4fb0a5]" /> มาร์จิ้น (% Margin)
+                  <TrendingUp className="w-3 h-3 text-teal-400" /> มาร์จิ้น (% Margin)
                 </div>
-                <div className="text-sm font-bold text-[#4fb0a5] mt-0.5">{calculatedMargin}%</div>
+                <div className="text-sm font-bold text-teal-300 mt-0.5">{calculatedMargin}%</div>
               </div>
             </div>
           </div>

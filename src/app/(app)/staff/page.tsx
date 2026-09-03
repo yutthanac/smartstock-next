@@ -19,6 +19,7 @@ import { RoleOption, PermissionOption, StaffUser } from './components/types';
 import { StaffCardView } from './components/StaffCardView';
 import { StaffTableView } from './components/StaffTableView';
 import { StaffModal } from './components/StaffModal';
+import { Dropdown } from '@/components/Dropdown';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
@@ -262,20 +263,17 @@ export default function StaffPage() {
             </div>
 
             {/* Role Filter Dropdown */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 w-full sm:w-auto">
               <Filter className="w-4 h-4 text-slate-400 shrink-0" />
-              <select
+              <Dropdown
                 value={selectedRoleFilter}
-                onChange={(e) => setSelectedRoleFilter(e.target.value)}
-                className="py-2.5 px-3 text-xs rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4fb0a5]/30 text-slate-700 font-medium"
-              >
-                <option value="all">ทุกบทบาท (All Roles)</option>
-                {roles.map((r) => (
-                  <option key={r.id || r.name} value={r.name}>
-                    {r.display_name}
-                  </option>
-                ))}
-              </select>
+                onChange={setSelectedRoleFilter}
+                options={[
+                  { value: 'all', label: 'ทุกบทบาท (All Roles)' },
+                  ...roles.map((r) => ({ value: r.name, label: r.display_name })),
+                ]}
+                className="w-full sm:w-48"
+              />
             </div>
           </div>
 
