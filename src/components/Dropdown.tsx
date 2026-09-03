@@ -74,8 +74,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`w-full flex items-center justify-between gap-2 bg-slate-50 hover:bg-white text-slate-700 hover:text-slate-900 border border-slate-200/90 hover:border-emerald-500/60 shadow-2xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer font-medium disabled:opacity-50 disabled:cursor-not-allowed ${sizeClasses[size]} ${
-          isOpen ? 'bg-white border-emerald-500 ring-2 ring-emerald-500/20' : ''
+        className={`w-full flex items-center justify-between gap-2 skeuo-btn-secondary focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all cursor-pointer font-bold disabled:opacity-50 disabled:cursor-not-allowed ${sizeClasses[size]} ${
+          isOpen ? 'border-emerald-600 ring-2 ring-emerald-500/20' : ''
         } ${buttonClassName}`}
       >
         <div className="flex items-center gap-2 truncate">
@@ -84,14 +84,14 @@ export const Dropdown: React.FC<DropdownProps> = ({
         </div>
         <ChevronDown
           className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
-            isOpen ? 'rotate-180 text-emerald-600' : ''
+            isOpen ? 'rotate-180 text-emerald-700' : ''
           }`}
         />
       </button>
 
       {/* Floating Menu Popover */}
       {isOpen && (
-        <div className="absolute left-0 mt-1.5 w-full min-w-[160px] bg-white rounded-2xl shadow-xl shadow-slate-300/30 border border-slate-100 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100 max-h-64 overflow-y-auto no-scrollbar">
+        <div className="absolute left-0 mt-1.5 w-full min-w-[160px] skeuo-card rounded-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100 max-h-64 overflow-y-auto no-scrollbar shadow-[0_12px_28px_rgba(15,23,42,0.12)]">
           {normalizedOptions.map((opt) => {
             const isSelected = String(opt.value) === String(value);
 

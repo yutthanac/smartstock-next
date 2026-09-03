@@ -123,13 +123,13 @@ export const Sidebar: React.FC<SidebarProps> = () => {
     <aside
       className={`${
         isCollapsed ? 'w-20' : 'w-72'
-      } bg-white text-slate-700 flex flex-col h-screen sticky top-0 border-r border-slate-200/80 select-none z-30 shadow-xs transition-all duration-300 relative group/sidebar`}
+      } bg-[#ebecf0] text-slate-700 flex flex-col h-screen sticky top-0 border-r border-[#d9dbe3] select-none z-30 transition-all duration-300 relative group/sidebar shadow-[4px_0_15px_rgba(186,190,204,0.3)]`}
     >
       {/* Brand Header */}
-      <div className={`p-3.5 border-b border-slate-100 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+      <div className={`p-4 border-b border-[#d9dbe3]/80 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
         {!isCollapsed && (
           <Link href="/dashboard" className="flex items-center gap-2.5 overflow-hidden">
-            <div className="w-9 h-9 rounded-2xl bg-emerald-50 p-1.5 flex items-center justify-center border border-emerald-100 shadow-xs shrink-0 hover:scale-105 transition-transform overflow-hidden">
+            <div className="w-10 h-10 rounded-2xl items-center justify-center shrink-0 hover:scale-105 transition-transform overflow-hidden">
               <img
                 src="/images/logo_ss.png"
                 alt="SmartStock Logo"
@@ -137,10 +137,10 @@ export const Sidebar: React.FC<SidebarProps> = () => {
               />
             </div>
             <div className="min-w-0 transition-opacity duration-200">
-              <div className="font-bold text-slate-900 tracking-wide text-lg flex items-center gap-1.5 whitespace-nowrap">
+              <div className="font-black text-slate-900 tracking-wide text-lg flex items-center gap-1.5 whitespace-nowrap">
                 SmartStock
               </div>
-              <div className="text-xs text-slate-400 whitespace-nowrap truncate">ระบบจัดการสต็อก & ขาย</div>
+              <div className="text-xs text-slate-500 font-medium whitespace-nowrap truncate">ระบบจัดการสต็อก & ขาย</div>
             </div>
           </Link>
         )}
@@ -149,7 +149,7 @@ export const Sidebar: React.FC<SidebarProps> = () => {
         <button
           onClick={toggleCollapse}
           title={isCollapsed ? 'ขยายแถบเมนู' : 'ย่อเมนูเหลือแต่ไอคอน'}
-          className="p-2 rounded-xl text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 border border-slate-200/60 hover:border-emerald-200 transition-all shrink-0"
+          className="p-2 rounded-xl neu-raised text-slate-600 hover:text-emerald-700 transition-all shrink-0 active:scale-95"
         >
           {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
@@ -185,26 +185,26 @@ export const Sidebar: React.FC<SidebarProps> = () => {
                       key={item.href}
                       href={item.href}
                       title={isCollapsed ? item.label : undefined}
-                      className={`flex items-center rounded-xl text-sm font-medium transition-all duration-150 group relative ${
+                      className={`flex items-center rounded-2xl text-sm font-normal transition-all duration-200 group relative ${
                         isCollapsed
-                          ? 'justify-center p-2.5'
-                          : 'justify-between px-3 py-2.5'
+                          ? 'justify-center p-3'
+                          : 'justify-between px-3.5 py-2.5'
                       } ${
                         isActive
-                          ? 'bg-emerald-50 text-emerald-800 font-bold border border-emerald-200/60 shadow-xs'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                          ? 'neu-sidebar-active text-slate-900 font-bold'
+                          : 'text-slate-600 hover:text-slate-900 hover:shadow-[2px_2px_5px_#cbd5e1,-2px_-2px_5px_#ffffff]'
                       }`}
                     >
                       <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 min-w-0'}`}>
-                        <Icon
-                          className={`w-5 h-5 shrink-0 transition-colors ${
+                        <div
+                          className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
                             isActive
-                              ? 'text-emerald-700'
-                              : item.highlight
-                              ? 'text-emerald-600 group-hover:text-emerald-700'
-                              : 'text-slate-400 group-hover:text-slate-600'
+                              ? 'text-slate-900'
+                              : 'text-slate-400 group-hover:text-slate-700'
                           }`}
-                        />
+                        >
+                          <Icon className="w-5 h-5 shrink-0" />
+                        </div>
                         {!isCollapsed && <span className="truncate">{item.label}</span>}
                       </div>
 
@@ -219,7 +219,6 @@ export const Sidebar: React.FC<SidebarProps> = () => {
                           )}
                           {item.alertCount && (
                             <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-rose-500 text-white font-bold shadow-sm">
-                              <AlertTriangle className="w-3 h-3" />
                               {item.alertCount}
                             </span>
                           )}

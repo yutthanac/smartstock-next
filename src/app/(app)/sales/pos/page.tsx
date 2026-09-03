@@ -197,7 +197,7 @@ export default function POSPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-slate-50/70">
+    <div className="flex-1 flex flex-col min-h-screen bg-[#ebecf0]">
       <Topbar
         title="ขายหน้าร้าน (POS System)"
         subtitle="ระบบสั่งอาหารพร้อมตัดสต็อกตามสูตรวัตถุดิบ (BOM Auto-Deduction) & ปรับแต่งรายละเอียดเมนู"
@@ -207,34 +207,37 @@ export default function POSPage() {
         {/* Left Area: Menu Selector & Category Filters */}
         <div className="flex-1 flex flex-col gap-5 min-w-0 w-full">
           {/* Filter Bar & Search */}
-          <div className="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+          <div className="skeuo-card p-4 rounded-3xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
             {/* Category pills with flex-wrap and smooth badges */}
             <div className="flex flex-wrap items-center gap-2 flex-1">
-              {dynamicCategories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-4 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition-all ${
-                    selectedCategory === cat
-                      ? 'bg-[#12312d] text-white shadow-sm'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
+              {dynamicCategories.map((cat) => {
+                const isSelected = selectedCategory === cat;
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-4 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition-all ${
+                      isSelected
+                        ? 'neu-pressed text-emerald-800 font-black border border-emerald-500/30'
+                        : 'neu-raised text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                );
+              })}
             </div>
 
             {/* View switcher & Search */}
             <div className="flex items-center gap-3 shrink-0">
-              <div className="bg-slate-100 p-1 rounded-2xl flex items-center gap-1 shrink-0">
+              <div className="skeuo-inset p-1 rounded-2xl flex items-center gap-1 shrink-0">
                 <button
                   type="button"
                   onClick={() => setViewMode('card')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                     viewMode === 'card'
-                      ? 'bg-white text-slate-900 shadow-sm'
-                      : 'text-slate-500 hover:text-slate-900'
+                      ? 'neu-raised text-emerald-800'
+                      : 'text-slate-500 hover:text-slate-800'
                   }`}
                   title="มุมมองการ์ด (Card View)"
                 >
@@ -246,8 +249,8 @@ export default function POSPage() {
                   onClick={() => setViewMode('list')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                     viewMode === 'list'
-                      ? 'bg-white text-slate-900 shadow-sm'
-                      : 'text-slate-500 hover:text-slate-900'
+                      ? 'neu-raised text-emerald-800'
+                      : 'text-slate-500 hover:text-slate-800'
                   }`}
                   title="มุมมองรายการ (List View)"
                 >
@@ -263,7 +266,7 @@ export default function POSPage() {
                   placeholder="ค้นหาชื่อเมนู..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4fb0a5]/30 focus:border-[#4fb0a5]"
+                  className="w-full pl-9 pr-3 py-2 text-xs rounded-2xl skeuo-input text-slate-800 placeholder:text-slate-400 focus:outline-none"
                 />
               </div>
             </div>
@@ -271,7 +274,7 @@ export default function POSPage() {
 
           {/* Menu Items Render */}
           {filteredMenu.length === 0 ? (
-            <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 text-slate-400 text-sm">
+            <div className="p-12 text-center skeuo-card rounded-3xl text-slate-400 text-sm">
               <UtensilsCrossed className="w-8 h-8 mx-auto mb-2 opacity-40 text-slate-400" />
               ไม่พบรายการอาหารในหมวดหมู่นี้
             </div>
@@ -287,37 +290,37 @@ export default function POSPage() {
                 return (
                   <div
                     key={menu.id}
-                    className={`bg-white rounded-3xl overflow-hidden border border-slate-200/80 shadow-sm flex flex-col justify-between transition-all hover:shadow-md ${
-                      !isAvailable ? 'opacity-60 bg-slate-50' : ''
+                    className={`skeuo-card-interactive rounded-3xl overflow-hidden flex flex-col justify-between transition-all ${
+                      !isAvailable ? 'opacity-60' : ''
                     }`}
                   >
                     <div>
-                      <div className="relative h-40 bg-slate-100 overflow-hidden group">
+                      <div className="relative h-40 bg-slate-200/60 overflow-hidden group">
                         <img
                           src={menu.image || '/images/logo_ss.png'}
                           alt={menu.name}
                           className={`w-full h-full ${
                             menu.image
                               ? 'object-cover group-hover:scale-105 transition-transform duration-300'
-                              : 'object-contain p-5 bg-white opacity-85'
+                              : 'object-contain p-5 opacity-85'
                           }`}
                         />
                         <div className="absolute top-2.5 left-2.5">
-                          <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-900/80 backdrop-blur-md text-white">
+                          <span className="text-[11px] font-normal px-2.5 py-0.5 rounded-full bg-slate-900/80 backdrop-blur-md text-white">
                             {menu.category}
                           </span>
                         </div>
                         <div className="absolute top-2.5 right-2.5 flex items-center gap-1">
                           <button
                             onClick={() => handleOpenOptionModal(menu)}
-                            className="p-1.5 rounded-xl bg-white/90 text-slate-700 hover:text-[#12312d] hover:bg-white shadow-sm transition-all"
+                            className="p-1.5 rounded-xl skeuo-btn-secondary shadow-sm"
                             title="เลือกตัวเลือกพิเศษ (ความเผ็ด, พิเศษ, หมายเหตุ)"
                           >
                             <SlidersHorizontal className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => setPreviewMenu(menu)}
-                            className="p-1.5 rounded-xl bg-white/90 text-slate-700 hover:text-[#4fb0a5] hover:bg-white shadow-sm transition-all"
+                            className="p-1.5 rounded-xl skeuo-btn-secondary shadow-sm text-emerald-700"
                             title="ดูสูตรวัตถุดิบ (BOM Preview)"
                           >
                             <Eye className="w-3.5 h-3.5" />
@@ -325,8 +328,8 @@ export default function POSPage() {
                         </div>
                         {!isAvailable && (
                           <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center">
-                            <span className="text-white font-bold text-xs bg-rose-600 px-3 py-1 rounded-lg">
-                              วัตถุดิบหมด (Sold Out)
+                            <span className="text-white font-semibold text-sm bg-red-600 px-3 py-1 rounded-lg">
+                              Sold Out!
                             </span>
                           </div>
                         )}
@@ -334,17 +337,17 @@ export default function POSPage() {
 
                       <div className="p-4 space-y-1.5">
                         <div className="flex items-start justify-between gap-2">
-                          <h3 className="font-bold text-slate-800 text-sm">{menu.name}</h3>
-                          <span className="font-extrabold text-base text-[#12312d] shrink-0">฿{menu.price.toFixed(2)}</span>
+                          <h3 className="font-bold text-slate-900 text-sm">{menu.name}</h3>
+                          <span className="font-black text-base text-emerald-800 shrink-0">฿{menu.price.toFixed(2)}</span>
                         </div>
                         {menu.description && (
-                          <p className="text-xs text-slate-400 line-clamp-1">{menu.description}</p>
+                          <p className="text-xs text-slate-500 line-clamp-1">{menu.description}</p>
                         )}
                       </div>
                     </div>
 
-                    <div className="p-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-                      <div className="text-[11px] text-slate-400">
+                    <div className="p-4 pt-3 border-t border-slate-300/60 flex items-center justify-between">
+                      <div className="text-[11px] text-slate-500 font-medium">
                         ต้นทุน: <span className="font-bold text-amber-700">฿{menu.recipe_cost}</span>
                       </div>
 
@@ -352,17 +355,11 @@ export default function POSPage() {
                         <button
                           disabled={!isAvailable}
                           onClick={() => handleOpenOptionModal(menu)}
-                          className="p-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors disabled:opacity-50"
-                          title="ปรับแต่งตัวเลือกก่อนสั่ง"
+                          className="px-3.5 py-2 rounded-2xl skeuo-btn-primary text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="เลือกรายละเอียดเพื่อสั่ง"
                         >
-                          <SlidersHorizontal className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          disabled={!isAvailable}
-                          onClick={() => addToCart(menu)}
-                          className="px-3 py-1.5 rounded-2xl bg-[#12312d] hover:bg-[#1a423d] text-white text-xs font-bold flex items-center gap-1 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed shadow-sm"
-                        >
-                          <Plus className="w-3.5 h-3.5" /> สั่งทันที {totalInCartForMenu > 0 && `(${totalInCartForMenu})`}
+                          <Plus className="w-4 h-4" />
+                          <span>สั่ง {totalInCartForMenu > 0 && `(${totalInCartForMenu})`}</span>
                         </button>
                       </div>
                     </div>
@@ -372,11 +369,11 @@ export default function POSPage() {
             </div>
           ) : (
             /* List View */
-            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+            <div className="skeuo-card rounded-3xl overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-500 uppercase tracking-wider font-semibold">
+                    <tr className="bg-slate-200/50 border-b border-slate-300/70 text-slate-600 uppercase tracking-wider font-bold">
                       <th className="py-3.5 px-4">เมนู</th>
                       <th className="py-3.5 px-4">หมวดหมู่</th>
                       <th className="py-3.5 px-4 text-right">ราคา</th>
@@ -385,7 +382,7 @@ export default function POSPage() {
                       <th className="py-3.5 px-4 text-center">สั่งซื้อ</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-200/60">
                     {filteredMenu.map((menu) => {
                       const totalInCartForMenu = cartItems
                         .filter((c) => c.item.id === menu.id)
@@ -393,10 +390,10 @@ export default function POSPage() {
                       const isAvailable = menu.status !== 'sold_out';
 
                       return (
-                        <tr key={menu.id} className="hover:bg-slate-50/60 transition-colors">
+                        <tr key={menu.id} className="hover:bg-slate-200/30 transition-colors">
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-xl bg-white border border-slate-200/80 overflow-hidden shrink-0 flex items-center justify-center p-1 shadow-2xs">
+                              <div className="w-10 h-10 rounded-xl neu-raised overflow-hidden shrink-0 flex items-center justify-center p-1">
                                 <img
                                   src={menu.image || '/images/logo_ss.png'}
                                   alt={menu.name}
@@ -406,17 +403,17 @@ export default function POSPage() {
                               <div>
                                 <div className="font-bold text-slate-900 text-sm">{menu.name}</div>
                                 {menu.description && (
-                                  <div className="text-[11px] text-slate-400 line-clamp-1">{menu.description}</div>
+                                  <div className="text-[11px] text-slate-500 line-clamp-1">{menu.description}</div>
                                 )}
                               </div>
                             </div>
                           </td>
                           <td className="py-3.5 px-4">
-                            <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#e6f7f5] text-[#12312d] border border-[#4fb0a5]/30 inline-block whitespace-nowrap">
+                            <span className="text-xs font-bold px-3 py-1 rounded-full skeuo-badge-green inline-block whitespace-nowrap">
                               {menu.category}
                             </span>
                           </td>
-                          <td className="py-3.5 px-4 text-right font-extrabold text-slate-900 text-sm">
+                          <td className="py-3.5 px-4 text-right font-black text-emerald-800 text-sm">
                             ฿{menu.price.toFixed(2)}
                           </td>
                           <td className="py-3.5 px-4 text-right font-bold text-amber-700">
@@ -425,30 +422,20 @@ export default function POSPage() {
                           <td className="py-3.5 px-4 text-center">
                             <button
                               onClick={() => setPreviewMenu(menu)}
-                              className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700"
+                              className="p-1.5 rounded-xl skeuo-btn-secondary text-slate-700 hover:text-emerald-800"
                               title="ดูสูตรวัตถุดิบ"
                             >
                               <Eye className="w-3.5 h-3.5" />
                             </button>
                           </td>
                           <td className="py-3.5 px-4 text-center">
-                            <div className="inline-flex items-center gap-1.5">
-                              <button
-                                disabled={!isAvailable}
-                                onClick={() => handleOpenOptionModal(menu)}
-                                className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700"
-                                title="ปรับแต่งตัวเลือกพิเศษ"
-                              >
-                                <SlidersHorizontal className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                disabled={!isAvailable}
-                                onClick={() => addToCart(menu)}
-                                className="px-3 py-1.5 rounded-xl bg-[#12312d] hover:bg-[#1a423d] text-white text-xs font-bold inline-flex items-center gap-1 disabled:bg-slate-300"
-                              >
-                                <Plus className="w-3.5 h-3.5" /> สั่ง {totalInCartForMenu > 0 && `(${totalInCartForMenu})`}
-                              </button>
-                            </div>
+                            <button
+                              disabled={!isAvailable}
+                              onClick={() => handleOpenOptionModal(menu)}
+                              className="px-3.5 py-1.5 rounded-xl skeuo-btn-primary text-xs font-bold inline-flex items-center gap-1 disabled:opacity-50"
+                            >
+                              <Plus className="w-3.5 h-3.5" /> สั่ง {totalInCartForMenu > 0 && `(${totalInCartForMenu})`}
+                            </button>
                           </td>
                         </tr>
                       );
@@ -463,7 +450,7 @@ export default function POSPage() {
         {/* Right Area: Order Cart & Real-time BOM Stock Deduction Preview */}
         <div className="w-full lg:w-96 flex flex-col gap-4 shrink-0">
           {/* Order Bill Card OR Item Option Panel */}
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-5 flex flex-col min-h-[560px]">
+          <div className="skeuo-card rounded-3xl p-5 flex flex-col min-h-[560px]">
             {optionTargetMenu ? (
               <ItemOptionPanel
                 item={optionTargetMenu}
@@ -480,13 +467,15 @@ export default function POSPage() {
               />
             ) : (
               <>
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-300/60">
                   <div className="flex items-center gap-2">
-                    <ShoppingCart className="w-5 h-5 text-[#4fb0a5]" />
-                    <h3 className="font-bold text-slate-800 text-base">รายการสั่งอาหาร</h3>
+                    <div className="w-8 h-8 rounded-xl skeuo-inset flex items-center justify-center text-emerald-700">
+                      <ShoppingCart className="w-4 h-4" />
+                    </div>
+                    <h3 className="font-black text-slate-900 text-base">รายการสั่งอาหาร</h3>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-semibold text-slate-500">โต๊ะ:</span>
+                    <span className="text-xs font-bold text-slate-500">โต๊ะ:</span>
                     <Dropdown
                       value={tableNo}
                       onChange={setTableNo}
@@ -500,18 +489,17 @@ export default function POSPage() {
                       ]}
                       size="sm"
                       className="w-32"
-                      buttonClassName="py-1 px-2.5 bg-slate-100 border-none rounded-xl text-xs font-bold text-slate-800"
+                      buttonClassName="py-1.5 px-2.5 rounded-xl text-xs font-bold text-slate-800"
                     />
                   </div>
                 </div>
 
                 {/* Cart Items List */}
-                <div className="flex-1 overflow-y-auto py-3 space-y-2.5 pr-1 max-h-72">
+                <div className="flex-1 overflow-y-auto py-3 space-y-2.5 pr-1 max-h-72 no-scrollbar">
                   {cartItems.length === 0 ? (
                     <div className="h-full py-12 flex flex-col items-center justify-center text-slate-400 text-xs">
                       <UtensilsCrossed className="w-10 h-10 mb-2 opacity-30" />
-                      <p>ยังไม่มีรายการในบิล</p>
-                      <p className="text-[11px] text-slate-400">เลือกเมนูจากแถบด้านซ้ายเพื่อสั่ง</p>
+                      <p className="font-medium">ยังไม่มีรายการ</p>
                     </div>
                   ) : (
                     cartItems.map((entry) => {
@@ -521,35 +509,35 @@ export default function POSPage() {
                       return (
                         <div
                           key={entry.cartId}
-                          className="p-3 rounded-2xl bg-slate-50 border border-slate-100 text-xs space-y-1.5"
+                          className="p-3 rounded-2xl skeuo-inset text-xs space-y-1.5"
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1">
-                              <div className="font-bold text-slate-800 flex items-center gap-1.5">
+                              <div className="font-bold text-slate-900 flex items-center gap-1.5">
                                 <span>{entry.item.name}</span>
                                 {entry.options.isSpecial && (
-                                  <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded-md font-bold">
+                                  <span className="text-[10px] skeuo-badge-amber px-1.5 py-0.2 rounded-md font-bold">
                                     พิเศษ
                                   </span>
                                 )}
                               </div>
-                              <div className="text-[11px] text-slate-400">
-                                ฿{effectivePrice} x {entry.quantity} = <strong className="text-slate-700">฿{effectivePrice * entry.quantity}</strong>
+                              <div className="text-[11px] text-slate-500">
+                                ฿{effectivePrice} x {entry.quantity} = <strong className="text-emerald-800">฿{effectivePrice * entry.quantity}</strong>
                               </div>
                             </div>
 
                             <div className="flex items-center gap-1.5 shrink-0">
-                              <div className="flex items-center bg-white rounded-xl border border-slate-200 shadow-2xs">
+                              <div className="flex items-center neu-raised px-1 py-0.5 rounded-xl">
                                 <button
                                   onClick={() => updateQuantity(entry.cartId, -1)}
-                                  className="w-6 h-6 flex items-center justify-center text-slate-600 hover:text-[#12312d]"
+                                  className="w-5 h-5 flex items-center justify-center text-slate-600 hover:text-emerald-800"
                                 >
                                   <Minus className="w-3 h-3" />
                                 </button>
-                                <span className="w-6 text-center font-bold text-slate-800">{entry.quantity}</span>
+                                <span className="w-5 text-center font-black text-slate-900">{entry.quantity}</span>
                                 <button
                                   onClick={() => updateQuantity(entry.cartId, 1)}
-                                  className="w-6 h-6 flex items-center justify-center text-slate-600 hover:text-[#12312d]"
+                                  className="w-5 h-5 flex items-center justify-center text-slate-600 hover:text-emerald-800"
                                 >
                                   <Plus className="w-3 h-3" />
                                 </button>
@@ -565,15 +553,15 @@ export default function POSPage() {
                           </div>
 
                           {/* Display Selected Note/Options */}
-                          <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 text-[11px]">
+                          <div className="flex items-center justify-between pt-1 border-t border-slate-300/60 text-[11px]">
                             <span className="text-slate-500 truncate max-w-[200px]" title={formattedNote || 'ไม่มีหมายเหตุ'}>
                               {formattedNote ? `📝 ${formattedNote}` : '🍽️ ทานที่ร้าน • เผ็ดปกติ'}
                             </span>
                             <button
                               onClick={() => handleOpenOptionModal(entry.item, entry.cartId)}
-                              className="text-[#4fb0a5] hover:text-[#12312d] font-bold text-[10px] shrink-0"
+                              className="text-emerald-700 hover:text-emerald-800 font-bold text-[10px] shrink-0"
                             >
-                              แก้ไขตัวเลือก
+                              แก้ไข
                             </button>
                           </div>
                         </div>
@@ -583,19 +571,19 @@ export default function POSPage() {
                 </div>
 
                 {/* Bill Summary & Payment Form */}
-                <div className="pt-3 border-t border-slate-100 space-y-3 mt-auto">
-                  <div className="space-y-1 text-xs">
+                <div className="pt-3 border-t border-slate-300/60 space-y-3 mt-auto">
+                  <div className="space-y-1 text-xs font-medium">
                     <div className="flex justify-between text-slate-500">
-                      <span>ยอดรวมค่าอาหาร (Subtotal)</span>
+                      <span>รวม</span>
                       <span>฿{subtotal.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-slate-500">
-                      <span>ภาษีมูลค่าเพิ่ม (VAT 7%)</span>
+                      <span>VAT 7%</span>
                       <span>฿{vat.toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between font-extrabold text-sm text-slate-900 pt-1 border-t border-slate-100">
-                      <span>ยอดชำระสุทธิ (Net Total)</span>
-                      <span className="text-base text-[#12312d]">฿{grandTotal.toFixed(2)}</span>
+                    <div className="flex justify-between font-black text-sm text-slate-900 pt-1 border-t border-slate-300/60">
+                      <span>สุทธิ</span>
+                      <span className="text-base text-emerald-800">฿{grandTotal.toFixed(2)}</span>
                     </div>
                   </div>
 
@@ -604,10 +592,10 @@ export default function POSPage() {
                     <button
                       type="button"
                       onClick={() => setPaymentMethod('qr_promptpay')}
-                      className={`py-2 rounded-xl text-[11px] font-bold flex flex-col items-center gap-1 transition-all border ${
+                      className={`py-2 rounded-xl text-[11px] font-bold flex flex-col items-center gap-1 transition-all ${
                         paymentMethod === 'qr_promptpay'
-                          ? 'bg-[#12312d] text-white border-[#12312d] shadow-sm'
-                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                          ? 'neu-pressed text-emerald-800 border border-emerald-500/40'
+                          : 'neu-raised text-slate-600 hover:text-slate-900'
                       }`}
                     >
                       <QrCode className="w-3.5 h-3.5" />
@@ -616,10 +604,10 @@ export default function POSPage() {
                     <button
                       type="button"
                       onClick={() => setPaymentMethod('cash')}
-                      className={`py-2 rounded-xl text-[11px] font-bold flex flex-col items-center gap-1 transition-all border ${
+                      className={`py-2 rounded-xl text-[11px] font-bold flex flex-col items-center gap-1 transition-all ${
                         paymentMethod === 'cash'
-                          ? 'bg-[#12312d] text-white border-[#12312d] shadow-sm'
-                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                          ? 'neu-pressed text-emerald-800 border border-emerald-500/40'
+                          : 'neu-raised text-slate-600 hover:text-slate-900'
                       }`}
                     >
                       <Banknote className="w-3.5 h-3.5" />
@@ -628,10 +616,10 @@ export default function POSPage() {
                     <button
                       type="button"
                       onClick={() => setPaymentMethod('credit_card')}
-                      className={`py-2 rounded-xl text-[11px] font-bold flex flex-col items-center gap-1 transition-all border ${
+                      className={`py-2 rounded-xl text-[11px] font-bold flex flex-col items-center gap-1 transition-all ${
                         paymentMethod === 'credit_card'
-                          ? 'bg-[#12312d] text-white border-[#12312d] shadow-sm'
-                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                          ? 'neu-pressed text-emerald-800 border border-emerald-500/40'
+                          : 'neu-raised text-slate-600 hover:text-slate-900'
                       }`}
                     >
                       <CreditCard className="w-3.5 h-3.5" />
@@ -642,10 +630,10 @@ export default function POSPage() {
                   <button
                     disabled={cartItems.length === 0}
                     onClick={handleCheckout}
-                    className="w-full py-3 rounded-2xl bg-[#4fb0a5] hover:bg-[#3d9b90] text-slate-950 font-bold text-xs shadow-lg shadow-[#4fb0a5]/20 flex items-center justify-center gap-2 transition-all transform active:scale-95 disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none disabled:cursor-not-allowed"
+                    className="w-full py-3 rounded-2xl skeuo-btn-primary font-bold text-xs flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <CheckCircle2 className="w-4 h-4" />
-                    ยืนยันออเดอร์ & ตัดสต็อกอัตโนมัติ
+                    ยืนยันชำระเงิน
                   </button>
                 </div>
               </>
@@ -653,34 +641,34 @@ export default function POSPage() {
           </div>
 
           {/* Real-time BOM Stock Deduction Preview */}
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-4 space-y-2 text-xs">
-            <div className="flex items-center gap-2 text-slate-700 font-bold text-xs">
-              <Layers className="w-4 h-4 text-[#4fb0a5]" />
-              <span>Preview วัตถุดิบที่จะถูกตัดสต็อก</span>
+          <div className="skeuo-card rounded-3xl p-4 space-y-2 text-xs">
+            <div className="flex items-center gap-2 text-slate-800 font-bold text-xs">
+              <Layers className="w-4 h-4 text-emerald-700" />
+              <span>ตัดสต็อกวัตถุดิบ (BOM)</span>
             </div>
             {Object.keys(cartBOMImpact).length === 0 ? (
-              <p className="text-[11px] text-slate-400 py-1">
-                เมื่อเพิ่มเมนูลงในบิล รายการตัดสต็อกวัตถุดิบแบบ Real-time จะแสดงที่นี่
+              <p className="text-[11px] text-slate-400 py-1 font-medium">
+                รายการตัดสต็อกจะแสดงเมื่อมีออเดอร์
               </p>
             ) : (
-              <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+              <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1 no-scrollbar">
                 {Object.values(cartBOMImpact).map((impact, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between text-[11px] p-2 rounded-xl bg-slate-50 border border-slate-100"
+                    className="flex items-center justify-between text-[11px] p-2.5 rounded-xl skeuo-inset"
                   >
                     <div>
-                      <span className="font-semibold text-slate-800">{impact.name}</span>
+                      <span className="font-bold text-slate-900">{impact.name}</span>
                       <div className="text-[10px] text-slate-400">
-                        เดิม: {impact.current} {impact.unit}
+                        เดิม {impact.current} {impact.unit}
                       </div>
                     </div>
                     <div className="text-right">
                       <span className="font-bold text-rose-600">
                         -{impact.used} {impact.unit}
                       </span>
-                      <div className="text-[10px] text-emerald-600 font-semibold">
-                        คงเหลือ: {impact.remaining} {impact.unit}
+                      <div className="text-[10px] text-emerald-700 font-bold">
+                        เหลือ {impact.remaining} {impact.unit}
                       </div>
                     </div>
                   </div>

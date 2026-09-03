@@ -131,7 +131,7 @@ export default function StockPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-slate-50/70">
+    <div className="flex-1 flex flex-col min-h-screen bg-[#ebecf0]">
       <Topbar
         title="จัดการสต็อกวัตถุดิบ (Stock Management)"
         subtitle="ควบคุมระดับสต็อก จุดสั่งซื้อซ้ำ (Reorder Point) และประวัติการเคลื่อนไหว"
@@ -140,12 +140,12 @@ export default function StockPage() {
       <main className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
         {/* Navigation Sub-tabs & Action buttons */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-2xs">
+          <div className="flex items-center gap-2 skeuo-inset p-1.5 rounded-2xl">
             <button
               onClick={() => setActiveTab('inventory')}
-              className={`px-4 py-2 rounded-xl text-sm font-normal transition-all flex items-center gap-2 ${
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${
                 activeTab === 'inventory'
-                  ? 'bg-[#12312d] text-white shadow-sm'
+                  ? 'neu-raised text-emerald-800'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -154,9 +154,9 @@ export default function StockPage() {
             </button>
             <button
               onClick={() => setActiveTab('movements')}
-              className={`px-4 py-2 rounded-xl text-sm font-normal transition-all flex items-center gap-2 ${
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${
                 activeTab === 'movements'
-                  ? 'bg-[#12312d] text-white shadow-sm'
+                  ? 'neu-raised text-emerald-800'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -167,7 +167,7 @@ export default function StockPage() {
 
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="px-4 py-2.5 rounded-2xl bg-[#4fb0a5] hover:bg-[#3d9b90] text-slate-950 font-normal text-sm shadow-lg shadow-[#4fb0a5]/20 flex items-center gap-2 transition-all transform active:scale-95"
+            className="px-4 py-2.5 rounded-2xl skeuo-btn-primary font-bold text-sm flex items-center gap-2 transition-all"
           >
             <Plus className="w-4 h-4" /> เพิ่มวัตถุดิบใหม่
           </button>
@@ -175,9 +175,9 @@ export default function StockPage() {
 
         {activeTab === 'inventory' ? (
           /* Inventory Table View */
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div className="skeuo-card rounded-3xl overflow-hidden">
             {/* Filter Bar */}
-            <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="p-4 border-b border-slate-300/60 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="relative w-full sm:w-72">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
@@ -188,7 +188,7 @@ export default function StockPage() {
                     setSearch(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full pl-10 pr-4 py-2.5 text-xs rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4fb0a5]/30 focus:border-[#4fb0a5]"
+                  className="w-full pl-10 pr-4 py-2.5 text-xs rounded-2xl skeuo-input text-slate-800 placeholder:text-slate-400 focus:outline-none"
                 />
               </div>
 
@@ -320,15 +320,15 @@ export default function StockPage() {
           </div>
         ) : (
           /* Movement History Log View */
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-5 space-y-4">
+          <div className="skeuo-card rounded-3xl p-5 space-y-4">
             <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-              <History className="w-5 h-5 text-[#4fb0a5]" />
+              <History className="w-5 h-5 text-emerald-800" />
               บันทึกประวัติการปรับสต็อก
             </h3>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="bg-slate-300 border border-slate-400 rounded-lg uppercase tracking-wider font-bold">
+                  <tr className="bg-slate-200/60 border-b border-slate-300/70 uppercase tracking-wider font-bold text-slate-700">
                     <th className="py-3 px-4">วัน-เวลา</th>
                     <th className="py-3 px-4">วัตถุดิบ</th>
                     <th className="py-3 px-4">ประเภท</th>
@@ -338,7 +338,7 @@ export default function StockPage() {
                     <th className="py-3 px-4">ผู้บันทึก</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-200/60">
                   {movements.map((mov) => (
                     <tr key={mov.id} className="hover:bg-slate-50/80">
                       <td className="py-3 px-4 text-slate-500 font-mono">{mov.created_at}</td>

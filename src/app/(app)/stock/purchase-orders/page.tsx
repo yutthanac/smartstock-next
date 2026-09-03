@@ -39,33 +39,33 @@ export default function PurchaseOrdersPage() {
   const lowStock = ingredients.filter((i) => i.quantity <= i.reorder_point);
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-slate-50/70">
+    <div className="flex-1 flex flex-col min-h-screen bg-[#ebecf0]">
       <Topbar title="ใบสั่งซื้อ & ซัพพลายเออร์ (Purchase Orders)" subtitle="จัดการจัดซื้อวัตถุดิบเติมสต็อกและคู่ค้า" />
 
       <main className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
         {/* Recommended PO Quick-Gen Card */}
         {lowStock.length > 0 && (
-          <div className="p-5 rounded-2xl bg-gradient-to-r from-[#12312d] to-[#1c4d46] text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-md">
+          <div className="p-5 rounded-3xl skeuo-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <Package className="w-5 h-5 text-[#4fb0a5]" />
-                <h3 className="font-bold text-base">ระบบตรวจพบวัตถุดิบใกล้หมด {lowStock.length} รายการ</h3>
+                <Package className="w-5 h-5 text-amber-600" />
+                <h3 className="font-black text-base text-slate-900">ระบบตรวจพบวัตถุดิบใกล้หมด {lowStock.length} รายการ</h3>
               </div>
-              <p className="text-xs text-slate-300 mt-1">
+              <p className="text-xs text-slate-500 mt-1 font-medium">
                 สร้างใบสั่งซื้อ (PO) ส่งหาซัพพลายเออร์อัตโนมัติตามจุดสั่งซื้อที่ตั้งไว้
               </p>
             </div>
-            <button className="px-4 py-2.5 rounded-xl bg-[#4fb0a5] hover:bg-[#3d9b90] text-slate-950 font-bold text-xs shadow-md transition-all self-start sm:self-auto">
+            <button className="px-4 py-2.5 rounded-2xl skeuo-btn-primary font-bold text-xs transition-all self-start sm:self-auto">
               + สร้าง PO เติมสต็อกด่วนทันที
             </button>
           </div>
         )}
 
         {/* PO List Table */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4">
+        <div className="skeuo-card rounded-3xl p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-              <FileSpreadsheet className="w-5 h-5 text-[#4fb0a5]" />
+              <FileSpreadsheet className="w-5 h-5 text-emerald-800" />
               รายการใบสั่งซื้อล่าสุด
             </h3>
           </div>
@@ -73,39 +73,39 @@ export default function PurchaseOrdersPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase tracking-wider font-semibold">
-                  <th className="py-3 px-4">เลขที่ PO</th>
-                  <th className="py-3 px-4">ซัพพลายเออร์</th>
-                  <th className="py-3 px-4">วันที่สั่งซื้อ</th>
-                  <th className="py-3 px-4 text-center">จำนวนรายการ</th>
-                  <th className="py-3 px-4 text-right">ยอดรวม (บาท)</th>
-                  <th className="py-3 px-4 text-center">สถานะ</th>
-                  <th className="py-3 px-4 text-center">การดำเนินการ</th>
+                <tr className="bg-slate-200/60 border-b border-slate-300/70 text-slate-700 uppercase tracking-wider font-bold">
+                  <th className="py-3.5 px-4">เลขที่ PO</th>
+                  <th className="py-3.5 px-4">ซัพพลายเออร์</th>
+                  <th className="py-3.5 px-4">วันที่สั่งซื้อ</th>
+                  <th className="py-3.5 px-4 text-center">จำนวนรายการ</th>
+                  <th className="py-3.5 px-4 text-right">ยอดรวม (บาท)</th>
+                  <th className="py-3.5 px-4 text-center">สถานะ</th>
+                  <th className="py-3.5 px-4 text-center">การดำเนินการ</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-200/60">
                 {poList.map((po) => (
-                  <tr key={po.id} className="hover:bg-slate-50/80">
-                    <td className="py-3 px-4 font-bold text-slate-900">{po.id}</td>
-                    <td className="py-3 px-4 text-slate-700 font-medium">{po.supplier}</td>
-                    <td className="py-3 px-4 text-slate-500">{po.date}</td>
-                    <td className="py-3 px-4 text-center">{po.itemsCount} รายการ</td>
-                    <td className="py-3 px-4 text-right font-bold text-slate-900">
+                  <tr key={po.id} className="hover:bg-slate-200/30 transition-colors">
+                    <td className="py-3.5 px-4 font-bold text-slate-900">{po.id}</td>
+                    <td className="py-3.5 px-4 text-slate-700 font-medium">{po.supplier}</td>
+                    <td className="py-3.5 px-4 text-slate-500">{po.date}</td>
+                    <td className="py-3.5 px-4 text-center">{po.itemsCount} รายการ</td>
+                    <td className="py-3.5 px-4 text-right font-black text-emerald-800">
                       ฿{po.totalAmount.toLocaleString()}
                     </td>
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-3.5 px-4 text-center">
                       {po.status === 'received' ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold skeuo-badge-green">
                           <CheckCircle2 className="w-3 h-3" /> รับของเข้าคลังแล้ว
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold skeuo-badge-amber">
                           <Clock className="w-3 h-3" /> รอส่งมอบสินค้า
                         </span>
                       )}
                     </td>
-                    <td className="py-3 px-4 text-center">
-                      <button className="text-xs text-[#4fb0a5] hover:underline font-semibold">
+                    <td className="py-3.5 px-4 text-center">
+                      <button className="px-3 py-1.5 rounded-xl skeuo-btn-secondary text-xs font-bold text-slate-700 hover:text-slate-950">
                         ดูรายละเอียด
                       </button>
                     </td>

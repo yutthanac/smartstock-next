@@ -28,9 +28,180 @@
 
 body {
   font-family: var(--font-noto-thai), var(--font-noto-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: #f8fafc;
+  background-color: #ebecf0;
   color: #1e293b;
+  font-size: 15px; /* ขยายขนาดฟอนต์อ่านง่ายขึ้นทั่วทั้งเว็บ */
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+}
+
+/* =========================================================
+   Crisp Minimal Neumorphism (ลดความฟุ้ง คมชัด มินิมอล สบายตา)
+   - ลด Blur Radius จาก 14-18px เหลือ 4-6px
+   - ลดเงาฟุ้งดำ มิตินุ่มสะอาดตา
+   ========================================================= */
+
+:root {
+  --neu-bg: #ebecf0;
+  --neu-light: #ffffff;
+  --neu-shadow: rgba(166, 175, 195, 0.6);
+  --neu-shadow-inset: rgba(166, 175, 195, 0.45);
+  --neu-emerald: #059669;
+}
+
+/* 1. Neumorphic Flat Canvas */
+.neu-flat {
+  background: #ebecf0;
+  border-radius: 18px;
+  box-shadow: 3px 3px 6px var(--neu-shadow), -3px -3px 6px var(--neu-light);
+}
+
+/* 2. Neumorphic Extruded / Raised (ปุ่มนูน คม ไม่ฟุ้งดำ) */
+.neu-raised {
+  background: #ebecf0;
+  border-radius: 16px;
+  box-shadow: 2px 2px 5px var(--neu-shadow), -2px -2px 5px var(--neu-light);
+  transition: all 0.15s ease;
+}
+
+.neu-raised:hover {
+  box-shadow: 3px 3px 7px var(--neu-shadow), -3px -3px 7px var(--neu-light);
+}
+
+/* 3. Neumorphic Inset / Pressed / Active (หลุมจม คมชัด ไม่ฟุ้งหนา) */
+.neu-pressed {
+  background: #ebecf0;
+  border-radius: 16px;
+  box-shadow: inset 2px 2px 4px var(--neu-shadow-inset), inset -2px -2px 4px var(--neu-light);
+}
+
+/* 4. Neumorphic Sidebar Active Menu Item */
+.neu-sidebar-active {
+  background: #ebecf0;
+  box-shadow: 
+    inset 2px 2px 4px rgba(166, 175, 195, 0.6), 
+    inset -2px -2px 4px #ffffff;
+  border: 1px solid rgba(166, 175, 195, 0.25);
+}
+
+/* 5. Neumorphic Convex Pill Button */
+.neu-btn-emerald {
+  background: linear-gradient(145deg, #10b981, #047857);
+  box-shadow: 2px 2px 6px rgba(4, 120, 87, 0.25), -2px -2px 6px #ffffff;
+  color: #ffffff;
+  transition: all 0.15s ease;
+}
+
+.neu-btn-emerald:active {
+  box-shadow: inset 2px 2px 4px #034b36, inset -2px -2px 4px #15c389;
+  transform: translateY(1px);
+}
+
+/* 1. Raised Cards (การ์ดยกระดับ คมกริบ เงาไม่ฟุ้ง) */
+.skeuo-card {
+  background: #ebecf0;
+  border-radius: 24px;
+  box-shadow: 4px 4px 8px var(--neu-shadow), -4px -4px 8px var(--neu-light);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.skeuo-card-interactive {
+  background: #ebecf0;
+  border-radius: 20px;
+  box-shadow: 3px 3px 6px var(--neu-shadow), -3px -3px 6px var(--neu-light);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  transition: all 0.15s ease;
+}
+
+.skeuo-card-interactive:hover {
+  transform: translateY(-1px);
+  box-shadow: 4px 4px 9px var(--neu-shadow), -4px -4px 9px var(--neu-light);
+}
+
+/* 2. Inset Wells / Debossed Surfaces */
+.skeuo-inset {
+  background: #ebecf0;
+  box-shadow: inset 2px 2px 4px var(--neu-shadow-inset), inset -2px -2px 4px var(--neu-light);
+  border-radius: 16px;
+}
+
+.skeuo-input {
+  background: #ebecf0;
+  border: none;
+  box-shadow: inset 2px 2px 4px var(--neu-shadow-inset), inset -2px -2px 4px var(--neu-light);
+  transition: all 0.15s ease;
+}
+
+.skeuo-input:focus {
+  background: #ebecf0;
+  box-shadow: 
+    inset 2px 2px 4px var(--neu-shadow-inset), 
+    inset -2px -2px 4px var(--neu-light),
+    0 0 0 2px rgba(5, 150, 105, 0.35);
+}
+
+/* 3. Tactile Buttons */
+.skeuo-btn-primary {
+  background: linear-gradient(145deg, #10b981, #047857);
+  color: #ffffff;
+  border-radius: 14px;
+  box-shadow: 2px 2px 5px rgba(4, 120, 87, 0.25), -2px -2px 5px #ffffff;
+  transition: all 0.15s ease;
+}
+
+.skeuo-btn-primary:hover {
+  box-shadow: 3px 3px 7px rgba(4, 120, 87, 0.3), -3px -3px 7px #ffffff;
+}
+
+.skeuo-btn-primary:active {
+  transform: translateY(1px);
+  box-shadow: inset 2px 2px 4px #034b36, inset -2px -2px 4px #15c389;
+}
+
+.skeuo-btn-secondary {
+  background: #ebecf0;
+  color: #334155;
+  border-radius: 14px;
+  box-shadow: 2px 2px 5px var(--neu-shadow), -2px -2px 5px var(--neu-light);
+  transition: all 0.15s ease;
+}
+
+.skeuo-btn-secondary:hover {
+  color: #0f172a;
+  box-shadow: 3px 3px 6px var(--neu-shadow), -3px -3px 6px var(--neu-light);
+}
+
+.skeuo-btn-secondary:active {
+  box-shadow: inset 2px 2px 4px var(--neu-shadow-inset), inset -2px -2px 4px var(--neu-light);
+  transform: translateY(1px);
+}
+
+/* 4. Badges & Emblems (ป้ายสถานะปั๊มจม/นูนเรียบหรู) */
+.skeuo-badge-green {
+  background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%);
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 1px 2px rgba(6, 95, 70, 0.08);
+}
+
+.skeuo-badge-amber {
+  background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+  color: #92400e;
+  border: 1px solid #fde68a;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 1px 2px rgba(146, 64, 14, 0.08);
+}
+
+.skeuo-badge-rose {
+  background: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%);
+  color: #9f1239;
+  border: 1px solid #fecdd3;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 1px 2px rgba(159, 18, 57, 0.08);
 }
 
 /* Custom scrollbar */

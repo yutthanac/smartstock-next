@@ -9,21 +9,21 @@ interface AiInsightsCardProps {
 
 export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({ recommendations }) => {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between">
+    <div className="skeuo-card rounded-3xl p-6 flex flex-col justify-between">
       <div>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#4fb0a5] to-[#12312d] flex items-center justify-center text-white shadow-sm">
-              <Sparkles className="w-5 h-5 text-amber-300" />
+            <div className="w-9 h-9 rounded-xl skeuo-inset flex items-center justify-center text-emerald-700">
+              <Sparkles className="w-5 h-5 text-emerald-600" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 text-base">AI แนะนำเมนูขายดี & กลยุทธ์</h3>
+              <h3 className="font-black text-slate-900 text-base">AI แนะนำเมนูขายดี & กลยุทธ์</h3>
               <p className="text-xs text-slate-500">วิเคราะห์จากความถี่ออเดอร์และอัตรากำไร</p>
             </div>
           </div>
           <Link
             href="/menu/ai-insights"
-            className="text-xs font-semibold text-[#4fb0a5] hover:underline flex items-center"
+            className="text-xs font-bold text-emerald-700 hover:text-emerald-800 skeuo-btn-secondary px-3 py-1.5 rounded-xl flex items-center gap-1"
           >
             วิเคราะห์เต็ม <ChevronRight className="w-3.5 h-3.5" />
           </Link>
@@ -33,20 +33,20 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({ recommendations 
           {recommendations.map((rec) => (
             <div
               key={rec.id}
-              className="p-4 rounded-xl bg-slate-50 border border-slate-100 hover:border-[#4fb0a5]/40 transition-colors"
+              className="p-4 rounded-2xl skeuo-inset hover:border-slate-300 transition-colors"
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <div className="font-bold text-slate-800 text-sm">{rec.name}</div>
-                  <div className="text-xs text-slate-400 mt-0.5">
+                  <div className="font-bold text-slate-900 text-sm">{rec.name}</div>
+                  <div className="text-xs text-slate-500 mt-0.5 font-medium">
                     หมวด: {rec.category} • ยอดสั่ง {rec.order_count} จาน
                   </div>
                 </div>
-                <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${rec.tag_color}`}>
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full skeuo-badge-green">
                   {rec.tag}
                 </span>
               </div>
-              <p className="text-xs text-slate-600 mt-2 bg-white p-2 rounded-lg border border-slate-100/80 leading-relaxed">
+              <p className="text-xs text-slate-700 mt-2.5 skeuo-card p-2.5 rounded-xl leading-relaxed font-medium">
                 💡 {rec.insight}
               </p>
             </div>

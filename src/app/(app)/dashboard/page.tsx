@@ -13,7 +13,7 @@ export default function DashboardPage() {
   const { dashboard } = useStock();
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-slate-50/70">
+    <div className="flex-1 flex flex-col min-h-screen bg-[#ebecf0]">
       <Topbar
         title="แดชบอร์ดภาพรวมร้านอาหาร"
         subtitle={`ข้อมูลสรุป ณ วันที่ 1 กันยายน 2026 • ระบบตัดสต็อกอัตโนมัติ BOM`}

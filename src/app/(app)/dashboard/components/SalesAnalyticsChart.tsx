@@ -17,11 +17,13 @@ interface SalesAnalyticsChartProps {
 
 export const SalesAnalyticsChart: React.FC<SalesAnalyticsChartProps> = ({ sales7days }) => {
   return (
-    <section className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+    <section className="skeuo-card rounded-3xl p-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <ShoppingBag className="w-5 h-5 text-[#4fb0a5]" />
+          <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl skeuo-inset flex items-center justify-center text-emerald-700">
+              <ShoppingBag className="w-4 h-4" />
+            </div>
             สถิติยอดขาย & ต้นทุน 7 วันล่าสุด
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -29,12 +31,12 @@ export const SalesAnalyticsChart: React.FC<SalesAnalyticsChartProps> = ({ sales7
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 text-xs text-slate-600 bg-slate-100 px-3 py-1.5 rounded-xl font-medium">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#4fb0a5]"></span>
+          <span className="inline-flex items-center gap-1.5 text-xs text-emerald-800 skeuo-badge-green px-3 py-1.5 rounded-xl font-bold">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 shadow-xs"></span>
             ยอดขาย (Sales)
           </span>
-          <span className="inline-flex items-center gap-1.5 text-xs text-slate-600 bg-slate-100 px-3 py-1.5 rounded-xl font-medium">
-            <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
+          <span className="inline-flex items-center gap-1.5 text-xs text-slate-600 skeuo-btn-secondary px-3 py-1.5 rounded-xl font-bold">
+            <span className="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
             ต้นทุน (Cost)
           </span>
         </div>
