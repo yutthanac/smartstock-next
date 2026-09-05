@@ -1,12 +1,13 @@
-import React from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus, Edit2, X } from 'lucide-react';
 import { Dropdown } from '@/components/Dropdown';
 import { useStock } from '@/lib/StockContext';
+import { Ingredient } from '@/types';
 
 interface AddIngredientModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (e: React.FormEvent) => void;
+  editingTarget?: Ingredient | null;
   formData: {
     name: string;
     unit: string;
@@ -15,6 +16,7 @@ interface AddIngredientModalProps {
     cost_per_unit: number | string;
     category: string;
     supplier: string;
+    tracking_type: 'strict' | 'bulk_expense';
   };
   setFormData: React.Dispatch<
     React.SetStateAction<{
@@ -25,6 +27,7 @@ interface AddIngredientModalProps {
       cost_per_unit: number | string;
       category: string;
       supplier: string;
+      tracking_type: 'strict' | 'bulk_expense';
     }>
   >;
 }
@@ -33,6 +36,7 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
+  editingTarget,
   formData,
   setFormData,
 }) => {
@@ -48,9 +52,11 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-[#4fb0a5]/10 text-[#4fb0a5] flex items-center justify-center">
-              <Plus className="w-4 h-4" />
+              {editingTarget ? <Edit2 className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
             </div>
-            <h3 className="font-bold text-slate-900 text-base">เพิ่มวัตถุดิบใหม่เข้าระบบ</h3>
+            <h3 className="font-bold text-slate-900 text-base">
+              {editingTarget ? `แก้ไขข้อมูลวัตถุดิบ: ${editingTarget.name}` : 'เพิ่มวัตถุดิบใหม่เข้าระบบ'}
+            </h3>
           </div>
           <button
             type="button"
@@ -59,6 +65,50 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
           >
             <X className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* Tracking Type Selection (Strict vs Bulk Expense) */}
+        <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+          <label className="font-bold text-slate-800 text-xs block">
+            ลักษณะการตัดสต็อก (Inventory Tracking Type)
+          </label>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, tracking_type: 'strict' })}
+              className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                formData.tracking_type === 'strict'
+                  ? 'bg-emerald-50 border-emerald-500 ring-2 ring-emerald-500/20 text-emerald-950 font-bold'
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                <span className="text-base">🥩</span>
+                <span className="font-bold text-xs">วัตถุดิบหลัก (BOM)</span>
+              </div>
+              <p className="text-[10px] text-slate-500 mt-1 font-normal leading-tight">
+                ตัดสต็อกออโต้ตามสัดส่วนต่อจานเมื่อขาย POS (เช่น หมู, ไก่, กุ้ง)
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, tracking_type: 'bulk_expense' })}
+              className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                formData.tracking_type === 'bulk_expense'
+                  ? 'bg-amber-50 border-amber-500 ring-2 ring-amber-500/20 text-amber-950 font-bold'
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                <span className="text-base">🧂</span>
+                <span className="font-bold text-xs">เครื่องปรุง / ของใช้</span>
+              </div>
+              <p className="text-[10px] text-slate-500 mt-1 font-normal leading-tight">
+                ไม่ตัดย่อยต่อจาน ตัดยอดเมื่อเปิดขวด/หมดจริง (เช่น น้ำปลา, ซอส, ผัก)
+              </p>
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
@@ -201,9 +251,9 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
           </button>
           <button
             type="submit"
-            className="px-5 py-2.5 rounded-xl font-bold bg-[#4fb0a5] hover:bg-[#3d9b90] text-slate-950 shadow-md shadow-[#4fb0a5]/20"
+            className="px-5 py-2.5 rounded-xl font-bold bg-[#4fb0a5] hover:bg-[#3d9b90] text-slate-950 shadow-md shadow-[#4fb0a5]/20 cursor-pointer"
           >
-            บันทึกวัตถุดิบ
+            {editingTarget ? 'บันทึกการแก้ไข' : 'บันทึกวัตถุดิบ'}
           </button>
         </div>
       </form>

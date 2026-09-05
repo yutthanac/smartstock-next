@@ -22,6 +22,7 @@ export interface Ingredient {
   reorder_point: number;
   cost_per_unit: number;
   status: 'normal' | 'low' | 'out';
+  tracking_type?: 'strict' | 'bulk_expense';
   category?: string;
   supplier?: string;
   updated_at?: string;

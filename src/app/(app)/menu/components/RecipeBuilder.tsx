@@ -28,11 +28,15 @@ export const RecipeBuilder: React.FC<RecipeBuilderProps> = ({
         <button
           type="button"
           onClick={onAddRow}
-          className="px-2.5 py-1 rounded-xl bg-white border border-slate-200 text-[#12312d] font-bold text-[11px] hover:bg-slate-100 flex items-center gap-1 transition-colors shadow-2xs"
+          className="px-2.5 py-1 rounded-xl bg-white border border-slate-200 text-[#12312d] font-bold text-[11px] hover:bg-slate-100 flex items-center gap-1 transition-colors shadow-2xs cursor-pointer"
         >
           <Plus className="w-3.5 h-3.5 text-[#4fb0a5]" /> เพิ่มวัตถุดิบ
         </button>
       </div>
+
+      <p className="text-[11px] text-slate-500 font-normal leading-tight">
+        💡 <strong className="text-slate-700">วัตถุดิบหลัก (🥩)</strong> จะตัดสต็อกอัตโนมัติตามจานขาย | <strong className="text-slate-700">เครื่องปรุง/ผัก (🧂)</strong> คำนวณต้นทุนต่อจานให้ แต่จะตัดสต็อกจริงเมื่อกดเบิกขวดใหม่ในครัว
+      </p>
 
       <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
         {recipes.map((row, index) => {
@@ -47,11 +51,12 @@ export const RecipeBuilder: React.FC<RecipeBuilderProps> = ({
                   onChange={(val) => onUpdateRow(index, 'ingredient_id', Number(val))}
                   options={ingredients.map((ing) => ({
                     value: ing.id,
-                    label: `${ing.name} (${ing.cost_per_unit} ฿/${ing.unit})`,
+                    label: `${ing.tracking_type === 'bulk_expense' ? '🧂' : '🥩'} ${ing.name} (${ing.cost_per_unit} ฿/${ing.unit})`,
+                    badge: ing.tracking_type === 'bulk_expense' ? 'เครื่องปรุง' : 'วัตถุดิบหลัก',
                   }))}
                   size="sm"
                   className="w-full"
-                  buttonClassName="py-1.5 px-2 bg-slate-50 rounded-lg text-xs"
+                  buttonClassName="py-1.5 px-2 bg-slate-50 rounded-lg text-xs font-medium"
                 />
               </div>
 
@@ -86,7 +91,7 @@ export const RecipeBuilder: React.FC<RecipeBuilderProps> = ({
                 type="button"
                 onClick={() => onRemoveRow(index)}
                 disabled={recipes.length <= 1}
-                className="p-1.5 text-slate-400 hover:text-rose-500 disabled:opacity-30 transition-colors"
+                className="p-1.5 text-slate-400 hover:text-rose-500 disabled:opacity-30 transition-colors cursor-pointer"
                 title="ลบแถว"
               >
                 <Trash2 className="w-3.5 h-3.5" />

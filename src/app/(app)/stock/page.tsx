@@ -14,6 +14,8 @@ import {
   TrendingDown,
   TrendingUp,
   Trash2,
+  Zap,
+  Edit2,
 } from 'lucide-react';
 import { useStock } from '@/lib/StockContext';
 import { Topbar } from '@/components/Topbar';
@@ -24,7 +26,7 @@ import { AddIngredientModal } from './components/AddIngredientModal';
 import { AdjustStockModal } from './components/AdjustStockModal';
 
 export default function StockPage() {
-  const { ingredients, movements, addIngredient, deleteIngredient, adjustStock } = useStock();
+  const { ingredients, movements, addIngredient, updateIngredient, deleteIngredient, adjustStock, bulkUseIngredient } = useStock();
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<'inventory' | 'movements'>('inventory');
@@ -33,6 +35,7 @@ export default function StockPage() {
 
   // Modal States
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingTarget, setEditingTarget] = useState<Ingredient | null>(null);
   const [adjustTarget, setAdjustTarget] = useState<Ingredient | null>(null);
   const [adjustType, setAdjustType] = useState<'in' | 'waste' | 'adjust'>('in');
   const [adjustAmount, setAdjustAmount] = useState<number | string>(1);
@@ -47,6 +50,7 @@ export default function StockPage() {
     cost_per_unit: number | string;
     category: string;
     supplier: string;
+    tracking_type: 'strict' | 'bulk_expense';
   }>({
     name: '',
     unit: 'กก.',
@@ -55,6 +59,7 @@ export default function StockPage() {
     cost_per_unit: '100',
     category: 'เนื้อสัตว์',
     supplier: '',
+    tracking_type: 'strict',
   });
 
   const filteredIngredients = ingredients.filter((ing) => {
@@ -68,7 +73,37 @@ export default function StockPage() {
     currentPage * pageSize
   );
 
-  const handleCreateIngredient = async (e: React.FormEvent) => {
+  const handleOpenCreate = () => {
+    setEditingTarget(null);
+    setFormData({
+      name: '',
+      unit: 'กก.',
+      quantity: '',
+      reorder_point: '5',
+      cost_per_unit: '100',
+      category: 'เนื้อสัตว์',
+      supplier: '',
+      tracking_type: 'strict',
+    });
+    setIsAddModalOpen(true);
+  };
+
+  const handleOpenEdit = (ing: Ingredient) => {
+    setEditingTarget(ing);
+    setFormData({
+      name: ing.name,
+      unit: ing.unit,
+      quantity: ing.quantity,
+      reorder_point: ing.reorder_point,
+      cost_per_unit: ing.cost_per_unit,
+      category: ing.category || 'เนื้อสัตว์',
+      supplier: ing.supplier || '',
+      tracking_type: ing.tracking_type || 'strict',
+    });
+    setIsAddModalOpen(true);
+  };
+
+  const handleSaveIngredient = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
       alert('กรุณากรอกชื่อวัตถุดิบ');
@@ -79,18 +114,34 @@ export default function StockPage() {
     const reorder = typeof formData.reorder_point === 'number' ? formData.reorder_point : parseFloat(formData.reorder_point) || 0;
     const cost = typeof formData.cost_per_unit === 'number' ? formData.cost_per_unit : parseFloat(formData.cost_per_unit) || 0;
 
-    const success = await addIngredient({
-      name: formData.name.trim(),
-      unit: formData.unit,
-      quantity: qty,
-      reorder_point: reorder,
-      cost_per_unit: cost,
-      category: formData.category,
-      supplier: formData.supplier.trim() || undefined,
-    });
+    let success = false;
+    if (editingTarget) {
+      success = await updateIngredient(editingTarget.id, {
+        name: formData.name.trim(),
+        unit: formData.unit,
+        quantity: qty,
+        reorder_point: reorder,
+        cost_per_unit: cost,
+        category: formData.category,
+        supplier: formData.supplier.trim() || undefined,
+        tracking_type: formData.tracking_type,
+      });
+    } else {
+      success = await addIngredient({
+        name: formData.name.trim(),
+        unit: formData.unit,
+        quantity: qty,
+        reorder_point: reorder,
+        cost_per_unit: cost,
+        category: formData.category,
+        supplier: formData.supplier.trim() || undefined,
+        tracking_type: formData.tracking_type,
+      });
+    }
 
     if (success) {
       setIsAddModalOpen(false);
+      setEditingTarget(null);
       setFormData({
         name: '',
         unit: 'กก.',
@@ -99,9 +150,10 @@ export default function StockPage() {
         cost_per_unit: '100',
         category: 'เนื้อสัตว์',
         supplier: '',
+        tracking_type: 'strict',
       });
     } else {
-      alert('ไม่สามารถเพิ่มวัตถุดิบได้ กรุณาลองใหม่อีกครั้ง');
+      alert(editingTarget ? 'ไม่สามารถบันทึกการแก้ไขได้ กรุณาลองใหม่อีกครั้ง' : 'ไม่สามารถเพิ่มวัตถุดิบได้ กรุณาลองใหม่อีกครั้ง');
     }
   };
 
@@ -166,7 +218,7 @@ export default function StockPage() {
           </div>
 
           <button
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={handleOpenCreate}
             className="px-4 py-2.5 rounded-2xl skeuo-btn-primary font-bold text-sm flex items-center gap-2 transition-all"
           >
             <Plus className="w-4 h-4" /> เพิ่มวัตถุดิบใหม่
@@ -219,6 +271,7 @@ export default function StockPage() {
                   <tr className="bg-slate-100 border-b border-slate-300  uppercase tracking-wide font-bold text-slate-800">
                     <th className="py-3.5 px-4">ชื่อวัตถุดิบ</th>
                     <th className="py-3.5 px-4">หมวดหมู่</th>
+                    <th className="py-3.5 px-4 text-center">การตัดสต็อก</th>
                     <th className="py-3.5 px-4 text-right">ต้นทุน/หน่วย</th>
                     <th className="py-3.5 px-4 text-center">ระดับสต็อก</th>
                     <th className="py-3.5 px-4 text-right">จำนวนคงเหลือ</th>
@@ -240,6 +293,17 @@ export default function StockPage() {
                           )}
                         </td>
                         <td className="py-3.5 px-4 text-slate-500">{item.category || '-'}</td>
+                        <td className="py-3.5 px-4 text-center">
+                          {item.tracking_type === 'bulk_expense' ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200" title="ตัดสต็อกเมื่อเปิดใช้/หมดจริง ไม่ตัดเศษตามจานขาย">
+                              🧂 เบิกใช้/หมดจริง
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200" title="ตัดสต็อกอัตโนมัติตามจานขายของ POS">
+                              🥩 วัตถุดิบหลัก (BOM)
+                            </span>
+                          )}
+                        </td>
                         <td className="py-3.5 px-4 text-right font-medium text-slate-700">
                           ฿{item.cost_per_unit} / {item.unit}
                         </td>
@@ -281,20 +345,27 @@ export default function StockPage() {
                           )}
                         </td>
                         <td className="py-3.5 px-4 text-center">
-                          <div className="flex items-center justify-center gap-2">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => handleOpenEdit(item)}
+                              className="p-1.5 text-slate-400 hover:text-emerald-700 transition-colors cursor-pointer"
+                              title="แก้ไขข้อมูลวัตถุดิบ"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
                             <button
                               onClick={() => {
                                 setAdjustTarget(item);
                                 setAdjustType('in');
                                 setAdjustAmount(1);
                               }}
-                              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-[#4fb0a5]/20 hover:text-[#12312d] text-slate-700 font-bold text-xs transition-colors"
+                              className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-[#4fb0a5]/20 hover:text-[#12312d] text-slate-700 font-bold text-xs transition-colors cursor-pointer"
                             >
                               ปรับสต็อก
                             </button>
                             <button
                               onClick={() => handleDelete(item.id, item.name)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors"
+                              className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
                               title="ลบรายการ"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -386,13 +457,14 @@ export default function StockPage() {
         )}
       </main>
 
-      {/* Modular Add Ingredient Modal */}
+      {/* Modular Add / Edit Ingredient Modal */}
       <AddIngredientModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onSubmit={handleCreateIngredient}
+        onSubmit={handleSaveIngredient}
         formData={formData}
         setFormData={setFormData}
+        editingTarget={editingTarget}
       />
 
       {/* Modular Adjust Stock Modal */}

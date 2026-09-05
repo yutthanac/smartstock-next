@@ -20,6 +20,7 @@ interface StockContextType {
   updateIngredient: (id: number, ingredient: Partial<Ingredient>) => Promise<boolean>;
   deleteIngredient: (id: number) => Promise<boolean>;
   adjustStock: (id: number, type: 'in' | 'out' | 'adjust' | 'waste', amount: number, note: string) => Promise<boolean>;
+  bulkUseIngredient: (id: number, amount?: number, note?: string) => Promise<boolean>;
   addMenuItem: (menu: { name: string; category: string; price: number; image?: string; description?: string; recipes: { ingredient_id: number; quantity_used: number }[] }) => Promise<boolean>;
   updateMenuItem: (id: number, menu: { name?: string; category?: string; price?: number; image?: string; description?: string; recipes?: { ingredient_id: number; quantity_used: number }[] }) => Promise<boolean>;
   deleteMenuItem: (id: number) => Promise<boolean>;
@@ -311,6 +312,28 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const bulkUseIngredient = async (id: number, amount: number = 1, note?: string): Promise<boolean> => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/ingredients/${id}/bulk-use`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ amount, note }),
+      });
+      if (res.ok) {
+        await fetchData();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error('Error bulk using ingredient:', e);
+      return false;
+    }
+  };
+
   // Menu API calls
   const addMenuItem = async (menu: { name: string; category: string; price: number; image?: string; description?: string; recipes: { ingredient_id: number; quantity_used: number }[] }): Promise<boolean> => {
     try {
@@ -435,6 +458,7 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
         updateIngredient,
         deleteIngredient,
         adjustStock,
+        bulkUseIngredient,
         addMenuItem,
         updateMenuItem,
         deleteMenuItem,
