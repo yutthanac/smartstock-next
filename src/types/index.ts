@@ -130,3 +130,10 @@ export interface DashboardKPI {
     impact_dishes: string[];
   }[];
 }
+
+export interface UnitSetting {
+  id: number | string;
+  name: string; // เช่น กก., กรัม, ลิตร, ขวด, แพ็ค
+  description?: string;
+  category?: string;
+}

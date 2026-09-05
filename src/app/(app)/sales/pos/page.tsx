@@ -199,8 +199,8 @@ export default function POSPage() {
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-[#ebecf0]">
       <Topbar
-        title="ขายหน้าร้าน (POS System)"
-        subtitle="ระบบสั่งอาหารพร้อมตัดสต็อกตามสูตรวัตถุดิบ (BOM Auto-Deduction) & ปรับแต่งรายละเอียดเมนู"
+        title="ขายหน้าร้าน"
+        subtitle="ระบบสั่งอาหารพร้อมตัดสต็อกตามสูตรวัตถุดิบ"
       />
 
       <main className="p-4 sm:p-6 lg:p-8 flex-1 flex flex-col lg:flex-row gap-6 w-full items-start">

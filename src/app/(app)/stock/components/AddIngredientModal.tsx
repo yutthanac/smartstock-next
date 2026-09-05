@@ -1,6 +1,7 @@
 import React from 'react';
 import { Plus, X } from 'lucide-react';
 import { Dropdown } from '@/components/Dropdown';
+import { useStock } from '@/lib/StockContext';
 
 interface AddIngredientModalProps {
   isOpen: boolean;
@@ -35,6 +36,7 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
   formData,
   setFormData,
 }) => {
+  const { units } = useStock();
   if (!isOpen) return null;
 
   return (
@@ -95,15 +97,10 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
             <Dropdown
               value={formData.unit}
               onChange={(val) => setFormData({ ...formData, unit: val })}
-              options={[
-                { value: 'กก.', label: 'กิโลกรัม (กก.)' },
-                { value: 'กรัม', label: 'กรัม' },
-                { value: 'มล.', label: 'มิลลิลิตร (มล.)' },
-                { value: 'ฟอง', label: 'ฟอง' },
-                { value: 'กล่อง', label: 'กล่อง' },
-                { value: 'ขวด', label: 'ขวด' },
-                { value: 'แพ็ค', label: 'แพ็ค' },
-              ]}
+              options={units.map((u) => ({
+                value: u.name,
+                label: u.name,
+              }))}
               className="w-full"
               buttonClassName="py-2.5 px-3 rounded-xl bg-slate-50"
             />

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Check } from 'lucide-react';
 
 export interface DropdownOption {
@@ -32,7 +33,9 @@ export const Dropdown: React.FC<DropdownProps> = ({
   disabled = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number; width: number } | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   // Normalize options to DropdownOption
   const normalizedOptions: DropdownOption[] = options.map((opt) => {
@@ -44,19 +47,70 @@ export const Dropdown: React.FC<DropdownProps> = ({
 
   const selectedOption = normalizedOptions.find((opt) => String(opt.value) === String(value));
 
-  // Close when clicked outside
+  // Compute fixed popover coordinates based on button's bounding box
+  const updatePosition = () => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const availableBelow = window.innerHeight - rect.bottom;
+    const dropdownHeight = 240; // Estimated max height
+
+    let top = rect.bottom + 6;
+    // If not enough room below, open upwards
+    if (availableBelow < dropdownHeight && rect.top > dropdownHeight) {
+      top = rect.top - dropdownHeight - 6;
+    }
+
+    setMenuPosition({
+      top: Math.max(8, top),
+      left: rect.left,
+      width: Math.max(rect.width, 180),
+    });
+  };
+
+  const handleToggle = () => {
+    if (disabled) return;
+    if (!isOpen) {
+      updatePosition();
+      setIsOpen(true);
+    } else {
+      setIsOpen(false);
+    }
+  };
+
+  // Close when clicked outside or when window scrolls/resizes
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        triggerRef.current &&
+        !triggerRef.current.contains(target) &&
+        menuRef.current &&
+        !menuRef.current.contains(target)
+      ) {
         setIsOpen(false);
+      }
+    };
+
+    const handleScrollOrResize = (event: Event) => {
+      // If scrolling inside the dropdown itself, don't close
+      if (menuRef.current && menuRef.current.contains(event.target as Node)) {
+        return;
+      }
+      if (isOpen) {
+        updatePosition();
       }
     };
 
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      window.addEventListener('scroll', handleScrollOrResize, true);
+      window.addEventListener('resize', handleScrollOrResize);
     }
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
     };
   }, [isOpen]);
 
@@ -68,12 +122,13 @@ export const Dropdown: React.FC<DropdownProps> = ({
   };
 
   return (
-    <div className={`relative inline-block text-left ${className}`} ref={dropdownRef}>
+    <div className={`relative inline-block text-left ${className}`}>
       {/* Trigger Button */}
       <button
+        ref={triggerRef}
         type="button"
         disabled={disabled}
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={handleToggle}
         className={`w-full flex items-center justify-between gap-2 skeuo-btn-secondary focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all cursor-pointer font-bold disabled:opacity-50 disabled:cursor-not-allowed ${sizeClasses[size]} ${
           isOpen ? 'border-emerald-600 ring-2 ring-emerald-500/20' : ''
         } ${buttonClassName}`}
@@ -89,43 +144,57 @@ export const Dropdown: React.FC<DropdownProps> = ({
         />
       </button>
 
-      {/* Floating Menu Popover */}
-      {isOpen && (
-        <div className="absolute left-0 mt-1.5 w-full min-w-[160px] skeuo-card rounded-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100 max-h-64 overflow-y-auto no-scrollbar shadow-[0_12px_28px_rgba(15,23,42,0.12)]">
-          {normalizedOptions.map((opt) => {
-            const isSelected = String(opt.value) === String(value);
+      {/* Floating Menu Popover via Portal (ทะลุกรอบ modal / overflow:hidden ทุกชนิด) */}
+      {isOpen &&
+        menuPosition &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            ref={menuRef}
+            style={{
+              position: 'fixed',
+              top: `${menuPosition.top}px`,
+              left: `${menuPosition.left}px`,
+              width: `${menuPosition.width}px`,
+              zIndex: 99999,
+            }}
+            className="skeuo-card rounded-2xl py-1.5 animate-in fade-in zoom-in-95 duration-100 max-h-60 overflow-y-auto no-scrollbar shadow-[0_16px_36px_rgba(15,23,42,0.22)] border border-slate-200/90 bg-white"
+          >
+            {normalizedOptions.map((opt) => {
+              const isSelected = String(opt.value) === String(value);
 
-            return (
-              <button
-                key={String(opt.value)}
-                type="button"
-                onClick={() => {
-                  onChange(opt.value);
-                  setIsOpen(false);
-                }}
-                className={`w-full flex items-center justify-between px-3.5 py-2 text-xs text-left transition-colors cursor-pointer ${
-                  isSelected
-                    ? 'bg-emerald-50 text-emerald-800 font-bold'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium'
-                }`}
-              >
-                <div className="flex items-center gap-2 truncate">
-                  {opt.icon && <span className="shrink-0">{opt.icon}</span>}
-                  <span className="truncate">{opt.label}</span>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                  {opt.badge && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500">
-                      {opt.badge}
-                    </span>
-                  )}
-                  {isSelected && <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      )}
+              return (
+                <button
+                  key={String(opt.value)}
+                  type="button"
+                  onClick={() => {
+                    onChange(opt.value);
+                    setIsOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-3.5 py-2 text-xs text-left transition-colors cursor-pointer ${
+                    isSelected
+                      ? 'bg-emerald-50 text-emerald-800 font-bold'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    {opt.icon && <span className="shrink-0">{opt.icon}</span>}
+                    <span className="truncate">{opt.label}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                    {opt.badge && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500">
+                        {opt.badge}
+                      </span>
+                    )}
+                    {isSelected && <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>,
+          document.body
+        )}
     </div>
   );
 };

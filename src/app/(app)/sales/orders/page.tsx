@@ -38,7 +38,7 @@ export default function OrdersHistoryPage() {
                   <th className="py-3 px-4">โต๊ะ</th>
                   <th className="py-3 px-4">เวลา</th>
                   <th className="py-3 px-4">รายการอาหาร</th>
-                  <th className="py-3 px-4 text-right">ยอดรวม (VAT 7%)</th>
+                  <th className="py-3 px-4 text-right">ยอดรวม</th>
                   <th className="py-3 px-4 text-center">วิธีชำระ</th>
                   <th className="py-3 px-4 text-center">สถานะ</th>
                 </tr>
@@ -47,7 +47,7 @@ export default function OrdersHistoryPage() {
                 {orders.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-8 text-center text-slate-400">
-                      ยังไม่มีรายการสั่งซื้อใหม่ (ทดสอบสั่งซื้อได้ที่หน้า ขายหน้าร้าน / POS)
+                      ยังไม่มีรายการสั่งซื้อใหม่
                     </td>
                   </tr>
                 ) : (

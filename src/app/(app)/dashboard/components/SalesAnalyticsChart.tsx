@@ -1,19 +1,42 @@
+'use client';
+
 import React from 'react';
-import { ShoppingBag } from 'lucide-react';
+import { ShoppingBag, TrendingUp } from 'lucide-react';
 import {
   BarChart,
   Bar,
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
 } from 'recharts';
 import { DashboardKPI } from '@/types';
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+} from '@/components/ui/chart';
 
 interface SalesAnalyticsChartProps {
   sales7days: DashboardKPI['sales_7days'];
 }
+
+const chartConfig = {
+  sales: {
+    label: 'ยอดขาย',
+    color: '#059669', // Emerald 600
+  },
+  cost: {
+    label: 'ต้นทุนวัตถุดิบ',
+    color: '#94a3b8', // Slate 400
+  },
+  profit: {
+    label: 'กำไร (Profit)',
+    color: '#10b981', // Emerald 500
+  },
+} satisfies ChartConfig;
 
 export const SalesAnalyticsChart: React.FC<SalesAnalyticsChartProps> = ({ sales7days }) => {
   return (
@@ -26,47 +49,56 @@ export const SalesAnalyticsChart: React.FC<SalesAnalyticsChartProps> = ({ sales7
             </div>
             สถิติยอดขาย & ต้นทุน 7 วันล่าสุด
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            เปรียบเทียบยอดขายรวมกับต้นทุนวัตถุดิบที่ตัดจากสูตรอาหาร (BOM)
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 text-xs text-emerald-800 skeuo-badge-green px-3 py-1.5 rounded-xl font-bold">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 shadow-xs"></span>
-            ยอดขาย (Sales)
-          </span>
-          <span className="inline-flex items-center gap-1.5 text-xs text-slate-600 skeuo-btn-secondary px-3 py-1.5 rounded-xl font-bold">
-            <span className="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
-            ต้นทุน (Cost)
-          </span>
         </div>
       </div>
 
       <div className="h-72 w-full">
-        <ResponsiveContainer width="100%" height="100%">
+        <ChartContainer config={chartConfig} className="h-full w-full aspect-auto">
           <BarChart
             data={sales7days}
-            margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+            margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
             barGap={6}
           >
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-            <XAxis dataKey="day" stroke="#94a3b8" fontSize={12} tickLine={false} />
-            <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} tickFormatter={(val) => `฿${val / 1000}k`} />
-            <Tooltip
-              formatter={(value: any) => [`฿${Number(value).toLocaleString()}`, '']}
-              contentStyle={{
-                backgroundColor: '#12312d',
-                borderRadius: '12px',
-                border: 'none',
-                color: '#fff',
-                fontSize: '12px',
-              }}
-              itemStyle={{ color: '#e2e8f0' }}
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis
+              dataKey="day"
+              fontSize={12}
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
             />
-            <Bar dataKey="sales" name="ยอดขาย" fill="#4fb0a5" radius={[6, 6, 0, 0]} maxBarSize={36} />
-            <Bar dataKey="cost" name="ต้นทุน" fill="#cbd5e1" radius={[6, 6, 0, 0]} maxBarSize={36} />
+            <YAxis
+              fontSize={12}
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={(val) => `฿${val / 1000}k`}
+            />
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  indicator="dot"
+                  formatter={(value) => [
+                    `฿${Number(value).toLocaleString()}`,
+                    '',
+                  ]}
+                />
+              }
+            />
+            <ChartLegend content={<ChartLegendContent />} />
+            <Bar
+              dataKey="sales"
+              fill="var(--color-sales)"
+              radius={[6, 6, 0, 0]}
+              maxBarSize={38}
+            />
+            <Bar
+              dataKey="cost"
+              fill="var(--color-cost)"
+              radius={[6, 6, 0, 0]}
+              maxBarSize={38}
+            />
           </BarChart>
-        </ResponsiveContainer>
+        </ChartContainer>
       </div>
     </section>
   );

@@ -18,58 +18,7 @@ import Link from 'next/link';
 
 export default function AIInsightsPage() {
   const { dashboard } = useStock();
-
-  const insightsList = [
-    {
-      id: 1,
-      name: 'กะเพราหมูสับไข่ดาว',
-      category: 'อาหารจานเดียว',
-      order_count: 142,
-      margin: 64.6,
-      trend: '+24%',
-      tag: 'ยอดฮิต',
-      tag_color: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-      reason: 'สถิติยอดสั่งซื้อสูงสุดอันดับ 1 ตลอด 30 วันที่ผ่านมา มีความถี่การสั่งซื้อซ้ำต่อเนื่อง',
-      suggestion: 'ควรสต็อกเนื้อหมูสันคอและใบกะเพราสดไม่ให้ขาดสต็อก และพิจารณาทำเซตคอมโบพร้อมเครื่องดื่มเพื่อเพิ่ม Ticket Size',
-    },
-    {
-      id: 3,
-      name: 'สปาเก็ตตี้ขี้เมากุ้งแม่น้ำ',
-      category: 'พาสต้า & เส้น',
-      order_count: 86,
-      margin: 69.7,
-      trend: '+12%',
-      tag: 'มาร์จิ้นดี',
-      tag_color: 'bg-teal-100 text-teal-800 border-teal-300',
-      reason: 'อัตรากำไรขั้นต้น (Margin) สูงถึง 69.7% ซึ่งสูงกว่าค่าเฉลี่ยของร้าน (65.9%)',
-      suggestion: 'แนะนำให้จัดวางเป็น "เมนูแนะนำประจำสัปดาห์" และอบรมพนักงานเสิร์ฟแนะนำเป็นเมนูชูโรง',
-    },
-    {
-      id: 2,
-      name: 'สเต็กเนื้อริบอายพรีเมียม',
-      category: 'สเต็ก & ย่าง',
-      order_count: 42,
-      margin: 62.7,
-      trend: '-18%',
-      tag: 'สั่งลดลง - ควรทำโปรโมชัน',
-      tag_color: 'bg-amber-100 text-amber-800 border-amber-300',
-      reason: 'ยอดขายชะลอตัวลง 18% ในช่วง 14 วันหลัง อาจเกิดจากราคาขายค่อนข้างสูงเมื่อเทียบกับกลุ่มจานเดียว',
-      suggestion: 'จัดโปรโมชัน Flash Sale ช่วงเย็นวันธรรมดา หรือเซตคู่ไวน์/สลัด เพื่อระบายสต็อกเนื้อริบอายก่อนหมดอายุ',
-    },
-    {
-      id: 5,
-      name: 'ข้าวผัดเนื้อริบอายกระเทียมกรอบ',
-      category: 'อาหารจานเดียว',
-      order_count: 58,
-      margin: 67.2,
-      trend: '+35%',
-      tag: 'กำลังมาแรง',
-      tag_color: 'bg-blue-100 text-blue-800 border-blue-300',
-      reason: 'ยอดขายเติบโตเร็วที่สุดในกลุ่มเมนูใหม่ มีกระแสตอบรับดีในโซเชียลมีเดีย',
-      suggestion: 'โปรโมตเพิ่มผ่านหน้าเพจร้าน และขยายไซส์เป็น "จานใหญ่พิเศษสำหรับแชร์"',
-    },
-  ];
-
+  const insightsList = dashboard?.ai_recommendations || [];
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-slate-50/70">
       <Topbar
@@ -124,32 +73,20 @@ export default function AIInsightsPage() {
                     <div className="text-base font-bold text-emerald-700 mt-0.5">{item.margin}%</div>
                   </div>
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                    <div className="text-[11px] text-slate-400">แนวโน้มยอดสั่งซื้อ</div>
-                    <div
-                      className={`text-base font-bold mt-0.5 flex items-center gap-1 ${
-                        item.trend.startsWith('+') ? 'text-emerald-600' : 'text-rose-600'
-                      }`}
-                    >
-                      {item.trend.startsWith('+') ? (
-                        <TrendingUp className="w-4 h-4" />
-                      ) : (
-                        <TrendingDown className="w-4 h-4" />
-                      )}
-                      {item.trend}
+                    <div className="text-[11px] text-slate-400">ยอดสั่งซื้อสะสม</div>
+                    <div className="text-base font-bold text-slate-800 mt-0.5 flex items-center gap-1">
+                      <TrendingUp className="w-4 h-4 text-emerald-600" />
+                      {item.order_count || 0} ออเดอร์
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-2 pt-2 text-xs">
-                  <div>
-                    <span className="font-bold text-slate-700">🔍 ข้อเท็จจริงจากข้อมูล:</span>
-                    <p className="text-slate-600 mt-0.5">{item.reason}</p>
-                  </div>
                   <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200/80 text-amber-900">
                     <span className="font-bold flex items-center gap-1">
                       <Lightbulb className="w-4 h-4 text-amber-600" /> คำแนะนำจาก AI:
                     </span>
-                    <p className="mt-1 leading-relaxed">{item.suggestion}</p>
+                    <p className="mt-1 leading-relaxed">{item.insight || (item as any).suggestion || '-'}</p>
                   </div>
                 </div>
               </div>

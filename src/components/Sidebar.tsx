@@ -23,6 +23,7 @@ import {
   User as UserIcon,
   ChevronLeft,
   ChevronRight,
+  ShoppingBag,
 } from 'lucide-react';
 import { useStock } from '@/lib/StockContext';
 import { useAuth } from '@/lib/AuthContext';
@@ -92,7 +93,7 @@ export const Sidebar: React.FC<SidebarProps> = () => {
           requiredPermission: 'view_stock',
         },
         { label: 'วัตถุดิบทั้งหมด', href: '/stock/ingredients', icon: Carrot, requiredPermission: 'view_stock' },
-        { label: 'ใบสั่งซื้อ', href: '/stock/purchase-orders', icon: FileSpreadsheet, requiredPermission: 'view_stock' },
+        { label: 'รายการซื้อของ/จ่ายตลาด', href: '/stock/purchase-orders', icon: ShoppingBag, requiredPermission: 'view_stock' },
       ],
     },
     {

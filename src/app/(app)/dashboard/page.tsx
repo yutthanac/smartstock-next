@@ -5,6 +5,7 @@ import { useStock } from '@/lib/StockContext';
 import { Topbar } from '@/components/Topbar';
 import { KpiCards } from './components/KpiCards';
 import { SalesAnalyticsChart } from './components/SalesAnalyticsChart';
+import { SalesDonutCard } from './components/SalesDonutCard';
 import { AiInsightsCard } from './components/AiInsightsCard';
 import { LowStockAlertCard } from './components/LowStockAlertCard';
 import { MenuProfitabilityTable } from './components/MenuProfitabilityTable';
@@ -23,8 +24,20 @@ export default function DashboardPage() {
         {/* 1. KPI Summary Cards */}
         <KpiCards dashboard={dashboard} />
 
-        {/* 2. 7-Days Sales & Cost Analytics Chart */}
-        <SalesAnalyticsChart sales7days={dashboard.sales_7days} />
+        {/* 2. Visual Charts: 2 แบบ (Recharts ChartContainer & Framer-Motion DonutChart) */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-7">
+            <SalesAnalyticsChart sales7days={dashboard.sales_7days} />
+          </div>
+          <div className="lg:col-span-5">
+            <SalesDonutCard
+              sales7days={dashboard.sales_7days}
+              totalSales={dashboard.today_sales}
+              totalCost={dashboard.today_cost}
+              totalProfit={dashboard.today_profit}
+            />
+          </div>
+        </section>
 
         {/* 3. 2 Columns: AI Recommendations & Low Stock Alerts */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
