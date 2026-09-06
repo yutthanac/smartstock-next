@@ -285,12 +285,12 @@ export const Sidebar: React.FC<SidebarProps> = () => {
     <aside
       className={`${
         isCollapsed ? 'w-20' : 'w-64'
-      } bg-[#ebecf0] text-slate-700 flex flex-col h-screen sticky top-0 border-r border-slate-300/70 select-none z-30 transition-all duration-300 relative group/sidebar shadow-sm`}
+      } bg-white text-slate-700 flex flex-col h-screen sticky top-0 border-r border-slate-200 select-none z-30 transition-all duration-300 relative group/sidebar`}
     >
       {/* Brand Header with Store Switcher Trigger */}
       <div
         ref={dropdownRef}
-        className={`p-3.5 border-b border-slate-300/60 flex items-center relative ${
+        className={`p-3.5 border-b border-slate-100 flex items-center relative ${
           isCollapsed ? 'justify-center' : 'justify-between'
         }`}
       >
@@ -497,8 +497,8 @@ export const Sidebar: React.FC<SidebarProps> = () => {
                           : 'justify-between px-3.5 py-2.5 rounded-2xl'
                       } ${
                         isActive
-                          ? 'skeuo-card text-slate-900 font-semibold shadow-xs border border-slate-300/80 bg-white'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 font-medium'
+                          ? 'bg-[#ebecf0] text-slate-900 font-semibold skeuo-inset'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 font-medium'
                       }`}
                     >
                       <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 min-w-0'}`}>
@@ -506,7 +506,7 @@ export const Sidebar: React.FC<SidebarProps> = () => {
                           className={`flex items-center justify-center transition-colors ${
                             isActive
                               ? 'text-slate-900'
-                              : 'text-slate-500 group-hover:text-slate-800'
+                              : 'text-slate-400 group-hover:text-slate-700'
                           }`}
                         >
                           <Icon className="w-4 h-4 shrink-0" />
@@ -524,7 +524,7 @@ export const Sidebar: React.FC<SidebarProps> = () => {
                             </span>
                           )}
                           {item.alertCount && (
-                            <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full skeuo-inset text-rose-700 font-semibold">
+                            <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 font-semibold border border-rose-200">
                               {item.alertCount}
                             </span>
                           )}
@@ -558,8 +558,8 @@ export const Sidebar: React.FC<SidebarProps> = () => {
 
       {/* Role Simulation Switcher for Testing (only when expanded) */}
       {!isCollapsed && (
-        <div className="px-3 py-2.5 border-t border-slate-300/60 bg-transparent">
-          <div className="flex items-center justify-between text-xs font-normal text-slate-500 mb-1.5">
+        <div className="px-3 py-2.5 border-t border-slate-100 bg-slate-50/50">
+          <div className="flex items-center justify-between text-xs font-normal text-slate-400 mb-1.5">
             <span className="flex items-center gap-1">
               <Eye className="w-3.5 h-3.5 text-slate-500" />
               จำลองมุมมอง:
@@ -582,8 +582,8 @@ export const Sidebar: React.FC<SidebarProps> = () => {
                   onClick={() => setSimulatedRole(r === actualRole ? null : r)}
                   className={`py-1.5 text-xs font-medium rounded-xl transition-all capitalize cursor-pointer ${
                     isActive
-                      ? 'skeuo-card text-slate-900 bg-white shadow-2xs font-semibold'
-                      : 'skeuo-inset text-slate-600 hover:text-slate-900'
+                      ? 'bg-[#ebecf0] text-slate-900 font-semibold skeuo-inset'
+                      : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80'
                   }`}
                   title={`ดูเมนูในมุมมอง ${ROLE_DISPLAY_NAMES[r]}`}
                 >
@@ -596,18 +596,18 @@ export const Sidebar: React.FC<SidebarProps> = () => {
       )}
 
       {/* Footer User Info & Logout Button */}
-      <div className={`p-3 border-t border-slate-300/60 ${isCollapsed ? 'flex flex-col items-center gap-2' : 'space-y-2'}`}>
+      <div className={`p-3 border-t border-slate-100 ${isCollapsed ? 'flex flex-col items-center gap-2' : 'space-y-2'}`}>
         {!isCollapsed ? (
-          <div className="p-2.5 rounded-2xl skeuo-card flex items-center justify-between bg-white">
+          <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-200/70 flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-full skeuo-inset text-slate-700 flex items-center justify-center font-medium text-xs shrink-0">
+              <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-medium text-xs shrink-0">
                 <UserIcon className="w-4 h-4" />
               </div>
               <div className="min-w-0">
                 <div className="text-sm font-semibold text-slate-800 truncate">
                   {user?.name || 'ผู้ใช้'}
                 </div>
-                <div className="text-xs text-slate-500 truncate font-normal">
+                <div className="text-xs text-slate-400 truncate font-normal">
                   {ROLE_DISPLAY_NAMES[effectiveRole] ?? effectiveRole}
                 </div>
               </div>
@@ -624,7 +624,7 @@ export const Sidebar: React.FC<SidebarProps> = () => {
           <div className="flex flex-col items-center gap-2 py-1">
             <div
               title={`${user?.name || 'ผู้ใช้'} (${ROLE_DISPLAY_NAMES[effectiveRole] ?? effectiveRole})`}
-              className="w-9 h-9 rounded-full skeuo-inset text-slate-700 flex items-center justify-center font-medium text-xs shrink-0 cursor-pointer"
+              className="w-9 h-9 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-medium text-xs shrink-0 cursor-pointer"
             >
               <UserIcon className="w-4 h-4" />
             </div>
