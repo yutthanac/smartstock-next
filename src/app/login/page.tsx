@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { Lock, Mail, ArrowRight, AlertCircle, Sparkles } from 'lucide-react';
+import { Button } from '@/components/Button';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -23,16 +24,15 @@ export default function LoginPage() {
     }
   };
 
-  const quickLogin = (quickEmail: string) => {
-    setEmail(quickEmail);
+  const quickLogin = (userEmail: string) => {
+    setEmail(userEmail);
     setPassword('password123');
-    setError(null);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Background Soft Glows (60-30-10 subtle emerald accents) */}
-      <div className="absolute top-1/4 -left-20 w-96 h-96 bg-emerald-200/30 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background Accent Gradients */}
+      <div className="absolute top-1/4 -left-20 w-96 h-96 bg-slate-200/30 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-teal-100/40 rounded-full blur-3xl pointer-events-none" />
 
       {/* Brand Header */}
@@ -101,84 +101,78 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="block w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-xs transition-all"
+                  className="block w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 text-xs transition-all"
                 />
               </div>
             </div>
 
-            {/* 10% Accent CTA Button */}
-            <button
+            <Button
               type="submit"
-              disabled={loading}
-              className="w-full mt-2 flex justify-center items-center gap-2 py-3 px-4 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 shadow-md shadow-emerald-600/20 transition-all transform active:scale-[0.98] disabled:opacity-50"
+              isLoading={loading}
+              size="lg"
+              className="w-full mt-2"
             >
-              {loading ? (
-                <span>กำลังเข้าสู่ระบบ...</span>
-              ) : (
-                <>
-                  <span>เข้าสู่ระบบ</span>
-                </>
-              )}
-            </button>
+              เข้าสู่ระบบ
+            </Button>
           </form>
 
           {/* Quick Login Section for Testing */}
           <div className="mt-6 pt-5 border-t border-slate-100">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 mb-2.5">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 mb-2.5">
+              <Sparkles className="w-3.5 h-3.5 text-slate-500" />
               <span>บัญชีทดสอบด่วน (Quick Test Accounts):</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => quickLogin('admin@smartstock.local')}
-                className={`p-2.5 rounded-xl border text-left transition-all ${
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                   email === 'admin@smartstock.local'
-                    ? 'bg-emerald-50 border-emerald-300 text-emerald-900 shadow-xs'
+                    ? 'bg-slate-900 border-slate-900 text-white shadow-xs'
                     : 'bg-slate-50/70 border-slate-200 text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                <div className="text-xs font-bold text-emerald-700">Admin (เจ้าของร้าน)</div>
-                <div className="text-[10px] text-slate-400 mt-0.5 truncate">admin@smartstock.local</div>
+                <div className={`text-xs font-semibold ${email === 'admin@smartstock.local' ? 'text-white' : 'text-slate-900'}`}>Admin (เจ้าของร้าน)</div>
+                <div className={`text-[10px] mt-0.5 truncate ${email === 'admin@smartstock.local' ? 'text-slate-300' : 'text-slate-400'}`}>admin@smartstock.local</div>
               </button>
 
               <button
                 type="button"
                 onClick={() => quickLogin('manager@smartstock.local')}
-                className={`p-2.5 rounded-xl border text-left transition-all ${
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                   email === 'manager@smartstock.local'
-                    ? 'bg-emerald-50 border-emerald-300 text-emerald-900 shadow-xs'
+                    ? 'bg-slate-900 border-slate-900 text-white shadow-xs'
                     : 'bg-slate-50/70 border-slate-200 text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                <div className="text-xs font-bold text-teal-700">Manager (ผู้จัดการ)</div>
-                <div className="text-[10px] text-slate-400 mt-0.5 truncate">manager@smartstock.local</div>
+                <div className={`text-xs font-semibold ${email === 'manager@smartstock.local' ? 'text-white' : 'text-slate-900'}`}>Manager (ผู้จัดการ)</div>
+                <div className={`text-[10px] mt-0.5 truncate ${email === 'manager@smartstock.local' ? 'text-slate-300' : 'text-slate-400'}`}>manager@smartstock.local</div>
               </button>
 
               <button
                 type="button"
                 onClick={() => quickLogin('chef@smartstock.local')}
-                className={`p-2.5 rounded-xl border text-left transition-all ${
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                   email === 'chef@smartstock.local'
-                    ? 'bg-emerald-50 border-emerald-300 text-emerald-900 shadow-xs'
+                    ? 'bg-slate-900 border-slate-900 text-white shadow-xs'
                     : 'bg-slate-50/70 border-slate-200 text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                <div className="text-xs font-bold text-amber-700">Chef (หัวหน้าครัว)</div>
-                <div className="text-[10px] text-slate-400 mt-0.5 truncate">chef@smartstock.local</div>
+                <div className={`text-xs font-semibold ${email === 'chef@smartstock.local' ? 'text-white' : 'text-slate-900'}`}>Chef (หัวหน้าครัว)</div>
+                <div className={`text-[10px] mt-0.5 truncate ${email === 'chef@smartstock.local' ? 'text-slate-300' : 'text-slate-400'}`}>chef@smartstock.local</div>
               </button>
 
               <button
                 type="button"
                 onClick={() => quickLogin('cashier@smartstock.local')}
-                className={`p-2.5 rounded-xl border text-left transition-all ${
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                   email === 'cashier@smartstock.local'
-                    ? 'bg-emerald-50 border-emerald-300 text-emerald-900 shadow-xs'
+                    ? 'bg-slate-900 border-slate-900 text-white shadow-xs'
                     : 'bg-slate-50/70 border-slate-200 text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                <div className="text-xs font-bold text-slate-700">Cashier (หน้าร้าน POS)</div>
-                <div className="text-[10px] text-slate-400 mt-0.5 truncate">cashier@smartstock.local</div>
+                <div className={`text-xs font-semibold ${email === 'cashier@smartstock.local' ? 'text-white' : 'text-slate-900'}`}>Cashier (หน้าร้าน POS)</div>
+                <div className={`text-[10px] mt-0.5 truncate ${email === 'cashier@smartstock.local' ? 'text-slate-300' : 'text-slate-400'}`}>cashier@smartstock.local</div>
               </button>
             </div>
             <p className="text-[11px] text-slate-400 text-center mt-3">

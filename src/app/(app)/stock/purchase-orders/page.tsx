@@ -18,85 +18,103 @@ import { Topbar } from '@/components/Topbar';
 import { PurchaseOrder, PurchaseOrderItem } from './types';
 import { CreatePOModal } from './components/CreatePOModal';
 import { POPrintViewModal } from './components/POPrintViewModal';
+import { Button } from '@/components/Button';
+import { Badge } from '@/components/Badge';
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '@/components/Table';
 
 const INITIAL_MOCK_SHOPPING_LISTS: PurchaseOrder[] = [
   {
-    id: 'SHOP-20260905-01',
-    store_name: 'ตลาดสดมหาชัยซีฟู้ด',
-    buyer_name: 'น้าแหวว (แม่ครัว)',
+    id: 'PO-20260905-01',
+    store_name: 'โรงคั่วกาแฟ Aroma Specialty',
+    buyer_name: 'บาริสต้าตั้ม',
     date: '2026-09-05',
     status: 'pending',
     items: [
       {
-        name: 'กุ้งขาวสดคัดไซส์',
-        quantity: 8,
+        name: 'เมล็ดกาแฟ House Blend คั่วกลาง',
+        quantity: 10,
         unit: 'กก.',
-        cost_per_unit: 220,
-        total_price: 1760,
-        current_stock: 2.1,
+        cost_per_unit: 380,
+        total_price: 3800,
+        current_stock: 2.5,
         reorder_point: 5,
         checked: false,
       },
       {
-        name: 'ปลาหมึกกล้วยสด',
-        quantity: 6,
+        name: 'เมล็ดกาแฟ Single Origin Ethiopia (คั่วอ่อน)',
+        quantity: 3,
         unit: 'กก.',
-        cost_per_unit: 260,
-        total_price: 1560,
-        current_stock: 1.5,
-        reorder_point: 4,
+        cost_per_unit: 650,
+        total_price: 1950,
+        current_stock: 0.8,
+        reorder_point: 2,
         checked: false,
       },
       {
-        name: 'หอยลายสด',
-        quantity: 10,
-        unit: 'กก.',
-        cost_per_unit: 95,
-        total_price: 950,
-        current_stock: 3,
-        reorder_point: 6,
+        name: 'ผงมัทฉะเกรดพิธีการ Uji Matcha 100g',
+        quantity: 5,
+        unit: 'ถุง',
+        cost_per_unit: 280,
+        total_price: 1400,
+        current_stock: 1,
+        reorder_point: 3,
         checked: false,
       },
     ],
-    subtotal: 4270,
-    totalAmount: 4270,
-    note: 'ไปซื้อช่วงตี 5 จะได้ของสดใหม่ คัดตัวโตๆ เก็บใบเสร็จเงินสดมาด้วย',
+    subtotal: 7150,
+    totalAmount: 7150,
+    note: 'เลือกรอบคั่วไม่เกิน 7 วัน และขอใบกำกับภาษี',
   },
   {
-    id: 'SHOP-20260904-02',
-    store_name: 'แม็คโคร Makro สาขาใกล้ร้าน',
-    buyer_name: 'สมชาย (ผู้ช่วยเชฟ)',
+    id: 'PO-20260904-02',
+    store_name: 'แม็คโคร Makro',
+    buyer_name: 'ผู้จัดการร้าน',
     date: '2026-09-04',
     status: 'completed',
     items: [
       {
-        name: 'เนื้อหมูสันนอก',
-        quantity: 15,
-        unit: 'กก.',
-        cost_per_unit: 160,
-        total_price: 2400,
+        name: 'นมสด Meiji พาสเจอร์ไรส์ 2L',
+        quantity: 12,
+        unit: 'แกลลอน',
+        cost_per_unit: 95,
+        total_price: 1140,
         checked: true,
       },
       {
-        name: 'น้ำมันปาล์มสำหรับทอด (แกลลอน)',
+        name: 'ไซรัปวานิลลา Monin 700ml',
+        quantity: 4,
+        unit: 'ขวด',
+        cost_per_unit: 290,
+        total_price: 1160,
+        checked: true,
+      },
+      {
+        name: 'แก้วกาแฟเย็น PET 16oz พร้อมฝายกดื่ม',
         quantity: 2,
-        unit: 'กล่อง',
-        cost_per_unit: 345,
-        total_price: 690,
+        unit: 'ลัง',
+        cost_per_unit: 550,
+        total_price: 1100,
         checked: true,
       },
       {
-        name: 'ถุงหิ้วใส่กล่องอาหาร 8x16',
+        name: 'เนยสดแท้ Pure Butter สำหรับขนม',
         quantity: 5,
-        unit: 'แพ็ค',
-        cost_per_unit: 45,
-        total_price: 225,
+        unit: 'กก.',
+        cost_per_unit: 280,
+        total_price: 1400,
         checked: true,
       },
     ],
-    subtotal: 3315,
-    totalAmount: 3315,
-    note: 'ซื้อของเข้าคลังและตรวจนับยอดเรียบร้อย',
+    subtotal: 4800,
+    totalAmount: 4800,
+    note: 'ตรวจเช็ควันหมดอายุนมสด และรับเข้าคลังเรียบร้อย',
   },
 ];
 
@@ -152,7 +170,7 @@ export default function PurchaseOrdersPage() {
     });
 
     setPrefillItems(items);
-    setPrefillStore('ตลาดสด / ร้านประจำ');
+    setPrefillStore('โรงคั่วกาแฟ / ซัพพลายเออร์');
     setIsCreateModalOpen(true);
   };
 
@@ -194,145 +212,147 @@ export default function PurchaseOrdersPage() {
 
   const handleDeletePO = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm(`คุณต้องการลบรายการจ่ายตลาดเลขที่ ${id} หรือไม่?`)) {
+    if (confirm(`คุณต้องการลบรายการสั่งซื้อเลขที่ ${id} หรือไม่?`)) {
       setPoList((prev) => prev.filter((po) => po.id !== id));
       if (viewingPO?.id === id) setViewingPO(null);
     }
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-[#ebecf0]">
+    <div className="flex-1 flex flex-col min-h-screen bg-[#f8fafc]">
       <Topbar
-        title="รายการไปซื้อของ & จ่ายตลาด (Shopping Lists)"
-        subtitle="ลิสต์รายการวัตถุดิบที่ต้องไปซื้อหน้าร้าน/ตลาด พิมพ์ใบเช็คลิสต์พกพา และควบคุมงบจัดซื้อ"
+        title="รายการสั่งซื้อวัตถุดิบ"
+        subtitle="จัดการรายการสั่งซื้อวัตถุดิบ คุมงบประมาณ และพิมพ์ใบเช็คลิสต์"
       />
 
-      <main className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
+      <main className="p-6 md:p-8 space-y-5 max-w-7xl mx-auto w-full">
         {/* Recommended Low-Stock Alert Card */}
         {lowStock.length > 0 && (
-          <div className="p-5 rounded-3xl skeuo-card flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-amber-200/50">
+          <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <Package className="w-5 h-5 text-amber-600" />
-                <h3 className="font-black text-base text-slate-900">
-                  มีวัตถุดิบใกล้หมด {lowStock.length} รายการที่ควรออกไปซื้อ
+                <Package className="w-4 h-4 text-amber-600" />
+                <h3 className="font-medium text-sm text-slate-900">
+                  มีวัตถุดิบใกล้หมด {lowStock.length} รายการที่ต้องสั่งเพิ่ม
                 </h3>
               </div>
-              <p className="text-xs text-slate-500 mt-1 font-medium">
-                กดดึงวัตถุดิบที่ขาดจัดทำเป็นรายการไปจ่ายตลาดได้ทันที ไม่ต้องจดมือ
+              <p className="text-xs text-slate-400 mt-0.5 font-normal">
+                สร้างรายการสั่งซื้อจากของใกล้หมดได้ทันที
               </p>
             </div>
-            <button
+            <Button
               onClick={handleCreateFromLowStock}
-              className="px-4 py-2.5 rounded-2xl skeuo-btn-primary font-bold text-xs transition-all self-start sm:self-auto flex items-center gap-2 cursor-pointer shadow-md shadow-emerald-700/20"
+              icon={<Plus className="w-3.5 h-3.5" />}
+              size="sm"
             >
-              <Plus className="w-4 h-4" />
-              ดึงของใกล้หมดทำรายการจ่ายตลาด
-            </button>
+              ดึงของใกล้หมดทำรายการสั่งซื้อ
+            </Button>
           </div>
         )}
 
         {/* Shopping Lists Table */}
-        <div className="skeuo-card rounded-3xl p-5 space-y-4">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-5 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                <ShoppingBag className="w-5 h-5 text-emerald-800" />
-                ประวัติรายการไปซื้อของ / จ่ายตลาด ({poList.length})
+              <h3 className="font-normal text-slate-900 text-sm flex items-center gap-2">
+                <ShoppingBag className="w-4 h-4 text-slate-500" />
+                ประวัติการสั่งซื้อวัตถุดิบ ({poList.length})
               </h3>
-              <p className="text-xs text-slate-500">คลิกรายการเพื่อเปิดดูใบเช็คลิสต์ สั่งพิมพ์พกพาไปตลาด หรือส่งออก CSV</p>
+              <p className="text-xs text-slate-400 font-normal">คลิกรายการเพื่อดูรายละเอียด พิมพ์ใบเช็คลิสต์ หรือส่งออก CSV</p>
             </div>
 
-            <button
+            <Button
               onClick={handleOpenBlankCreate}
-              className="px-4 py-2.5 rounded-2xl skeuo-btn-primary font-bold text-xs transition-all flex items-center gap-2 self-start sm:self-auto cursor-pointer"
+              icon={<Plus className="w-3.5 h-3.5" />}
+              size="sm"
             >
-              <Plus className="w-4 h-4" />
-              + ทำรายการซื้อของใหม่
-            </button>
+              สั่งซื้อวัตถุดิบใหม่
+            </Button>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="bg-slate-200/60 border-b border-slate-300/70 text-slate-700 uppercase tracking-wider font-bold whitespace-nowrap">
-                  <th className="py-3.5 px-4">เลขที่</th>
-                  <th className="py-3.5 px-4 min-w-40">ร้าน / ตลาดที่จะไปซื้อ</th>
-                  <th className="py-3.5 px-4 min-w-28">ผู้ไปซื้อ</th>
-                  <th className="py-3.5 px-4 min-w-24">วันที่ซื้อ</th>
-                  <th className="py-3.5 px-4 text-center min-w-24">จำนวนของ</th>
-                  <th className="py-3.5 px-4 text-right min-w-28">งบประมาณรวม</th>
-                  <th className="py-3.5 px-4 text-center min-w-28">สถานะ</th>
-                  <th className="py-3.5 px-4 text-center min-w-28">การดำเนินการ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200/60 whitespace-nowrap">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead>เลขที่</TableHead>
+                  <TableHead className="min-w-40">ร้าน / ซัพพลายเออร์</TableHead>
+                  <TableHead className="min-w-28">ผู้สั่งซื้อ</TableHead>
+                  <TableHead className="min-w-24">วันที่สั่ง</TableHead>
+                  <TableHead className="text-center min-w-24">จำนวน</TableHead>
+                  <TableHead className="text-right min-w-28">ยอดรวม</TableHead>
+                  <TableHead className="text-center min-w-28">สถานะ</TableHead>
+                  <TableHead className="text-center min-w-28">การดำเนินการ</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {poList.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="text-center py-12 text-slate-400 font-medium">
-                      ยังไม่มีรายการจ่ายตลาด กดปุ่ม "+ ทำรายการซื้อของใหม่" เพื่อเริ่มต้น
-                    </td>
-                  </tr>
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-12 text-slate-400 font-normal">
+                      ยังไม่มีรายการสั่งซื้อ กดปุ่ม "+ สั่งซื้อวัตถุดิบใหม่" เพื่อเริ่มต้น
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   poList.map((po) => (
-                    <tr
+                    <TableRow
                       key={po.id}
                       onClick={() => setViewingPO(po)}
-                      className="hover:bg-slate-200/40 cursor-pointer transition-colors"
+                      className="cursor-pointer"
                     >
-                      <td className="py-3.5 px-4 font-bold text-emerald-800">{po.id}</td>
-                      <td className="py-3.5 px-4 text-slate-900 font-bold flex items-center gap-1.5">
-                        <Store className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-                        <span>{po.store_name}</span>
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-700">{po.buyer_name || '-'}</td>
-                      <td className="py-3.5 px-4 text-slate-500">{po.date}</td>
-                      <td className="py-3.5 px-4 text-center text-slate-700 font-semibold">
+                      <TableCell className="font-mono font-normal text-slate-700">{po.id}</TableCell>
+                      <TableCell className="text-slate-700 font-normal">
+                        <div className="flex items-center gap-1.5">
+                          <Store className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <span>{po.store_name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-slate-500 font-normal">{po.buyer_name || '-'}</TableCell>
+                      <TableCell className="text-slate-400 font-normal">{po.date}</TableCell>
+                      <TableCell className="text-center text-slate-500 font-normal">
                         {po.items?.length || 0} อย่าง
-                      </td>
-                      <td className="py-3.5 px-4 text-right font-black text-emerald-800">
+                      </TableCell>
+                      <TableCell className="text-right font-mono font-normal text-slate-700">
                         ฿{po.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
+                      </TableCell>
+                      <TableCell className="text-center">
                         {po.status === 'completed' ? (
-                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold skeuo-badge-green">
-                            <CheckCircle2 className="w-3 h-3" /> ซื้อของครบแล้ว
-                          </span>
+                          <Badge variant="outline" size="sm" icon={<CheckCircle2 className="w-3 h-3 text-slate-500" />}>
+                            ซื้อครบแล้ว
+                          </Badge>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold skeuo-badge-amber">
-                            <Clock className="w-3 h-3" /> รอนำไปซื้อ
-                          </span>
+                          <Badge variant="warning" size="sm" icon={<Clock className="w-3 h-3 text-amber-600" />}>
+                            รอนำไปซื้อ
+                          </Badge>
                         )}
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
+                      </TableCell>
+                      <TableCell className="text-center">
                         <div className="inline-flex items-center gap-1.5">
-                          <button
-                            type="button"
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
                               setViewingPO(po);
                             }}
-                            className="px-3 py-1.5 rounded-xl skeuo-btn-secondary text-xs font-bold text-slate-700 hover:text-slate-950 flex items-center gap-1"
-                            title="เปิดดู / สั่งพิมพ์"
+                            icon={<Printer className="w-3.5 h-3.5 text-slate-600" />}
+                            className="h-7 px-2.5 text-[11px] font-normal"
                           >
-                            <Printer className="w-3.5 h-3.5 text-emerald-700" />
-                            <span>ดู & พิมพ์</span>
-                          </button>
+                            ดู & พิมพ์
+                          </Button>
                           <button
                             type="button"
                             onClick={(e) => handleDeletePO(po.id, e)}
-                            className="p-1.5 rounded-xl hover:bg-rose-100 text-slate-400 hover:text-rose-600 transition-colors"
+                            className="p-1.5 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
                             title="ลบรายการ"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </div>
       </main>

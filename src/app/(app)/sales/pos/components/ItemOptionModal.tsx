@@ -1,11 +1,16 @@
+'use client';
+
 import React, { useState } from 'react';
-import { X, Check, Flame, MessageSquarePlus, UtensilsCrossed, Sparkles } from 'lucide-react';
+import { X, Coffee, Sparkles } from 'lucide-react';
 import { MenuItem } from '@/types';
+import { Button } from '@/components/Button';
 
 export interface CartItemOption {
-  spiciness: string; // 'ไม่เผ็ด' | 'เผ็ดน้อย' | 'เผ็ดปกติ' | 'เผ็ดมาก'
+  temperature?: string; // 'เย็น' | 'ร้อน' | 'ปั่น'
+  sweetness?: string;   // '100%' | '50%' | '25%' | '0%'
   diningOption: string; // 'ทานที่ร้าน' | 'กลับบ้าน'
-  isSpecial: boolean; // ธรรมดา vs พิเศษ
+  isSpecial: boolean;   // เพิ่มช็อต (+15฿)
+  spiciness?: string;
   customNote: string;
 }
 
@@ -26,12 +31,13 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
 }) => {
   if (!isOpen || !item) return null;
 
-  const [spiciness, setSpiciness] = useState<string>(initialOptions?.spiciness || 'เผ็ดปกติ');
+  const [temperature, setTemperature] = useState<string>(initialOptions?.temperature || 'เย็น');
+  const [sweetness, setSweetness] = useState<string>(initialOptions?.sweetness || 'หวาน 100%');
   const [diningOption, setDiningOption] = useState<string>(initialOptions?.diningOption || 'ทานที่ร้าน');
   const [isSpecial, setIsSpecial] = useState<boolean>(initialOptions?.isSpecial || false);
   const [customNote, setCustomNote] = useState<string>(initialOptions?.customNote || '');
 
-  const quickTags = ['ไม่ใส่ผัก', 'ไม่ใส่กระเทียม', 'ไม่ใส่ชูรส', 'หวานน้อย', 'เค็มน้อย', 'แยกน้ำซุป', 'ขอน้ำจิ้มเพิ่ม'];
+  const quickTags = ['หวานน้อย (50%)', 'ไม่หวาน (0%)', 'เพิ่มช็อต (+15฿)', 'แยกน้ำแข็ง', 'นมโอ๊ต (+15฿)', 'วิปครีม', 'ไม่ใส่ไซรัป'];
 
   const handleToggleTag = (tag: string) => {
     if (customNote.includes(tag)) {
@@ -44,7 +50,8 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     onConfirm({
-      spiciness,
+      temperature,
+      sweetness,
       diningOption,
       isSpecial,
       customNote: customNote.trim(),
@@ -60,163 +67,174 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
       >
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-[#4fb0a5]/10 text-[#12312d] flex items-center justify-center font-bold">
-              <UtensilsCrossed className="w-5 h-5 text-[#4fb0a5]" />
+            <div className="w-9 h-9 rounded-2xl bg-slate-100 text-slate-800 flex items-center justify-center font-bold">
+              <Coffee className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 text-base">{item.name}</h3>
-              <p className="text-slate-500 text-[11px]">ปรับแต่งตัวเลือกพิเศษ & รายละเอียดความต้องการ</p>
+              <h3 className="font-semibold text-slate-900 text-base">{item.name}</h3>
+              <p className="text-slate-500 text-[11px]">เลือกอุณหภูมิ ความหวาน และรายละเอียด</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-xl text-slate-400 hover:text-slate-700"
+            className="p-1 rounded-xl text-slate-400 hover:text-slate-700 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="space-y-4">
-          {/* Option: Special or Regular */}
+        <div className="space-y-3.5">
+          {/* Option: Temperature */}
           <div>
-            <label className="font-bold text-slate-800 block mb-1.5 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>ขนาด / ปริมาณ</span>
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setIsSpecial(false)}
-                className={`py-2 px-3 rounded-2xl font-bold transition-all border ${
-                  !isSpecial
-                    ? 'bg-[#12312d] text-white border-[#12312d] shadow-sm'
-                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                }`}
-              >
-                ธรรมดา
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsSpecial(true)}
-                className={`py-2 px-3 rounded-2xl font-bold transition-all border ${
-                  isSpecial
-                    ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-sm'
-                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                }`}
-              >
-                พิเศษ (+10฿)
-              </button>
-            </div>
-          </div>
-
-          {/* Option: Dining in vs Takeaway */}
-          <div>
-            <label className="font-bold text-slate-800 block mb-1.5">รูปแบบการทาน</label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setDiningOption('ทานที่ร้าน')}
-                className={`py-2 px-3 rounded-2xl font-bold transition-all border ${
-                  diningOption === 'ทานที่ร้าน'
-                    ? 'bg-[#12312d] text-white border-[#12312d] shadow-sm'
-                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                }`}
-              >
-                🍽️ ทานที่ร้าน (Dine-in)
-              </button>
-              <button
-                type="button"
-                onClick={() => setDiningOption('กลับบ้าน')}
-                className={`py-2 px-3 rounded-2xl font-bold transition-all border ${
-                  diningOption === 'กลับบ้าน'
-                    ? 'bg-[#4fb0a5] text-slate-950 border-[#4fb0a5] shadow-sm'
-                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                }`}
-              >
-                🥡 ใส่กล่องกลับบ้าน (Takeaway)
-              </button>
-            </div>
-          </div>
-
-          {/* Option: Spiciness */}
-          <div>
-            <label className="font-bold text-slate-800 block mb-1.5 flex items-center gap-1.5">
-              <Flame className="w-3.5 h-3.5 text-rose-500" />
-              <span>ระดับความเผ็ด</span>
-            </label>
-            <div className="grid grid-cols-4 gap-1.5">
-              {['ไม่เผ็ด', 'เผ็ดน้อย', 'เผ็ดปกติ', 'เผ็ดมาก 🔥'].map((lvl) => (
+            <label className="font-medium text-slate-700 block mb-1">อุณหภูมิ</label>
+            <div className="grid grid-cols-3 gap-2">
+              {['เย็น', 'ร้อน', 'ปั่น (+10฿)'].map((t) => (
                 <button
-                  key={lvl}
+                  key={t}
                   type="button"
-                  onClick={() => setSpiciness(lvl)}
-                  className={`py-2 px-1 rounded-xl text-center font-bold text-[11px] transition-all border ${
-                    spiciness === lvl
-                      ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
+                  onClick={() => setTemperature(t)}
+                  className={`py-2 px-2 rounded-xl font-medium transition-all border text-center cursor-pointer ${
+                    temperature === t
+                      ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
                       : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                   }`}
                 >
-                  {lvl}
+                  {t}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Quick Option Tags */}
+          {/* Option: Sweetness */}
           <div>
-            <label className="font-bold text-slate-800 block mb-1.5">ตัวเลือกเพิ่มเติมที่พบบ่อย</label>
-            <div className="flex flex-wrap gap-1.5">
-              {quickTags.map((tag) => {
-                const isSelected = customNote.includes(tag);
-                return (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => handleToggleTag(tag)}
-                    className={`px-2.5 py-1 rounded-xl text-[11px] font-semibold transition-all border ${
-                      isSelected
-                        ? 'bg-[#4fb0a5]/20 text-[#12312d] border-[#4fb0a5] font-bold'
-                        : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                    }`}
-                  >
-                    {tag} {isSelected && '✓'}
-                  </button>
-                );
-              })}
+            <label className="font-medium text-slate-700 block mb-1">ระดับความหวาน</label>
+            <div className="grid grid-cols-4 gap-1.5">
+              {['ไม่หวาน (0%)', 'หวานน้อย (50%)', 'หวาน 100%', 'หวานมาก'].map((sw) => (
+                <button
+                  key={sw}
+                  type="button"
+                  onClick={() => setSweetness(sw)}
+                  className={`py-2 px-1 rounded-xl font-medium text-[10.5px] transition-all border text-center cursor-pointer ${
+                    sweetness === sw
+                      ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  {sw}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Custom Note input */}
+          {/* Option: Extra Shot / Size */}
           <div>
-            <label className="font-bold text-slate-800 block mb-1 flex items-center gap-1.5">
-              <MessageSquarePlus className="w-3.5 h-3.5 text-slate-500" />
-              <span>ระบุหมายเหตุเพิ่มเติม</span>
+            <label className="font-medium text-slate-700 block mb-1 flex items-center gap-1">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>เพิ่มช็อต / พิเศษ</span>
             </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setIsSpecial(false)}
+                className={`py-2 px-3 rounded-xl font-medium transition-all border cursor-pointer ${
+                  !isSpecial
+                    ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                }`}
+              >
+                ปกติ
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsSpecial(true)}
+                className={`py-2 px-3 rounded-xl font-medium transition-all border cursor-pointer ${
+                  isSpecial
+                    ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                }`}
+              >
+                เพิ่มช็อต (+15฿)
+              </button>
+            </div>
+          </div>
+
+          {/* Option: Dine-in vs Takeaway */}
+          <div>
+            <label className="font-medium text-slate-700 block mb-1">รูปแบบการเสิร์ฟ</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setDiningOption('ทานที่ร้าน')}
+                className={`py-2 px-3 rounded-xl font-medium transition-all border cursor-pointer ${
+                  diningOption === 'ทานที่ร้าน'
+                    ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                }`}
+              >
+                ☕ ทานที่ร้าน
+              </button>
+              <button
+                type="button"
+                onClick={() => setDiningOption('กลับบ้าน')}
+                className={`py-2 px-3 rounded-xl font-medium transition-all border cursor-pointer ${
+                  diningOption === 'กลับบ้าน'
+                    ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                }`}
+              >
+                🥤 ใส่แก้วกลับ (Takeaway)
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Tags */}
+          <div>
+            <label className="font-medium text-slate-700 block mb-1.5">ตัวเลือกเพิ่มเติม</label>
+            <div className="flex flex-wrap gap-1.5">
+              {quickTags.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => handleToggleTag(tag)}
+                  className={`px-2.5 py-1 rounded-lg text-[10.5px] font-medium border transition-colors cursor-pointer ${
+                    customNote.includes(tag)
+                      ? 'bg-slate-900 text-white border-slate-900'
+                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Custom Note */}
+          <div>
             <input
               type="text"
-              placeholder="เช่น ขอไม่ใส่พริกไทย, ขอน้ำปลาพริกเพิ่ม, ใส่ไข่ดาวไม่สุก"
+              placeholder="หมายเหตุเพิ่มเติม..."
               value={customNote}
               onChange={(e) => setCustomNote(e.target.value)}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4fb0a5]/30 text-slate-800"
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-400"
             />
           </div>
         </div>
 
-        <div className="pt-3 border-t border-slate-100 flex justify-end gap-2">
-          <button
+        <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+          <Button
             type="button"
+            variant="outline"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl font-semibold text-slate-600 hover:bg-slate-100 border border-slate-200"
           >
             ยกเลิก
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
-            className="px-5 py-2 rounded-xl font-bold bg-[#12312d] text-white hover:bg-[#1a423d] shadow-sm flex items-center gap-1.5"
+            variant="primary"
           >
-            <Check className="w-4 h-4" /> บันทึกตัวเลือก
-          </button>
+            ยืนยัน
+          </Button>
         </div>
       </form>
     </div>

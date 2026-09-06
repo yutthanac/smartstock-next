@@ -43,12 +43,15 @@ export const SalesAnalyticsChart: React.FC<SalesAnalyticsChartProps> = ({ sales7
     <section className="skeuo-card rounded-3xl p-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl skeuo-inset flex items-center justify-center text-emerald-700">
-              <ShoppingBag className="w-4 h-4" />
+          <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl skeuo-inset flex items-center justify-center text-slate-700">
+              <ShoppingBag className="w-5 h-5" />
             </div>
             สถิติยอดขาย & ต้นทุน 7 วันล่าสุด
           </h2>
+          <p className="text-sm text-slate-500 mt-1 font-normal ml-11.5">
+            แนวโน้มยอดขาย ต้นทุนวัตถุดิบ และกำไรรายวัน
+          </p>
         </div>
       </div>
 

@@ -1,5 +1,7 @@
-import { Plus, Edit2, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Edit2, X, Calculator } from 'lucide-react';
 import { Dropdown } from '@/components/Dropdown';
+import { Button } from '@/components/Button';
 import { useStock } from '@/lib/StockContext';
 import { Ingredient } from '@/types';
 
@@ -41,6 +43,61 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
   setFormData,
 }) => {
   const { units } = useStock();
+  const [purchasePrice, setPurchasePrice] = useState<string>('');
+
+  useEffect(() => {
+    if (editingTarget) {
+      const qty = parseFloat(String(editingTarget.quantity));
+      const cost = parseFloat(String(editingTarget.cost_per_unit));
+      if (!isNaN(qty) && !isNaN(cost) && qty > 0 && cost > 0) {
+        setPurchasePrice(String(Math.round(qty * cost * 100) / 100));
+      } else {
+        setPurchasePrice('');
+      }
+    } else {
+      setPurchasePrice('');
+    }
+  }, [editingTarget, isOpen]);
+
+  const handlePurchasePriceChange = (val: string) => {
+    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+      setPurchasePrice(val);
+      const priceNum = parseFloat(val);
+      const qtyNum = parseFloat(String(formData.quantity));
+      if (!isNaN(priceNum) && !isNaN(qtyNum) && qtyNum > 0) {
+        const unitCost = Math.round((priceNum / qtyNum) * 10000) / 10000;
+        setFormData((prev) => ({ ...prev, cost_per_unit: unitCost }));
+      }
+    }
+  };
+
+  const handleQuantityChange = (val: string) => {
+    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+      const qtyNum = parseFloat(val);
+      const priceNum = parseFloat(purchasePrice);
+      let newCost = formData.cost_per_unit;
+      if (!isNaN(priceNum) && priceNum > 0 && !isNaN(qtyNum) && qtyNum > 0) {
+        newCost = Math.round((priceNum / qtyNum) * 10000) / 10000;
+      }
+      setFormData((prev) => ({
+        ...prev,
+        quantity: val === '' ? '' : val,
+        cost_per_unit: newCost,
+      }));
+    }
+  };
+
+  const handleCostPerUnitChange = (val: string) => {
+    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+      const unitCost = parseFloat(val);
+      const qtyNum = parseFloat(String(formData.quantity));
+      if (!isNaN(unitCost) && !isNaN(qtyNum) && qtyNum > 0) {
+        setPurchasePrice(String(Math.round(unitCost * qtyNum * 100) / 100));
+      }
+      setFormData((prev) => ({ ...prev, cost_per_unit: val === '' ? '' : val }));
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -51,26 +108,26 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
       >
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-[#4fb0a5]/10 text-[#4fb0a5] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-normal">
               {editingTarget ? <Edit2 className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
             </div>
-            <h3 className="font-bold text-slate-900 text-base">
-              {editingTarget ? `แก้ไขข้อมูลวัตถุดิบ: ${editingTarget.name}` : 'เพิ่มวัตถุดิบใหม่เข้าระบบ'}
+            <h3 className="font-semibold text-slate-900 text-base">
+              {editingTarget ? `แก้ไขวัตถุดิบ: ${editingTarget.name}` : 'เพิ่มวัตถุดิบ / เมล็ดกาแฟ'}
             </h3>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-xl text-slate-400 hover:text-slate-700"
+            className="p-1 rounded-xl text-slate-400 hover:text-slate-700 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Tracking Type Selection (Strict vs Bulk Expense) */}
+        {/* Tracking Type Selection */}
         <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-          <label className="font-bold text-slate-800 text-xs block">
-            ลักษณะการตัดสต็อก (Inventory Tracking Type)
+          <label className="font-medium text-slate-800 text-xs block">
+            ลักษณะการตัดสต็อก
           </label>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <button
@@ -78,16 +135,16 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
               onClick={() => setFormData({ ...formData, tracking_type: 'strict' })}
               className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                 formData.tracking_type === 'strict'
-                  ? 'bg-emerald-50 border-emerald-500 ring-2 ring-emerald-500/20 text-emerald-950 font-bold'
+                  ? 'bg-slate-900 text-white shadow-xs border-slate-900'
                   : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
               }`}
             >
               <div className="flex items-center gap-1.5">
-                <span className="text-base">🥩</span>
-                <span className="font-bold text-xs">วัตถุดิบหลัก (BOM)</span>
+                <span className="text-base">☕</span>
+                <span className={`text-xs ${formData.tracking_type === 'strict' ? 'font-medium text-white' : 'font-normal text-slate-800'}`}>ตัดตามแก้ว (BOM)</span>
               </div>
-              <p className="text-[10px] text-slate-500 mt-1 font-normal leading-tight">
-                ตัดสต็อกออโต้ตามสัดส่วนต่อจานเมื่อขาย POS (เช่น หมู, ไก่, กุ้ง)
+              <p className={`text-[10px] mt-1 leading-tight ${formData.tracking_type === 'strict' ? 'text-slate-300' : 'text-slate-500'}`}>
+                ตัดอัตโนมัติตามสูตรเมื่อขาย เช่น เมล็ดกาแฟ, นม, ชา, แก้ว
               </p>
             </button>
 
@@ -96,16 +153,16 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
               onClick={() => setFormData({ ...formData, tracking_type: 'bulk_expense' })}
               className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                 formData.tracking_type === 'bulk_expense'
-                  ? 'bg-amber-50 border-amber-500 ring-2 ring-amber-500/20 text-amber-950 font-bold'
+                  ? 'bg-slate-900 text-white shadow-xs border-slate-900'
                   : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
               }`}
             >
               <div className="flex items-center gap-1.5">
-                <span className="text-base">🧂</span>
-                <span className="font-bold text-xs">เครื่องปรุง / ของใช้</span>
+                <span className="text-base">🧴</span>
+                <span className={`text-xs ${formData.tracking_type === 'bulk_expense' ? 'font-medium text-white' : 'font-normal text-slate-800'}`}>เปิดใช้ / ของใช้</span>
               </div>
-              <p className="text-[10px] text-slate-500 mt-1 font-normal leading-tight">
-                ไม่ตัดย่อยต่อจาน ตัดยอดเมื่อเปิดขวด/หมดจริง (เช่น น้ำปลา, ซอส, ผัก)
+              <p className={`text-[10px] mt-1 leading-tight ${formData.tracking_type === 'bulk_expense' ? 'text-slate-300' : 'text-slate-500'}`}>
+                ตัดยอดเมื่อเปิดขวดใหม่หรือนับสต็อก เช่น ไซรัป, ซอส, ผงโรย
               </p>
             </button>
           </div>
@@ -113,14 +170,14 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
           <div className="sm:col-span-2">
-            <label className="font-semibold text-slate-700 block mb-1">ชื่อวัตถุดิบ</label>
+            <label className="font-normal text-slate-700 block mb-1">ชื่อวัตถุดิบ</label>
             <input
               type="text"
               required
-              placeholder="เช่น สันนอกหมู, กุ้งแชบ๊วย, นมสด"
+              placeholder="เช่น เมล็ดกาแฟบราซิล คั่วกลาง, นมสด, ไซรัปคาราเมล, ชาเขียวมัทฉะ"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#4fb0a5]/30 focus:outline-none"
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 focus:outline-none text-slate-800 font-normal"
             />
           </div>
 
@@ -130,12 +187,13 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
               value={formData.category}
               onChange={(val) => setFormData({ ...formData, category: val })}
               options={[
-                'เนื้อสัตว์',
-                'อาหารทะเล',
-                'ผักสด',
-                'ของแห้ง/เส้น',
-                'ไข่และนม',
-                'เครื่องปรุง',
+                'เมล็ดกาแฟ & ชา',
+                'นม & ผลิตภัณฑ์นม',
+                'ไซรัป & ซอสแต่งกลิ่น',
+                'ผงชง & ท็อปปิ้ง',
+                'แป้ง & วัตถุดิบขนม',
+                'แก้ว & บรรจุภัณฑ์',
+                'อาหาร & วัตถุดิบอื่นๆ',
               ]}
               className="w-full"
               buttonClassName="py-2.5 px-3 rounded-xl bg-slate-50"
@@ -165,19 +223,32 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
               type="text"
               inputMode="decimal"
               required
-              placeholder="0"
+              placeholder="เช่น 500"
               value={formData.quantity === 0 ? '' : formData.quantity}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val === '' || /^\d*\.?\d*$/.test(val)) {
-                  setFormData({ ...formData, quantity: val === '' ? '' : val });
-                }
-              }}
+              onChange={(e) => handleQuantityChange(e.target.value)}
               onBlur={(e) => {
                 const val = parseFloat(e.target.value);
-                setFormData({ ...formData, quantity: isNaN(val) || val < 0 ? 0 : val });
+                setFormData((prev) => ({ ...prev, quantity: isNaN(val) || val < 0 ? 0 : val }));
               }}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4fb0a5]/30"
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400"
+            />
+          </div>
+
+          {/* New Input: ราคาที่ซื้อมาทั้งหมด (คำนวณต้นทุนต่อหน่วยให้อัตโนมัติ) */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="font-semibold text-slate-700">
+                ราคาซื้อรวม (บาท)
+              </label>
+              <span className="text-[10px] text-slate-400 font-medium">ราคาต่อแพ็ค/ถุง</span>
+            </div>
+            <input
+              type="text"
+              inputMode="decimal"
+              placeholder="เช่น 250"
+              value={purchasePrice}
+              onChange={(e) => handlePurchasePriceChange(e.target.value)}
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400"
             />
           </div>
 
@@ -190,7 +261,7 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
               type="text"
               inputMode="decimal"
               required
-              placeholder="เช่น 5"
+              placeholder="เช่น 2"
               value={formData.reorder_point === 0 ? '' : formData.reorder_point}
               onChange={(e) => {
                 const val = e.target.value;
@@ -202,59 +273,62 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
                 const val = parseFloat(e.target.value);
                 setFormData({ ...formData, reorder_point: isNaN(val) || val < 0 ? 0 : val });
               }}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-amber-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4fb0a5]/30"
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-amber-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400"
             />
           </div>
 
           {/* Smooth Numeric Input: Cost per unit */}
           <div>
-            <label className="font-semibold text-slate-700 block mb-1">ต้นทุนต่อหน่วย (บาท/{formData.unit})</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="font-normal text-slate-700">
+                ต้นทุนต่อหน่วย (บาท/{formData.unit})
+              </label>
+            </div>
             <input
               type="text"
               inputMode="decimal"
               required
-              placeholder="เช่น 120"
+              placeholder="เช่น 0.5"
               value={formData.cost_per_unit === 0 ? '' : formData.cost_per_unit}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val === '' || /^\d*\.?\d*$/.test(val)) {
-                  setFormData({ ...formData, cost_per_unit: val === '' ? '' : val });
-                }
-              }}
+              onChange={(e) => handleCostPerUnitChange(e.target.value)}
               onBlur={(e) => {
                 const val = parseFloat(e.target.value);
-                setFormData({ ...formData, cost_per_unit: isNaN(val) || val < 0 ? 0 : val });
+                setFormData((prev) => ({ ...prev, cost_per_unit: isNaN(val) || val < 0 ? 0 : val }));
               }}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-emerald-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4fb0a5]/30"
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
             />
+            {Boolean(purchasePrice && Number(formData.quantity) > 0) && (
+              <p className="text-[11px] text-slate-500 mt-1 font-normal">
+                💡 {purchasePrice} บาท ÷ {formData.quantity} {formData.unit} = <span className="text-slate-900 font-mono font-medium">{formData.cost_per_unit}</span> บ./{formData.unit}
+              </p>
+            )}
           </div>
 
-          <div>
-            <label className="font-semibold text-slate-700 block mb-1">ซัพพลายเออร์ / แหล่งซื้อ</label>
+          <div className="sm:col-span-2">
+            <label className="font-normal text-slate-700 block mb-1">แหล่งสั่งซื้อ / ซัพพลายเออร์</label>
             <input
               type="text"
-              placeholder="เช่น ตลาดสด, Makro"
+              placeholder="เช่น โรงคั่วกาแฟ Aroma, แม็คโคร, CP"
               value={formData.supplier}
               onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none text-slate-800 font-normal"
             />
           </div>
         </div>
 
         <div className="pt-3 border-t border-slate-100 flex justify-end gap-2 text-xs">
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={onClose}
-            className="px-4 py-2.5 rounded-xl font-semibold text-slate-600 hover:bg-slate-100 border border-slate-200"
           >
             ยกเลิก
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
-            className="px-5 py-2.5 rounded-xl font-bold bg-[#4fb0a5] hover:bg-[#3d9b90] text-slate-950 shadow-md shadow-[#4fb0a5]/20 cursor-pointer"
           >
             {editingTarget ? 'บันทึกการแก้ไข' : 'บันทึกวัตถุดิบ'}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

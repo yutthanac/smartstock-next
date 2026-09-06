@@ -1,6 +1,9 @@
 import React from 'react';
-import { Layers, Edit2, Trash2, UtensilsCrossed } from 'lucide-react';
+import { Layers, Edit2, Trash2 } from 'lucide-react';
 import { MenuItem } from '@/types';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/Table';
+import { Badge } from '@/components/Badge';
+import { Button } from '@/components/Button';
 
 interface MenuListViewProps {
   items: MenuItem[];
@@ -12,23 +15,23 @@ export const MenuListView: React.FC<MenuListViewProps> = ({ items, onEdit, onDel
   return (
     <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs">
-          <thead>
-            <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-500 uppercase tracking-wider font-semibold">
-              <th className="py-3.5 px-4">รูปภาพ & เมนู</th>
-              <th className="py-3.5 px-4">หมวดหมู่</th>
-              <th className="py-3.5 px-4 text-right">ราคาขาย</th>
-              <th className="py-3.5 px-4 text-right">ต้นทุน BOM</th>
-              <th className="py-3.5 px-4 text-right">กำไร/จาน</th>
-              <th className="py-3.5 px-4 text-center">มาร์จิ้น (% Margin)</th>
-              <th className="py-3.5 px-4">สูตรวัตถุดิบ (BOM Recipes)</th>
-              <th className="py-3.5 px-4 text-center">จัดการ</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>รูปภาพ & เมนู</TableHead>
+              <TableHead>หมวดหมู่</TableHead>
+              <TableHead className="text-right">ราคาขาย</TableHead>
+              <TableHead className="text-right">ต้นทุน BOM</TableHead>
+              <TableHead className="text-right">กำไร/จาน</TableHead>
+              <TableHead className="text-center">มาร์จิ้น (% Margin)</TableHead>
+              <TableHead>สูตรวัตถุดิบ (BOM Recipes)</TableHead>
+              <TableHead className="text-center">จัดการ</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {items.map((item) => (
-              <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
-                <td className="py-3 px-4">
+              <TableRow key={item.id}>
+                <TableCell>
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200/80 overflow-hidden shrink-0 flex items-center justify-center p-1 shadow-2xs">
                       <img
@@ -38,71 +41,74 @@ export const MenuListView: React.FC<MenuListViewProps> = ({ items, onEdit, onDel
                       />
                     </div>
                     <div>
-                      <div className="font-bold text-slate-900 text-sm">{item.name}</div>
+                      <div className="font-normal text-slate-900 text-sm">{item.name}</div>
                       {item.description && (
                         <div className="text-[11px] text-slate-400 line-clamp-1 max-w-xs">{item.description}</div>
                       )}
                     </div>
                   </div>
-                </td>
-                <td className="py-3.5 px-4">
-                  <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#e6f7f5] text-[#12312d] border border-[#4fb0a5]/30 inline-block whitespace-nowrap">
+                </TableCell>
+                <TableCell>
+                  <Badge variant="neutral">
                     {item.category}
-                  </span>
-                </td>
-                <td className="py-3 px-4 text-right font-extrabold text-slate-900 text-sm">
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right font-normal text-slate-800 text-sm font-mono">
                   ฿{item.price.toFixed(2)}
-                </td>
-                <td className="py-3 px-4 text-right font-bold text-amber-700">
+                </TableCell>
+                <TableCell className="text-right font-normal text-slate-500 font-mono">
                   ฿{item.recipe_cost.toFixed(2)}
-                </td>
-                <td className="py-3 px-4 text-right font-bold text-emerald-700">
+                </TableCell>
+                <TableCell className="text-right font-normal text-slate-700 font-mono">
                   ฿{(item.price - item.recipe_cost).toFixed(2)}
-                </td>
-                <td className="py-3 px-4 text-center">
-                  <span className="inline-block font-bold text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                </TableCell>
+                <TableCell className="text-center">
+                  <Badge variant="neutral">
                     {item.margin_percent}%
-                  </span>
-                </td>
-                <td className="py-3 px-4 max-w-xs">
+                  </Badge>
+                </TableCell>
+                <TableCell className="max-w-xs">
                   <div className="flex flex-wrap gap-1">
                     {item.recipes && item.recipes.length > 0 ? (
                       item.recipes.map((r, idx) => (
                         <span
                           key={idx}
-                          className="inline-flex items-center gap-1 text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-lg border border-slate-200/80"
+                          className="inline-flex items-center gap-1 text-[10px] bg-slate-50 text-slate-600 px-2 py-0.5 rounded-lg border border-slate-200"
                         >
-                          <span className="font-medium">{r.ingredient_name || `#${r.ingredient_id}`}</span>
-                          <strong className="text-slate-900">{r.quantity_used} {r.ingredient_unit}</strong>
+                          <span className="font-normal">{r.ingredient_name || `#${r.ingredient_id}`}</span>
+                          <span className="font-normal text-slate-800 font-mono">{r.quantity_used} {r.ingredient_unit}</span>
                         </span>
                       ))
                     ) : (
                       <span className="text-slate-400 text-[11px] italic">ไม่มีสูตร</span>
                     )}
                   </div>
-                </td>
-                <td className="py-3 px-4 text-center">
+                </TableCell>
+                <TableCell className="text-center">
                   <div className="flex items-center justify-center gap-1.5">
-                    <button
+                    <Button
+                      size="sm"
+                      variant="secondary"
                       onClick={() => onEdit(item)}
-                      className="p-1.5 rounded-xl bg-slate-100 text-slate-700 hover:text-[#4fb0a5] hover:bg-slate-200 transition-colors shadow-2xs"
                       title="แก้ไขสูตร"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
                       onClick={() => onDelete(item.id)}
-                      className="p-1.5 rounded-xl bg-slate-100 text-slate-700 hover:text-rose-600 hover:bg-rose-50 transition-colors shadow-2xs"
+                      className="hover:text-rose-600 hover:bg-rose-50"
                       title="ลบเมนู"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    </Button>
                   </div>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

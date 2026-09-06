@@ -16,6 +16,7 @@ import {
   ShoppingBag,
 } from 'lucide-react';
 import { PurchaseOrder } from '../types';
+import { Button } from '@/components/Button';
 
 interface POPrintViewModalProps {
   po: PurchaseOrder | null;
@@ -85,12 +86,12 @@ export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
         {/* Top Control Bar (Screen only) */}
         <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-b border-slate-200 print:hidden">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center font-normal">
               <ShoppingBag className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                ใบจ่ายตลาด: <span className="text-emerald-700">{po.store_name}</span>
+              <h3 className="font-semibold text-slate-900 text-base flex items-center gap-2">
+                ใบจ่ายตลาด: <span className="text-slate-900 font-semibold">{po.store_name}</span>
               </h3>
               <p className="text-xs text-slate-500">
                 เลขที่: {po.id} • วันที่: {po.date}
@@ -100,30 +101,34 @@ export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
 
           <div className="flex items-center gap-2">
             {po.status === 'pending' && onMarkCompleted && (
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => onMarkCompleted(po.id)}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 text-xs font-bold transition-all cursor-pointer"
+                icon={<CheckCircle2 className="w-4 h-4" />}
+                className="hidden sm:inline-flex"
               >
-                <CheckCircle2 className="w-4 h-4" />
                 ซื้อของครบแล้ว
-              </button>
+              </Button>
             )}
 
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleExportCSV}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all border border-slate-200 cursor-pointer"
+              icon={<Download className="w-4 h-4 text-slate-600" />}
             >
-              <Download className="w-4 h-4 text-emerald-600" />
-              <span>Export CSV</span>
-            </button>
+              Export CSV
+            </Button>
 
-            <button
+            <Button
+              variant="primary"
+              size="sm"
               onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+              icon={<Printer className="w-4 h-4" />}
             >
-              <Printer className="w-4 h-4" />
-              <span>พิมพ์ใบจ่ายตลาด (Print)</span>
-            </button>
+              พิมพ์ใบจ่ายตลาด (Print)
+            </Button>
 
             <button
               onClick={onClose}

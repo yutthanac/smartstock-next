@@ -20,30 +20,29 @@ export default function AIInsightsPage() {
   const { dashboard } = useStock();
   const insightsList = dashboard?.ai_recommendations || [];
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-slate-50/70">
+    <div className="flex-1 flex flex-col min-h-screen bg-[#ebecf0]">
       <Topbar
-        title="AI แนะนำเมนู & กลยุทธ์การขาย (AI Menu Insights)"
-        subtitle="วิเคราะห์ข้อมูลออเดอร์ย้อนหลัง จัดอันดับความนิยม มาร์จิ้น และให้ข้อเสนอแนะอัจฉริยะ"
+        title="AI วิเคราะห์เมนู"
+        subtitle="คำแนะนำเมนูขายดี ต้นทุน และแนวทางดันยอดขาย"
       />
 
       <main className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
         {/* Header Hero Banner */}
-        <div className="p-6 rounded-2xl bg-gradient-to-r from-[#12312d] via-[#1a4740] to-[#256157] text-white flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-lg">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#4fb0a5]/20 text-[#4fb0a5] border border-[#4fb0a5]/30 text-xs font-bold">
+        <div className="p-6 rounded-3xl bg-slate-900 text-white flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-xs">
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold">
               <Sparkles className="w-3.5 h-3.5" />
-              Machine Learning & Order Analytics Engine
+              คำแนะนำอัจฉริยะ
             </div>
-            <h2 className="text-xl font-bold">ระบบวิเคราะห์ข้อมูลการขายและช่วยตัดสินใจ</h2>
-            <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
-              วิเคราะห์ความคุ้มค่าของสูตรอาหาร (BOM) เชื่อมโยงกับพฤติกรรมการสั่งซื้อจริง
-              ช่วยให้คุณปรับกลยุทธ์เมนู เพิ่มกำไรสุทธิ และลดการสูญเสียของวัตถุดิบค้างคลัง
+            <h2 className="text-xl font-bold">วิเคราะห์ความคุ้มค่าและเมนูแนะนำ</h2>
+            <p className="text-xs text-slate-300 max-w-2xl">
+              วิเคราะห์จากสัดส่วนต้นทุนวัตถุดิบและยอดสั่งซื้อ เพื่อช่วยวางแผนราคาและปรับโปรโมชัน
             </p>
           </div>
-          <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/15 text-center min-w-40">
-            <div className="text-xs text-slate-300">อัตรากำไรเฉลี่ยร้าน</div>
-            <div className="text-2xl font-bold text-[#4fb0a5] mt-0.5">65.9%</div>
-            <div className="text-[11px] text-emerald-300 mt-1">อยู่ในเกณฑ์ดีเยี่ยม</div>
+          <div className="bg-white/10 p-4 rounded-2xl border border-white/10 text-center min-w-36 shrink-0">
+            <div className="text-xs text-slate-300">อัตรากำไรเฉลี่ย</div>
+            <div className="text-2xl font-black text-emerald-400 mt-0.5">{dashboard.profit_margin || 0}%</div>
+            <div className="text-[10px] text-slate-400 mt-0.5">จากออเดอร์ทั้งหมด</div>
           </div>
         </div>
 

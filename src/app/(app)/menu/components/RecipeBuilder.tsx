@@ -2,6 +2,7 @@ import React from 'react';
 import { Layers, Plus, Trash2 } from 'lucide-react';
 import { Ingredient, RecipeItem } from '@/types';
 import { Dropdown } from '@/components/Dropdown';
+import { Button } from '@/components/Button';
 
 interface RecipeBuilderProps {
   recipes: RecipeItem[];
@@ -22,20 +23,21 @@ export const RecipeBuilder: React.FC<RecipeBuilderProps> = ({
     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Layers className="w-4 h-4 text-[#4fb0a5]" />
-          <span className="font-bold text-slate-800 text-xs">วัตถุดิบและสัดส่วนที่ใช้ต่อ 1 จาน (BOM)</span>
+          <Layers className="w-4 h-4 text-slate-600" />
+          <span className="font-semibold text-slate-800 text-xs">วัตถุดิบและสูตรชงต่อแก้ว/เสิร์ฟ</span>
         </div>
-        <button
+        <Button
           type="button"
+          size="sm"
+          variant="secondary"
           onClick={onAddRow}
-          className="px-2.5 py-1 rounded-xl bg-white border border-slate-200 text-[#12312d] font-bold text-[11px] hover:bg-slate-100 flex items-center gap-1 transition-colors shadow-2xs cursor-pointer"
         >
-          <Plus className="w-3.5 h-3.5 text-[#4fb0a5]" /> เพิ่มวัตถุดิบ
-        </button>
+          <Plus className="w-3.5 h-3.5" /> เพิ่มวัตถุดิบ
+        </Button>
       </div>
 
-      <p className="text-[11px] text-slate-500 font-normal leading-tight">
-        💡 <strong className="text-slate-700">วัตถุดิบหลัก (🥩)</strong> จะตัดสต็อกอัตโนมัติตามจานขาย | <strong className="text-slate-700">เครื่องปรุง/ผัก (🧂)</strong> คำนวณต้นทุนต่อจานให้ แต่จะตัดสต็อกจริงเมื่อกดเบิกขวดใหม่ในครัว
+      <p className="text-[11px] text-slate-400 font-normal">
+        ระบุปริมาณเมล็ดกาแฟ ชา หรือวัตถุดิบที่ใช้ต่อแก้ว เพื่อตัดสต็อกและคำนวณต้นทุน
       </p>
 
       <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
@@ -51,8 +53,8 @@ export const RecipeBuilder: React.FC<RecipeBuilderProps> = ({
                   onChange={(val) => onUpdateRow(index, 'ingredient_id', Number(val))}
                   options={ingredients.map((ing) => ({
                     value: ing.id,
-                    label: `${ing.tracking_type === 'bulk_expense' ? '🧂' : '🥩'} ${ing.name} (${ing.cost_per_unit} ฿/${ing.unit})`,
-                    badge: ing.tracking_type === 'bulk_expense' ? 'เครื่องปรุง' : 'วัตถุดิบหลัก',
+                    label: `${ing.tracking_type === 'bulk_expense' ? '🧴' : '☕'} ${ing.name} (${ing.cost_per_unit} ฿/${ing.unit})`,
+                    badge: ing.tracking_type === 'bulk_expense' ? 'ของใช้' : 'วัตถุดิบหลัก',
                   }))}
                   size="sm"
                   className="w-full"
@@ -61,7 +63,7 @@ export const RecipeBuilder: React.FC<RecipeBuilderProps> = ({
               </div>
 
               {/* Quantity text input with smooth blank typing */}
-              <div className="w-28">
+              <div className="w-20">
                 <input
                   type="text"
                   inputMode="decimal"
@@ -77,13 +79,16 @@ export const RecipeBuilder: React.FC<RecipeBuilderProps> = ({
                     const num = parseFloat(e.target.value);
                     onUpdateRow(index, 'quantity_used', isNaN(num) || num <= 0 ? 0.01 : num);
                   }}
-                  className="w-full p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-center focus:outline-none focus:bg-white focus:ring-1 focus:ring-[#4fb0a5]"
+                  className="w-full p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-normal text-center focus:outline-none focus:bg-white focus:ring-1 focus:ring-slate-400"
                 />
               </div>
 
-              {/* Unit display */}
-              <div className="w-12 text-slate-500 font-medium text-[11px] text-center shrink-0">
-                {selectedIng?.unit || ''}
+              {/* Unit & Live Calculated Cost */}
+              <div className="w-24 text-right pr-1 shrink-0">
+                <div className="text-xs font-normal text-slate-800 font-mono">
+                  ฿{((selectedIng?.cost_per_unit || 0) * (typeof row.quantity_used === 'number' ? row.quantity_used : parseFloat(row.quantity_used as any) || 0)).toFixed(2)}
+                </div>
+                <div className="text-[10px] text-slate-400 font-medium">{selectedIng?.unit || ''}</div>
               </div>
 
               {/* Delete row button */}

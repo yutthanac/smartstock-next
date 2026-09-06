@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, Search, Filter, UtensilsCrossed, LayoutGrid, List as ListIcon } from 'lucide-react';
+import { Plus, Search, Filter, Coffee, LayoutGrid, List as ListIcon } from 'lucide-react';
 import { useStock } from '@/lib/StockContext';
 import { Topbar } from '@/components/Topbar';
 import { MenuItem, RecipeItem } from '@/types';
@@ -9,6 +9,7 @@ import { MenuCard } from './components/MenuCard';
 import { MenuListView } from './components/MenuListView';
 import { MenuModal } from './components/MenuModal';
 import { Dropdown } from '@/components/Dropdown';
+import { Button } from '@/components/Button';
 
 export default function RecipeMenuPage() {
   const { menuItems, ingredients, addMenuItem, updateMenuItem, deleteMenuItem } = useStock();
@@ -23,8 +24,8 @@ export default function RecipeMenuPage() {
 
   // Form State
   const [name, setName] = useState('');
-  const [category, setCategory] = useState('อาหารจานเดียว');
-  const [price, setPrice] = useState<number | string>(89);
+  const [category, setCategory] = useState('กาแฟ (Coffee)');
+  const [price, setPrice] = useState<number | string>(65);
   const [image, setImage] = useState('');
   const [description, setDescription] = useState('');
   const [recipes, setRecipes] = useState<RecipeItem[]>([]);
@@ -33,8 +34,8 @@ export default function RecipeMenuPage() {
   const handleOpenCreate = () => {
     setEditingItem(null);
     setName('');
-    setCategory('อาหารจานเดียว');
-    setPrice(89);
+    setCategory('กาแฟ (Coffee)');
+    setPrice(65);
     setImage('');
     setDescription('');
     setRecipes([{ ingredient_id: ingredients[0]?.id || 1, quantity_used: 0.1 }]);
@@ -76,7 +77,7 @@ export default function RecipeMenuPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      alert('กรุณากรอกชื่อเมนูอาหาร');
+      alert('กรุณากรอกชื่อเมนู');
       return;
     }
 
@@ -140,8 +141,8 @@ export default function RecipeMenuPage() {
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-slate-50/70">
       <Topbar
-        title="สูตรอาหาร & เมนู (Recipe BOM Management)"
-        subtitle="ผูกเมนูกับวัตถุดิบและสัดส่วนที่ใช้ต่อ 1 จาน พร้อมคำนวณต้นทุน/กำไรอัตโนมัติ"
+        title="เมนู & สูตรชง (Recipe BOM)"
+        subtitle="ผูกเมนูกับวัตถุดิบและสูตรชง/เสิร์ฟ พร้อมคำนวณต้นทุนและกำไรต่อแก้วอัตโนมัติ"
       />
 
       <main className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
@@ -205,20 +206,21 @@ export default function RecipeMenuPage() {
               </button>
             </div>
 
-            <button
+            <Button
+              variant="primary"
               onClick={handleOpenCreate}
-              className="px-4 py-2.5 rounded-2xl bg-[#4fb0a5] hover:bg-[#439e94] text-slate-950 font-bold text-xs shadow-lg shadow-[#4fb0a5]/20 flex items-center gap-2 transition-all transform active:scale-95 shrink-0"
+              className="shrink-0"
             >
-              <Plus className="w-4 h-4" /> สร้างเมนู & ผูกสูตรใหม่
-            </button>
+              <Plus className="w-4 h-4" /> เพิ่มเมนูใหม่
+            </Button>
           </div>
         </div>
 
         {/* Menu Items Render (Card View or List View) */}
         {filteredMenuItems.length === 0 ? (
           <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 text-slate-400 text-sm">
-            <UtensilsCrossed className="w-8 h-8 mx-auto mb-2 opacity-40 text-slate-400" />
-            ไม่พบรายการเมนูที่ตรงกับเงื่อนไขการค้นหา
+            <Coffee className="w-8 h-8 mx-auto mb-2 opacity-40 text-slate-400" />
+            ไม่พบรายการเมนูที่ค้นหา
           </div>
         ) : viewMode === 'card' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

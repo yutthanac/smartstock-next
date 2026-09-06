@@ -129,8 +129,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
         type="button"
         disabled={disabled}
         onClick={handleToggle}
-        className={`w-full flex items-center justify-between gap-2 skeuo-btn-secondary focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all cursor-pointer font-bold disabled:opacity-50 disabled:cursor-not-allowed ${sizeClasses[size]} ${
-          isOpen ? 'border-emerald-600 ring-2 ring-emerald-500/20' : ''
+        className={`w-full flex items-center justify-between gap-2 skeuo-btn-secondary focus:outline-none focus:ring-2 focus:ring-slate-900/10 transition-all cursor-pointer font-normal disabled:opacity-50 disabled:cursor-not-allowed ${sizeClasses[size]} ${
+          isOpen ? 'border-slate-400 ring-2 ring-slate-900/10' : ''
         } ${buttonClassName}`}
       >
         <div className="flex items-center gap-2 truncate">
@@ -139,7 +139,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
         </div>
         <ChevronDown
           className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
-            isOpen ? 'rotate-180 text-emerald-700' : ''
+            isOpen ? 'rotate-180 text-slate-800' : ''
           }`}
         />
       </button>
@@ -158,7 +158,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
               width: `${menuPosition.width}px`,
               zIndex: 99999,
             }}
-            className="skeuo-card rounded-2xl py-1.5 animate-in fade-in zoom-in-95 duration-100 max-h-60 overflow-y-auto no-scrollbar shadow-[0_16px_36px_rgba(15,23,42,0.22)] border border-slate-200/90 bg-white"
+            className="skeuo-card rounded-2xl py-1.5 animate-in fade-in zoom-in-95 duration-100 max-h-60 overflow-y-auto no-scrollbar shadow-[0_16px_36px_rgba(15,23,42,0.15)] border border-slate-200/90 bg-white"
           >
             {normalizedOptions.map((opt) => {
               const isSelected = String(opt.value) === String(value);
@@ -173,8 +173,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
                   }}
                   className={`w-full flex items-center justify-between px-3.5 py-2 text-xs text-left transition-colors cursor-pointer ${
                     isSelected
-                      ? 'bg-emerald-50 text-emerald-800 font-bold'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium'
+                      ? 'bg-slate-100 text-slate-900 font-medium'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-normal'
                   }`}
                 >
                   <div className="flex items-center gap-2 truncate">
@@ -187,7 +187,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                         {opt.badge}
                       </span>
                     )}
-                    {isSelected && <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
+                    {isSelected && <Check className="w-3.5 h-3.5 text-slate-900 shrink-0" />}
                   </div>
                 </button>
               );

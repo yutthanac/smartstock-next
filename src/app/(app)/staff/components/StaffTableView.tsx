@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Mail, Edit2, Trash2, Key } from 'lucide-react';
+import { Shield, Mail, Edit2, Trash2, Key, Store } from 'lucide-react';
 import { StaffUser } from './types';
 
 interface StaffTableViewProps {
@@ -20,13 +20,14 @@ export const StaffTableView: React.FC<StaffTableViewProps> = ({
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              <th className="py-4 px-6">พนักงาน (Staff)</th>
-              <th className="py-4 px-6">อีเมล (Email)</th>
-              <th className="py-4 px-6">บทบาท & สิทธิ์ (Roles)</th>
-              <th className="py-4 px-6">จำนวนสิทธิ์ (Perms)</th>
-              <th className="py-4 px-6">วันที่สร้าง</th>
-              <th className="py-4 px-6 text-right">จัดการ</th>
+            <tr className="bg-transparent border-b border-slate-200 text-sm font-semibold text-slate-900">
+              <th className="py-4 px-6 font-semibold">พนักงาน (Staff)</th>
+              <th className="py-4 px-6 font-semibold">อีเมล (Email)</th>
+              <th className="py-4 px-6 font-semibold">สังกัดร้านค้า (Store)</th>
+              <th className="py-4 px-6 font-semibold">บทบาท & สิทธิ์ (Roles)</th>
+              <th className="py-4 px-6 font-semibold">จำนวนสิทธิ์</th>
+              <th className="py-4 px-6 font-semibold">วันที่สร้าง</th>
+              <th className="py-4 px-6 text-right font-semibold">จัดการ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-xs">
@@ -38,31 +39,50 @@ export const StaffTableView: React.FC<StaffTableViewProps> = ({
                   {/* Name & Avatar */}
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#12312d] to-[#4fb0a5] text-white font-bold flex items-center justify-center text-xs shadow-sm">
+                      <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white font-normal flex items-center justify-center text-xs shadow-sm">
                         {staff.name.slice(0, 2)}
                       </div>
                       <div>
-                        <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                        <div className="font-normal text-slate-800 flex items-center gap-1.5">
                           {staff.name}
                           {isMe && (
-                            <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-medium">
+                            <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-normal">
                               คุณ
                             </span>
                           )}
                         </div>
                         <div className="text-[10px] text-slate-400 font-mono truncate max-w-[150px]">
-                          {staff.id}
+                          ID: {staff.id}
                         </div>
                       </div>
                     </div>
                   </td>
 
                   {/* Email */}
-                  <td className="py-4 px-6 text-slate-600">
+                  <td className="py-4 px-6 text-slate-600 font-normal">
                     <div className="flex items-center gap-1.5">
                       <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                       <span>{staff.email}</span>
                     </div>
+                  </td>
+
+                  {/* Stores */}
+                  <td className="py-4 px-6">
+                    {staff.stores && staff.stores.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {staff.stores.map((st) => (
+                          <span
+                            key={st.id}
+                            className="text-[10px] font-normal px-2 py-0.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 flex items-center gap-1"
+                          >
+                            <Store className="w-3 h-3 text-slate-500" />
+                            {st.name}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-slate-400 italic">ทุกร้าน (ส่วนกลาง)</span>
+                    )}
                   </td>
 
                   {/* Roles */}
@@ -71,9 +91,9 @@ export const StaffTableView: React.FC<StaffTableViewProps> = ({
                       {staff.roles.map((r) => (
                         <span
                           key={r.id || r.name}
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-lg flex items-center gap-1 ${
+                          className={`text-[10px] font-normal px-2 py-0.5 rounded-lg flex items-center gap-1 ${
                             r.name === 'admin'
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              ? 'bg-slate-100 text-slate-800 border border-slate-200'
                               : r.name === 'manager'
                               ? 'bg-sky-50 text-sky-700 border border-sky-200'
                               : r.name === 'chef'
@@ -89,38 +109,44 @@ export const StaffTableView: React.FC<StaffTableViewProps> = ({
                   </td>
 
                   {/* Permissions count */}
-                  <td className="py-4 px-6 text-slate-500">
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full">
-                      <Key className="w-3 h-3 text-[#4fb0a5]" />
+                  <td className="py-4 px-6 text-slate-500 font-normal">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-normal bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full">
+                      <Key className="w-3 h-3 text-slate-500" />
                       {staff.permissions.length} สิทธิ์
                     </span>
                   </td>
 
                   {/* Created At */}
                   <td className="py-4 px-6 text-slate-400 text-[11px]">
-                    {staff.created_at || '-'}
+                    {new Date(staff.created_at).toLocaleDateString('th-TH', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })}
                   </td>
 
                   {/* Actions */}
                   <td className="py-4 px-6 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
+                    <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => onEdit(staff)}
-                        className="py-1.5 px-3 rounded-xl bg-slate-100 hover:bg-[#4fb0a5]/15 hover:text-[#12312d] text-slate-700 font-semibold text-xs flex items-center gap-1 transition-colors"
+                        title="แก้ไขสิทธิ์"
+                        className="p-2 rounded-xl text-slate-400 hover:text-[#4fb0a5] hover:bg-[#4fb0a5]/10 transition-colors cursor-pointer"
                       >
-                        <Edit2 className="w-3.5 h-3.5" />
-                        <span>แก้ไขสิทธิ์</span>
+                        <Edit2 className="w-4 h-4" />
                       </button>
-
-                      {!isMe && (
-                        <button
-                          onClick={() => onDelete(staff.id, staff.name)}
-                          className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                          title="ลบผู้ใช้"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
+                      <button
+                        onClick={() => onDelete(staff.id, staff.name)}
+                        disabled={isMe}
+                        title={isMe ? 'ไม่สามารถลบตัวเองได้' : 'ลบพนักงาน'}
+                        className={`p-2 rounded-xl transition-colors cursor-pointer ${
+                          isMe
+                            ? 'text-slate-200 cursor-not-allowed'
+                            : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
+                        }`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>

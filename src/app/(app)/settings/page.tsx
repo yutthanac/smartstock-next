@@ -14,15 +14,19 @@ import {
   Check,
   X,
   Tag,
+  Layers,
+  Sliders,
 } from 'lucide-react';
 import { Topbar } from '@/components/Topbar';
 import { useStock } from '@/lib/StockContext';
 import { UnitSetting } from '@/types';
+import StoresSettingsPage from './stores/page';
+import SidebarCustomizer from './components/SidebarCustomizer';
 
 export default function SettingsPage() {
   const { units, addUnit, updateUnit, deleteUnit } = useStock();
 
-  const [activeTab, setActiveTab] = useState<'store' | 'units' | 'api'>('units');
+  const [activeTab, setActiveTab] = useState<'sidebar' | 'stores' | 'units' | 'store' | 'api'>('sidebar');
 
   // Form states for adding new unit
   const [newUnitName, setNewUnitName] = useState('');
@@ -84,13 +88,35 @@ export default function SettingsPage() {
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-[#ebecf0]">
       <Topbar
-        title="ตั้งค่าระบบ (System Settings)"
-        subtitle="จัดการหน่วยนับวัตถุดิบ ข้อมูลร้านอาหาร และการเชื่อมต่อระบบ"
+        title="ตั้งค่าระบบ"
+        subtitle="จัดการเมนู ร้านค้า หน่วยนับ และข้อมูลระบบ"
       />
 
       <main className="p-6 md:p-8 space-y-6 max-w-5xl mx-auto w-full">
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 skeuo-inset p-1.5 rounded-2xl w-fit">
+        <div className="flex items-center gap-2 skeuo-inset p-1.5 rounded-2xl w-fit flex-wrap">
+          <button
+            onClick={() => setActiveTab('sidebar')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              activeTab === 'sidebar'
+                ? 'neu-raised text-emerald-800'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Sliders className="w-4 h-4" />
+            <span>เมนู Sidebar</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('stores')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              activeTab === 'stores'
+                ? 'neu-raised text-emerald-800'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            <span>ร้านค้า</span>
+          </button>
           <button
             onClick={() => setActiveTab('units')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
@@ -100,7 +126,7 @@ export default function SettingsPage() {
             }`}
           >
             <Scale className="w-4 h-4" />
-            <span>จัดการหน่วยนับวัตถุดิบ ({units.length})</span>
+            <span>หน่วยนับ ({units.length})</span>
           </button>
           <button
             onClick={() => setActiveTab('store')}
@@ -111,7 +137,7 @@ export default function SettingsPage() {
             }`}
           >
             <Store className="w-4 h-4" />
-            <span>ข้อมูลร้านอาหาร</span>
+            <span>ข้อมูลร้าน</span>
           </button>
           <button
             onClick={() => setActiveTab('api')}
@@ -122,9 +148,21 @@ export default function SettingsPage() {
             }`}
           >
             <Database className="w-4 h-4" />
-            <span>เชื่อมต่อ Backend API</span>
+            <span>API & ระบบ</span>
           </button>
         </div>
+
+        {/* Tab: Sidebar Management */}
+        {activeTab === 'sidebar' && (
+          <SidebarCustomizer />
+        )}
+
+        {/* Tab: Stores Management */}
+        {activeTab === 'stores' && (
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden">
+            <StoresSettingsPage />
+          </div>
+        )}
 
         {/* Tab 1: Unit Management */}
         {activeTab === 'units' && (
@@ -144,8 +182,8 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 {saveToast && (
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full animate-fade-in">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> บันทึกสำเร็จ!
+                  <span className="inline-flex items-center gap-1 text-xs font-normal text-slate-800 bg-slate-100 px-3 py-1 rounded-full border border-slate-200 animate-fade-in">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-slate-700" /> บันทึกสำเร็จ!
                   </span>
                 )}
               </div>
@@ -247,7 +285,7 @@ export default function SettingsPage() {
                                 <button
                                   type="button"
                                   onClick={() => handleSaveEdit(unit.id)}
-                                  className="p-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-colors cursor-pointer shadow-xs"
+                                  className="p-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white transition-colors cursor-pointer shadow-xs"
                                   title="บันทึกการแก้ไข"
                                 >
                                   <Check className="w-4 h-4" />
@@ -255,7 +293,7 @@ export default function SettingsPage() {
                                 <button
                                   type="button"
                                   onClick={handleCancelEdit}
-                                  className="p-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-600 transition-colors cursor-pointer"
+                                  className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors cursor-pointer border border-slate-200"
                                   title="ยกเลิก"
                                 >
                                   <X className="w-4 h-4" />
@@ -266,7 +304,7 @@ export default function SettingsPage() {
                                 <button
                                   type="button"
                                   onClick={() => handleStartEdit(unit)}
-                                  className="p-1.5 rounded-xl hover:bg-emerald-100 text-slate-400 hover:text-emerald-700 transition-colors cursor-pointer"
+                                  className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-800 transition-colors cursor-pointer"
                                   title="แก้ไขหน่วยนี้"
                                 >
                                   <Pencil className="w-4 h-4" />
@@ -366,9 +404,9 @@ export default function SettingsPage() {
                 </p>
               </div>
 
-              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-800 text-xs flex items-center justify-between">
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs flex items-center justify-between">
                 <span>สถานะเชื่อมต่อ: พร้อมใช้งาน (โหมด Local Client-Side Cache & Fallback เปิดใช้งานอยู่)</span>
-                <span className="font-bold">Online</span>
+                <span className="font-medium text-slate-900">Online</span>
               </div>
             </div>
 

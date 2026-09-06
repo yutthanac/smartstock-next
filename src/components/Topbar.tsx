@@ -29,55 +29,51 @@ export const Topbar: React.FC<TopbarProps> = ({ title, subtitle }) => {
   };
 
   return (
-    <header className="bg-[#ebecf0]/95 backdrop-blur-md sticky top-0 z-20 border-b border-[#d9dbe3] px-6 py-3.5 flex items-center justify-between shadow-[0_4px_12px_rgba(186,190,204,0.3)]">
-      <div>
-        <h1 className="text-xl font-black text-slate-900 tracking-tight">{title}</h1>
-        {subtitle && <p className="text-xs text-slate-500 mt-0.5 font-medium">{subtitle}</p>}
+    <header className="bg-white sticky top-0 z-20 border-b border-slate-200/80 px-6 py-3 flex items-center justify-between">
+      {/* Left: Breadcrumb Trail */}
+      <div className="flex items-center gap-2 text-sm text-slate-400 font-normal">
+        <span className="hover:text-slate-600 transition-colors">คลังสินค้า</span>
+        <span className="text-slate-300">›</span>
+        <span className="text-slate-800 font-medium">{title.split('(')[0].trim()}</span>
       </div>
 
-      <div className="flex items-center gap-3.5">
-        {/* Search quickbar */}
-        <div className="relative hidden md:block">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="ค้นหาเมนู, วัตถุดิบ, หรือออเดอร์..."
-            className="pl-9 pr-4 py-2 text-xs rounded-xl skeuo-input focus:outline-none transition-all w-64 text-slate-800 placeholder:text-slate-400"
-          />
-        </div>
+      {/* Center: System / Store Brand Title */}
+      <div className="absolute left-1/2 -translate-x-1/2 hidden sm:block">
+        <span className="text-xs font-semibold tracking-widest text-slate-800 uppercase">
+          SMARTSTOCK
+        </span>
+      </div>
 
-        {/* Notifications Icon with low stock badge */}
+      {/* Right: Notifications & User Avatar */}
+      <div className="flex items-center gap-4">
+        {/* Notification Bell with Badge Count */}
         <button
           aria-label="แจ้งเตือน"
-          className="relative p-2 rounded-xl text-slate-600 hover:text-slate-900 skeuo-btn-secondary"
+          className="relative p-1.5 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
         >
           <Bell className="w-4 h-4" />
           {dashboard.low_stock_count > 0 && (
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white"></span>
+            <span className="absolute -top-0.5 -right-0.5 min-w-3.5 h-3.5 px-1 bg-rose-500 text-white rounded-full text-[9px] font-medium flex items-center justify-center ring-2 ring-white">
+              {dashboard.low_stock_count > 9 ? '9+' : dashboard.low_stock_count}
+            </span>
           )}
         </button>
 
-        {/* User profile & Logout */}
-        <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
-          <div className="w-9 h-9 rounded-xl skeuo-btn-primary font-bold flex items-center justify-center text-xs">
+        {/* Circular User Avatar & Logout */}
+        <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
+          <div
+            title={`${user?.name || 'ผู้ใช้'} (${getRoleBadge(user?.roles)})`}
+            className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 font-medium flex items-center justify-center text-xs overflow-hidden border border-slate-300/80"
+          >
             {getInitials(user?.name)}
           </div>
-          <div className="hidden sm:block text-left">
-            <div className="text-xs font-bold text-slate-900 flex items-center gap-1">
-              {user?.name || 'กำลังโหลด...'}
-              <Shield className="w-3.5 h-3.5 text-emerald-600" />
-            </div>
-            <div className="text-[11px] text-slate-400 font-medium">{getRoleBadge(user?.roles)}</div>
-          </div>
 
-          {/* Logout Button */}
           <button
             onClick={() => logout()}
             title="ออกจากระบบ"
-            className="p-2 ml-1 text-slate-600 hover:text-rose-600 skeuo-btn-secondary rounded-xl transition-all flex items-center gap-1 text-xs font-bold"
+            className="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
           >
-            <LogOut className="w-4 h-4" />
-            <span className="hidden lg:inline text-[11px]">ออก</span>
+            <LogOut className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>

@@ -33,14 +33,14 @@ export default function OrdersHistoryPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase tracking-wider font-semibold">
-                  <th className="py-3 px-4">เลขที่บิล</th>
-                  <th className="py-3 px-4">โต๊ะ</th>
-                  <th className="py-3 px-4">เวลา</th>
-                  <th className="py-3 px-4">รายการอาหาร</th>
-                  <th className="py-3 px-4 text-right">ยอดรวม</th>
-                  <th className="py-3 px-4 text-center">วิธีชำระ</th>
-                  <th className="py-3 px-4 text-center">สถานะ</th>
+                <tr className="bg-transparent border-b border-slate-200 text-slate-900 text-sm font-semibold">
+                  <th className="py-3.5 px-4 font-semibold">เลขที่บิล</th>
+                  <th className="py-3.5 px-4 font-semibold">โต๊ะ</th>
+                  <th className="py-3.5 px-4 font-semibold">เวลา</th>
+                  <th className="py-3.5 px-4 font-semibold">รายการสินค้า/เครื่องดื่ม</th>
+                  <th className="py-3.5 px-4 text-right font-semibold">ยอดรวม</th>
+                  <th className="py-3.5 px-4 text-center font-semibold">วิธีชำระ</th>
+                  <th className="py-3.5 px-4 text-center font-semibold">สถานะ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

@@ -1,14 +1,7 @@
 'use client';
 
 import React from 'react';
-import {
-  BarChart3,
-  TrendingUp,
-  Download,
-  Calendar,
-  DollarSign,
-  PieChart,
-} from 'lucide-react';
+import { BarChart3, TrendingUp, DollarSign } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -24,35 +17,55 @@ import { Topbar } from '@/components/Topbar';
 export default function SalesReportPage() {
   const { dashboard } = useStock();
 
+  const total7DaysSales = (dashboard.sales_7days || []).reduce(
+    (sum, d) => sum + (Number(d.sales) || 0),
+    0
+  );
+
+  const avgDailySales =
+    dashboard.sales_7days && dashboard.sales_7days.length > 0
+      ? Math.round(total7DaysSales / dashboard.sales_7days.length)
+      : 0;
+
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-slate-50/70">
-      <Topbar title="รายงานยอดขาย (Sales Reports)" subtitle="รายงานสถิติการขาย รายได้ และบิลออเดอร์" />
+      <Topbar title="รายงานยอดขาย" subtitle="สถิติยอดขายและรายได้ตามช่วงเวลา" />
 
       <main className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-          <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-            <span className="text-xs text-slate-500 font-semibold">ยอดขายสัปดาห์นี้</span>
-            <div className="text-2xl font-bold text-slate-900 mt-1">฿133,050</div>
-            <div className="text-xs text-emerald-600 font-medium mt-1">+16.4% จากสัปดาห์ก่อน</div>
+        {/* KPI Cards (Real Data) */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+            <span className="text-xs text-slate-500 font-normal">ยอดขายวันนี้</span>
+            <div className="text-2xl font-semibold text-slate-900 mt-1 font-mono">
+              ฿{dashboard.today_sales.toLocaleString()}
+            </div>
+            <div className="text-xs text-slate-400 mt-1 font-normal">จำนวน {dashboard.total_orders_today} ออเดอร์</div>
           </div>
-          <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-            <span className="text-xs text-slate-500 font-semibold">เฉลี่ยต่อบิล (Ticket Size)</span>
-            <div className="text-2xl font-bold text-slate-900 mt-1">฿384.30</div>
-            <div className="text-xs text-slate-400 mt-1">จาก 346 บิลทั้งหมด</div>
+
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+            <span className="text-xs text-slate-500 font-normal">ยอดขายรวม 7 วัน</span>
+            <div className="text-2xl font-semibold text-slate-900 mt-1 font-mono">
+              ฿{total7DaysSales.toLocaleString()}
+            </div>
+            <div className="text-xs text-slate-400 mt-1 font-normal">เฉลี่ยวันละ ฿{avgDailySales.toLocaleString()}</div>
           </div>
-          <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-            <span className="text-xs text-slate-500 font-semibold">ช่วงเวลาขายดีที่สุด</span>
-            <div className="text-2xl font-bold text-[#12312d] mt-1">18:00 - 20:30</div>
-            <div className="text-xs text-[#4fb0a5] font-semibold mt-1">คิดเป็น 48% ของยอดทั้งวัน</div>
+
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+            <span className="text-xs text-slate-500 font-normal">กำไรสุทธิวันนี้</span>
+            <div className="text-2xl font-semibold text-slate-900 mt-1 font-mono">
+              ฿{dashboard.today_profit.toLocaleString()}
+            </div>
+            <div className="text-xs text-slate-500 font-normal mt-1">
+              มาร์จิ้น {dashboard.profit_margin}%
+            </div>
           </div>
         </div>
 
         {/* Sales Chart */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
-          <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-[#4fb0a5]" />
-            แนวโน้มยอดขายรายวัน (Daily Revenue)
+        <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
+          <h3 className="font-semibold text-slate-900 text-base flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-slate-700" />
+            แนวโน้มยอดขายรายวัน (7 วันล่าสุด)
           </h3>
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -62,9 +75,9 @@ export default function SalesReportPage() {
                 <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} tickFormatter={(v) => `฿${v / 1000}k`} />
                 <Tooltip
                   formatter={(val: any) => [`฿${Number(val).toLocaleString()}`, 'ยอดขาย']}
-                  contentStyle={{ backgroundColor: '#12312d', borderRadius: '12px', color: '#fff' }}
+                  contentStyle={{ backgroundColor: '#0f172a', borderRadius: '12px', color: '#fff' }}
                 />
-                <Bar dataKey="sales" fill="#4fb0a5" radius={[6, 6, 0, 0]} maxBarSize={45} />
+                <Bar dataKey="sales" fill="#0f172a" radius={[6, 6, 0, 0]} maxBarSize={45} />
               </BarChart>
             </ResponsiveContainer>
           </div>

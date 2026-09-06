@@ -16,8 +16,8 @@ export default function DashboardPage() {
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-[#ebecf0]">
       <Topbar
-        title="แดชบอร์ดภาพรวมร้านอาหาร"
-        subtitle={`ข้อมูลสรุป ณ วันที่ 1 กันยายน 2026 • ระบบตัดสต็อกอัตโนมัติ BOM`}
+        title="ภาพรวมร้านค้า"
+        subtitle="สรุปยอดขาย ต้นทุน และสต็อกสินค้าวันนี้"
       />
 
       <main className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto w-full">

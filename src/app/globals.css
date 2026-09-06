@@ -28,94 +28,101 @@
 
 body {
   font-family: var(--font-noto-thai), var(--font-noto-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: #ebecf0;
+  background-color: #f8fafc;
   color: #1e293b;
-  font-size: 15px; /* ขยายขนาดฟอนต์อ่านง่ายขึ้นทั่วทั้งเว็บ */
-  line-height: 1.55;
+  font-size: 16px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
 
+/* Typography refinement: clean, crisp, not excessively bold */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
 /* =========================================================
-   Crisp Minimal Neumorphism (ลดความฟุ้ง คมชัด มินิมอล สบายตา)
-   - ลด Blur Radius จาก 14-18px เหลือ 4-6px
-   - ลดเงาฟุ้งดำ มิตินุ่มสะอาดตา
+   Clean Modern Minimalist Theme (สไตล์คลีน มินิมอล สบายตา)
    ========================================================= */
 
 :root {
-  --neu-bg: #ebecf0;
+  --neu-bg: #f8fafc;
   --neu-light: #ffffff;
-  --neu-shadow: rgba(166, 175, 195, 0.6);
-  --neu-shadow-inset: rgba(166, 175, 195, 0.45);
+  --neu-shadow: rgba(166, 175, 195, 0.25);
+  --neu-shadow-inset: rgba(166, 175, 195, 0.2);
   --neu-emerald: #059669;
 }
 
 /* 1. Neumorphic Flat Canvas */
 .neu-flat {
-  background: #ebecf0;
+  background: #ffffff;
   border-radius: 18px;
-  box-shadow: 3px 3px 6px var(--neu-shadow), -3px -3px 6px var(--neu-light);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
-/* 2. Neumorphic Extruded / Raised (ปุ่มนูน คม ไม่ฟุ้งดำ) */
+/* 2. Neumorphic Extruded / Raised */
 .neu-raised {
-  background: #ebecf0;
-  border-radius: 16px;
-  box-shadow: 2px 2px 5px var(--neu-shadow), -2px -2px 5px var(--neu-light);
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   transition: all 0.15s ease;
 }
 
 .neu-raised:hover {
-  box-shadow: 3px 3px 7px var(--neu-shadow), -3px -3px 7px var(--neu-light);
+  background: #f8fafc;
+  border-color: #cbd5e1;
 }
 
-/* 3. Neumorphic Inset / Pressed / Active (หลุมจม คมชัด ไม่ฟุ้งหนา) */
+/* 3. Neumorphic Inset / Pressed / Active */
 .neu-pressed {
-  background: #ebecf0;
-  border-radius: 16px;
-  box-shadow: inset 2px 2px 4px var(--neu-shadow-inset), inset -2px -2px 4px var(--neu-light);
+  background: #f1f5f9;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
 }
 
-/* 4. Neumorphic Sidebar Active Menu Item */
-.neu-sidebar-active {
-  background: #ebecf0;
-  box-shadow: 
-    inset 2px 2px 4px rgba(166, 175, 195, 0.6), 
-    inset -2px -2px 4px #ffffff;
-  border: 1px solid rgba(166, 175, 195, 0.25);
+/* 4. Sidebar Active Menu Item (Capsule Pill Outline matching screenshot) */
+.neu-sidebar-active,
+.sidebar-pill-active {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 9999px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
 }
 
 /* 5. Neumorphic Convex Pill Button */
 .neu-btn-emerald {
-  background: linear-gradient(145deg, #10b981, #047857);
-  box-shadow: 2px 2px 6px rgba(4, 120, 87, 0.25), -2px -2px 6px #ffffff;
+  background: #0f172a;
+  border-radius: 9999px;
   color: #ffffff;
   transition: all 0.15s ease;
 }
 
-.neu-btn-emerald:active {
-  box-shadow: inset 2px 2px 4px #034b36, inset -2px -2px 4px #15c389;
-  transform: translateY(1px);
+.neu-btn-emerald:hover {
+  background: #1e293b;
 }
 
-/* 1. Raised Cards (การ์ดยกระดับ คมกริบ เงาไม่ฟุ้ง) */
+/* 1. Raised Cards */
 .skeuo-card {
-  background: #ebecf0;
-  border-radius: 24px;
-  box-shadow: 4px 4px 8px var(--neu-shadow), -4px -4px 8px var(--neu-light);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 4px 4px 12px rgba(166, 175, 195, 0.22), -3px -3px 10px rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(226, 232, 240, 0.8);
 }
 
 .skeuo-card-interactive {
-  background: #ebecf0;
-  border-radius: 20px;
-  box-shadow: 3px 3px 6px var(--neu-shadow), -3px -3px 6px var(--neu-light);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  transition: all 0.15s ease;
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 4px 4px 10px rgba(166, 175, 195, 0.2), -3px -3px 8px rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .skeuo-card-interactive:hover {
-  transform: translateY(-1px);
-  box-shadow: 4px 4px 9px var(--neu-shadow), -4px -4px 9px var(--neu-light);
+  transform: translateY(-2px);
+  border-color: #cbd5e1;
+  box-shadow: 6px 6px 16px rgba(166, 175, 195, 0.3), -4px -4px 12px rgba(255, 255, 255, 1);
 }
 
 /* 2. Inset Wells / Debossed Surfaces */
@@ -142,48 +149,44 @@ body {
 
 /* 3. Tactile Buttons */
 .skeuo-btn-primary {
-  background: linear-gradient(145deg, #10b981, #047857);
+  background: #0f172a;
   color: #ffffff;
   border-radius: 14px;
-  box-shadow: 2px 2px 5px rgba(4, 120, 87, 0.25), -2px -2px 5px #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: all 0.15s ease;
 }
 
 .skeuo-btn-primary:hover {
-  box-shadow: 3px 3px 7px rgba(4, 120, 87, 0.3), -3px -3px 7px #ffffff;
+  background: #1e293b;
 }
 
 .skeuo-btn-primary:active {
   transform: translateY(1px);
-  box-shadow: inset 2px 2px 4px #034b36, inset -2px -2px 4px #15c389;
+  background: #020617;
 }
 
 .skeuo-btn-secondary {
-  background: #ebecf0;
+  background: #f1f5f9;
   color: #334155;
   border-radius: 14px;
-  box-shadow: 2px 2px 5px var(--neu-shadow), -2px -2px 5px var(--neu-light);
+  border: 1px solid #e2e8f0;
   transition: all 0.15s ease;
 }
 
 .skeuo-btn-secondary:hover {
+  background: #e2e8f0;
   color: #0f172a;
-  box-shadow: 3px 3px 6px var(--neu-shadow), -3px -3px 6px var(--neu-light);
 }
 
 .skeuo-btn-secondary:active {
-  box-shadow: inset 2px 2px 4px var(--neu-shadow-inset), inset -2px -2px 4px var(--neu-light);
   transform: translateY(1px);
 }
 
-/* 4. Badges & Emblems (ป้ายสถานะปั๊มจม/นูนเรียบหรู) */
+/* 4. Badges & Emblems (ป้ายสถานะสไตล์มินิมอล) */
 .skeuo-badge-green {
-  background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%);
-  color: #065f46;
-  border: 1px solid #a7f3d0;
-  box-shadow: 
-    inset 0 1px 0 rgba(255, 255, 255, 0.8),
-    0 1px 2px rgba(6, 95, 70, 0.08);
+  background: #f8fafc;
+  color: #334155;
+  border: 1px solid #e2e8f0;
 }
 
 .skeuo-badge-amber {

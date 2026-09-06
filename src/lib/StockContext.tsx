@@ -60,7 +60,7 @@ const DEFAULT_UNITS: UnitSetting[] = [
 ];
 
 export function StockProvider({ children }: { children: React.ReactNode }) {
-  const { token } = useAuth();
+  const { token, activeStore } = useAuth();
 
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -172,12 +172,21 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
     return true;
   };
 
+  // Build common request headers (auth + active store)
+  const apiHeaders = (extra?: Record<string, string>): Record<string, string> => {
+    const h: Record<string, string> = { Accept: 'application/json', ...extra };
+    if (token) h['Authorization'] = `Bearer ${token}`;
+    if (activeStore) h['X-Store-ID'] = String(activeStore.id);
+    return h;
+  };
+
   // Fetch all real database records
   const fetchData = async () => {
     setIsLoading(true);
     try {
       const headers: Record<string, string> = { Accept: 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
+      if (activeStore) headers['X-Store-ID'] = String(activeStore.id);
 
       const [unitRes, ingRes, menuRes, ordRes, movRes, dashRes] = await Promise.all([
         fetch(`${API_BASE_URL}/units`, { headers }).catch(() => null),
@@ -221,20 +230,17 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Re-fetch whenever token or active store changes
   useEffect(() => {
     fetchData();
-  }, [token]);
+  }, [token, activeStore?.id]);
 
   // Ingredients API calls
   const addIngredient = async (item: Omit<Ingredient, 'id' | 'status'>): Promise<boolean> => {
     try {
       const res = await fetch(`${API_BASE_URL}/ingredients`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: apiHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(item),
       });
       if (res.ok) {
@@ -252,11 +258,7 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await fetch(`${API_BASE_URL}/ingredients/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: apiHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(updated),
       });
       if (res.ok) {
@@ -274,10 +276,7 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await fetch(`${API_BASE_URL}/ingredients/${id}`, {
         method: 'DELETE',
-        headers: {
-          Accept: 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: apiHeaders(),
       });
       if (res.ok) {
         await fetchData();
@@ -294,11 +293,7 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await fetch(`${API_BASE_URL}/ingredients/${id}/adjust`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: apiHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ type, amount, note }),
       });
       if (res.ok) {
@@ -316,11 +311,7 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await fetch(`${API_BASE_URL}/ingredients/${id}/bulk-use`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: apiHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ amount, note }),
       });
       if (res.ok) {
@@ -339,11 +330,7 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await fetch(`${API_BASE_URL}/menus`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: apiHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(menu),
       });
       if (res.ok) {
@@ -364,11 +351,7 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await fetch(`${API_BASE_URL}/menus/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: apiHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(menu),
       });
       if (res.ok) {
@@ -389,10 +372,7 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await fetch(`${API_BASE_URL}/menus/${id}`, {
         method: 'DELETE',
-        headers: {
-          Accept: 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: apiHeaders(),
       });
       if (res.ok) {
         await fetchData();
@@ -414,11 +394,7 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await fetch(`${API_BASE_URL}/pos/orders`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: apiHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           table_no: tableNo,
           payment_method: paymentMethod,

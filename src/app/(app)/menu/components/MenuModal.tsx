@@ -1,9 +1,10 @@
 import React from 'react';
-import { UtensilsCrossed, X, DollarSign, TrendingUp, PieChart } from 'lucide-react';
+import { Coffee, X, DollarSign, TrendingUp, PieChart } from 'lucide-react';
 import { Ingredient, MenuItem, RecipeItem } from '@/types';
 import { ImageUpload } from './ImageUpload';
 import { RecipeBuilder } from './RecipeBuilder';
 import { Dropdown } from '@/components/Dropdown';
+import { Button } from '@/components/Button';
 
 interface MenuModalProps {
   isOpen: boolean;
@@ -70,9 +71,9 @@ export const MenuModal: React.FC<MenuModalProps> = ({
       >
         <div className="flex justify-between items-center pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
-            <UtensilsCrossed className="w-5 h-5 text-[#4fb0a5]" />
-            <h3 className="font-bold text-slate-900 text-base">
-              {editingItem ? 'แก้ไขเมนู & สูตรอาหาร' : 'สร้างเมนูใหม่ & ผูกสูตร BOM'}
+            <Coffee className="w-5 h-5 text-slate-700" />
+            <h3 className="font-semibold text-slate-900 text-base">
+              {editingItem ? 'แก้ไขเมนู' : 'เพิ่มเมนูใหม่'}
             </h3>
           </div>
           <button
@@ -88,14 +89,14 @@ export const MenuModal: React.FC<MenuModalProps> = ({
           {/* Menu Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="sm:col-span-2">
-              <label className="font-semibold text-slate-700 block mb-1">ชื่อเมนู</label>
+              <label className="font-medium text-slate-700 block mb-1">ชื่อเมนู</label>
               <input
                 type="text"
                 required
-                placeholder="เช่น ข้าวผัดต้มยำกุ้ง"
+                placeholder="เช่น เอสเปรสโซ่เย็น, ลาเต้, มัทฉะ, ครัวซองต์"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4fb0a5]/30"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-400"
               />
             </div>
 
@@ -105,11 +106,11 @@ export const MenuModal: React.FC<MenuModalProps> = ({
                 value={category}
                 onChange={setCategory}
                 options={[
-                  'อาหารจานเดียว',
-                  'สเต็ก & ย่าง',
-                  'พาสต้า & เส้น',
-                  'พิซซ่า & ของทานเล่น',
-                  'เครื่องดื่ม & ของหวาน',
+                  'กาแฟ (Coffee)',
+                  'ชา & เครื่องดื่ม (Tea & Drinks)',
+                  'เบเกอรี่ & เค้ก (Bakery)',
+                  'ของทานเล่น (Snacks)',
+                  'อาหารจานเดียว (Food)',
                 ]}
                 className="w-full"
                 buttonClassName="py-2.5 px-3 rounded-xl bg-slate-50"
@@ -117,12 +118,12 @@ export const MenuModal: React.FC<MenuModalProps> = ({
             </div>
 
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">ราคาขายหน้าร้าน (บาท)</label>
+              <label className="font-medium text-slate-700 block mb-1">ราคาขาย (บาท)</label>
               <input
                 type="text"
                 inputMode="decimal"
                 required
-                placeholder="เช่น 89"
+                placeholder="เช่น 65"
                 value={price === 0 ? '' : price}
                 onChange={(e) => {
                   const val = e.target.value;
@@ -134,7 +135,7 @@ export const MenuModal: React.FC<MenuModalProps> = ({
                   const val = parseFloat(e.target.value);
                   setPrice(isNaN(val) || val < 0 ? 0 : val);
                 }}
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none font-bold text-slate-900 focus:ring-2 focus:ring-[#4fb0a5]/30"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none font-normal text-slate-900 focus:ring-2 focus:ring-slate-400"
               />
             </div>
 
@@ -142,10 +143,10 @@ export const MenuModal: React.FC<MenuModalProps> = ({
             <ImageUpload image={image} onChange={setImage} />
 
             <div className="sm:col-span-2">
-              <label className="font-semibold text-slate-700 block mb-1">รายละเอียดเมนู</label>
+              <label className="font-semibold text-slate-700 block mb-1">รายละเอียด</label>
               <textarea
                 rows={2}
-                placeholder="คำอธิบายสำหรับลูกค้าหรือครัว..."
+                placeholder="รายละเอียด รสชาติ หรือจุดเด่นของเมนู..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
@@ -180,7 +181,7 @@ export const MenuModal: React.FC<MenuModalProps> = ({
 
               <div className="p-2 rounded-xl bg-slate-800/90 border border-slate-700/60">
                 <div className="text-[10px] text-slate-400 flex items-center justify-center gap-1">
-                  <DollarSign className="w-3 h-3 text-emerald-400" /> กำไรต่อจาน
+                  <DollarSign className="w-3 h-3 text-emerald-400" /> กำไรต่อเสิร์ฟ/แก้ว
                 </div>
                 <div className="text-sm font-bold text-emerald-300 mt-0.5">฿{calculatedProfit.toFixed(2)}</div>
               </div>
@@ -197,19 +198,19 @@ export const MenuModal: React.FC<MenuModalProps> = ({
 
         {/* Modal Actions */}
         <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2 text-xs">
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={onClose}
-            className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold"
           >
             ยกเลิก
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
-            className="px-5 py-2.5 rounded-xl bg-[#4fb0a5] hover:bg-[#3d9b90] text-slate-950 font-bold shadow-md shadow-[#4fb0a5]/20"
+            variant="primary"
           >
             {editingItem ? 'บันทึกการแก้ไข' : 'สร้างเมนูและสูตร'}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

@@ -1,84 +1,101 @@
 'use client';
 
 import React from 'react';
-import {
-  TrendingUp,
-  PieChart,
-  Percent,
-  Download,
-  AlertCircle,
-} from 'lucide-react';
+import { TrendingUp, PieChart, Layers } from 'lucide-react';
 import { useStock } from '@/lib/StockContext';
 import { Topbar } from '@/components/Topbar';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/Table';
+import { Badge } from '@/components/Badge';
 
 export default function ProfitReportPage() {
-  const { dashboard } = useStock();
+  const { dashboard, ingredients } = useStock();
+
+  const inventoryValue = ingredients.reduce(
+    (sum, ing) => sum + (Number(ing.quantity) || 0) * (Number(ing.cost_per_unit) || 0),
+    0
+  );
+
+  const costPercentage =
+    dashboard.today_sales > 0
+      ? ((dashboard.today_cost / dashboard.today_sales) * 100).toFixed(1)
+      : '0.0';
 
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-slate-50/70">
-      <Topbar title="รายงานต้นทุน & กำไร (Cost & Profit Margin)" subtitle="วิเคราะห์ต้นทุนวัตถุดิบ (COGS) และอัตรากำไรต่อเมนู" />
+      <Topbar title="รายงานต้นทุน & กำไร" subtitle="สรุปต้นทุนวัตถุดิบและกำไรรายเมนู" />
 
       <main className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
-        {/* Metric Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-          <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-            <span className="text-xs text-slate-500 font-semibold">ต้นทุนวัตถุดิบเฉลี่ย (Food Cost %)</span>
-            <div className="text-2xl font-bold text-amber-700 mt-1">34.1%</div>
-            <div className="text-xs text-emerald-600 font-medium mt-1">เกณฑ์มาตรฐานร้านอาหาร (ไม่เกิน 35%)</div>
+        {/* Metric Cards (Real Computed Data) */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+            <span className="text-xs text-slate-500 font-normal">สัดส่วนต้นทุนวัตถุดิบ</span>
+            <div className="text-2xl font-semibold text-amber-700 mt-1 font-mono">{costPercentage}%</div>
+            <div className="text-xs text-slate-400 mt-1 font-normal">จากยอดขายวันนี้ ฿{dashboard.today_sales.toLocaleString()}</div>
           </div>
-          <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-            <span className="text-xs text-slate-500 font-semibold">กำไรขั้นต้นรวม (Gross Profit)</span>
-            <div className="text-2xl font-bold text-emerald-700 mt-1">฿87,650</div>
-            <div className="text-xs text-slate-400 mt-1">มาร์จิ้น 65.9%</div>
+
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+            <span className="text-xs text-slate-500 font-normal">กำไรขั้นต้นวันนี้</span>
+            <div className="text-2xl font-semibold text-slate-900 mt-1 font-mono">฿{dashboard.today_profit.toLocaleString()}</div>
+            <div className="text-xs text-slate-500 font-normal mt-1">อัตรากำไรเฉลี่ย {dashboard.profit_margin}%</div>
           </div>
-          <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-            <span className="text-xs text-slate-500 font-semibold">มูลค่าวัตถุดิบคงเหลือในคลัง</span>
-            <div className="text-2xl font-bold text-slate-900 mt-1">฿28,490</div>
-            <div className="text-xs text-slate-400 mt-1">หมุนเวียนคลังทุก 4.2 วัน</div>
+
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+            <span className="text-xs text-slate-500 font-normal">มูลค่าวัตถุดิบในคลังปัจจุบัน</span>
+            <div className="text-2xl font-semibold text-slate-900 mt-1 font-mono">฿{inventoryValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
+            <div className="text-xs text-slate-400 mt-1 font-normal">คำนวณจากสต็อกจริง {ingredients.length} รายการ</div>
           </div>
         </div>
 
-        {/* Profitability Breakdown Table */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4">
-          <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-[#4fb0a5]" />
-            สรุปกำไร-ขาดทุนรายเมนู (Dish Profitability Breakdown)
+        {/* Profitability Table */}
+        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-2xs p-5 space-y-4">
+          <h3 className="font-semibold text-slate-900 text-base flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-slate-700" />
+            สรุปกำไรและต้นทุนรายเมนู
           </h3>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase tracking-wider font-semibold">
-                  <th className="py-3 px-4">เมนูอาหาร</th>
-                  <th className="py-3 px-4">หมวดหมู่</th>
-                  <th className="py-3 px-4 text-right">ราคาขาย</th>
-                  <th className="py-3 px-4 text-right">ต้นทุนต่อจาน</th>
-                  <th className="py-3 px-4 text-right">กำไรต่อจาน</th>
-                  <th className="py-3 px-4 text-right">% Margin</th>
-                  <th className="py-3 px-4 text-right">ยอดขายสะสม (เดือนนี้)</th>
-                  <th className="py-3 px-4 text-right">กำไรรวมสะสม</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {dashboard.menu_profitability.map((item) => {
-                  const monthlyQty = item.sales_count * 22;
-                  const totalProfit = item.profit * monthlyQty;
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>เมนู</TableHead>
+                  <TableHead>หมวดหมู่</TableHead>
+                  <TableHead className="text-right">ราคาขาย</TableHead>
+                  <TableHead className="text-right">ต้นทุน/เสิร์ฟ</TableHead>
+                  <TableHead className="text-right">กำไร/เสิร์ฟ</TableHead>
+                  <TableHead className="text-right">มาร์จิ้น</TableHead>
+                  <TableHead className="text-right">ขายได้วันนี้</TableHead>
+                  <TableHead className="text-right">กำไรรวมวันนี้</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {dashboard.menu_profitability.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="py-8 text-center text-slate-400">
+                      ยังไม่มีข้อมูลการขายในวันนี้
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  dashboard.menu_profitability.map((item) => {
+                    const todayTotalProfit = item.profit * item.sales_count;
 
-                  return (
-                    <tr key={item.id} className="hover:bg-slate-50/80">
-                      <td className="py-3.5 px-4 font-bold text-slate-900">{item.name}</td>
-                      <td className="py-3.5 px-4 text-slate-500">{item.category}</td>
-                      <td className="py-3.5 px-4 text-right font-semibold text-slate-800">฿{item.price}</td>
-                      <td className="py-3.5 px-4 text-right text-amber-700 font-medium">฿{item.cost}</td>
-                      <td className="py-3.5 px-4 text-right font-bold text-emerald-700">฿{item.profit}</td>
-                      <td className="py-3.5 px-4 text-right font-bold text-emerald-600">{item.margin}%</td>
-                      <td className="py-3.5 px-4 text-right text-slate-700">{monthlyQty} จาน</td>
-                      <td className="py-3.5 px-4 text-right font-bold text-slate-900">฿{totalProfit.toLocaleString()}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                    return (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-normal text-slate-900">{item.name}</TableCell>
+                        <TableCell>
+                          <Badge variant="neutral">{item.category}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-normal text-slate-800 font-mono">฿{item.price}</TableCell>
+                        <TableCell className="text-right text-slate-500 font-normal font-mono">฿{item.cost}</TableCell>
+                        <TableCell className="text-right font-normal text-slate-800 font-mono">฿{item.profit}</TableCell>
+                        <TableCell className="text-right font-normal text-slate-700 font-mono">{item.margin}%</TableCell>
+                        <TableCell className="text-right text-slate-600 font-normal font-mono">{item.sales_count}</TableCell>
+                        <TableCell className="text-right font-normal text-slate-900 font-mono">฿{todayTotalProfit.toLocaleString()}</TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
           </div>
         </div>
       </main>

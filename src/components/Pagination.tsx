@@ -54,7 +54,7 @@ export const Pagination: React.FC<PaginationProps> = ({
           type="button"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="p-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          className="p-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           title="หน้าก่อนหน้า"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -76,10 +76,10 @@ export const Pagination: React.FC<PaginationProps> = ({
               key={p}
               type="button"
               onClick={() => onPageChange(Number(p))}
-              className={`w-8 h-8 rounded-xl font-bold transition-all ${
+              className={`w-8 h-8 rounded-xl font-medium transition-all ${
                 isCurrent
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:bg-slate-100'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-600 hover:bg-slate-100 font-normal'
               }`}
             >
               {p}
@@ -92,7 +92,7 @@ export const Pagination: React.FC<PaginationProps> = ({
           type="button"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="p-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          className="p-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           title="หน้าถัดไป"
         >
           <ChevronRight className="w-4 h-4" />

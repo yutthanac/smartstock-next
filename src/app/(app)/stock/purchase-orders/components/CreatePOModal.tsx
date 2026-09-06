@@ -15,6 +15,7 @@ import { Ingredient } from '@/types';
 import { PurchaseOrder, PurchaseOrderItem } from '../types';
 import { useStock } from '@/lib/StockContext';
 import { Dropdown } from '@/components/Dropdown';
+import { Button } from '@/components/Button';
 
 interface CreatePOModalProps {
   isOpen: boolean;
@@ -34,10 +35,10 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
   defaultStore = '',
 }) => {
   const { units } = useStock();
-  const [storeName, setStoreName] = useState(defaultStore || 'ตลาดสดมหาชัย');
-  const [buyerName, setBuyerName] = useState('คนครัว / แม่บ้าน');
+  const [storeName, setStoreName] = useState(defaultStore || 'โรงคั่วกาแฟ Aroma');
+  const [buyerName, setBuyerName] = useState('บาริสต้า / ผู้จัดการ');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [note, setNote] = useState('ไปซื้อเช้าตรู่ เลือกของสดใหม่ เก็บใบเสร็จหรือบิลเงินสดมาด้วย');
+  const [note, setNote] = useState('ตรวจเช็ครอบคั่วเมล็ดกาแฟ วันหมดอายุนมสด และสภาพบรรจุภัณฑ์');
   const [items, setItems] = useState<PurchaseOrderItem[]>([]);
   const [selectedIngredientId, setSelectedIngredientId] = useState<string>('');
   
@@ -61,12 +62,12 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
   if (!isOpen) return null;
 
   const commonStores = [
-    'ตลาดสดมหาชัย (อาหารทะเล/ของสด)',
-    'ตลาดไท / ตลาดสี่มุมเมือง (ผักผลไม้)',
-    'แม็คโคร Makro (ของแห้ง/ซอส/เนื้อสัตว์)',
-    'บิ๊กซี / โลตัส (ของใช้/เครื่องปรุง)',
-    'ร้านขายส่งเบทาโกร',
-    'ร้านชำหน้าปากซอย',
+    'โรงคั่วกาแฟ Aroma / เมล็ดกาแฟ',
+    'แม็คโคร Makro (นมสด/ไซรัป/วัตถุดิบ)',
+    'ร้านบรรจุภัณฑ์ & แพ็กเกจจิ้ง (แก้ว/ฝา/หลอด)',
+    'ร้านขายส่งเบเกอรี่ & วัตถุดิบทำขนม',
+    'บิ๊กซี / โลตัส (ของใช้ทั่วไป)',
+    'ตลาดสด (ผลไม้/ของสดเสริม)',
   ];
 
   // Quick add from stock list
@@ -179,12 +180,12 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-b border-slate-200">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
-              <ShoppingBag className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-2xl bg-slate-100 text-slate-800 flex items-center justify-center font-normal">
+              <ShoppingBag className="w-5 h-5 text-slate-700" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 text-base">จัดทำใบรายการไปซื้อของ / จ่ายตลาด</h3>
-              <p className="text-xs text-slate-500">รวมรายการที่ขาด เลือกตลาด/ร้านค้าที่จะไปซื้อ พิมพ์ถือไปดูได้</p>
+              <h3 className="font-semibold text-slate-900 text-base">สร้างใบสั่งซื้อวัตถุดิบ</h3>
+              <p className="text-xs text-slate-500">รวมรายการที่ต้องซื้อ พร้อมพิมพ์เช็คลิสต์และคุมงบประมาณ</p>
             </div>
           </div>
           <button
@@ -200,17 +201,17 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
           {/* Target Store & Buyer */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1 sm:col-span-1">
-              <label className="font-bold text-slate-900 flex items-center gap-1.5">
-                <Store className="w-4 h-4 text-emerald-700" />
-                ร้านค้า / ตลาดที่จะไปซื้อ:
+              <label className="font-normal text-slate-900 flex items-center gap-1.5">
+                <Store className="w-4 h-4 text-slate-600" />
+                ร้านค้า / ซัพพลายเออร์:
               </label>
               <input
                 type="text"
                 list="stores-list"
                 value={storeName}
                 onChange={(e) => setStoreName(e.target.value)}
-                placeholder="เช่น ตลาดสด, แม็คโคร, ร้านผัก..."
-                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:outline-emerald-600 text-xs font-semibold text-slate-800"
+                placeholder="เช่น โรงคั่วกาแฟ, แม็คโคร, ร้านแพ็กเกจจิ้ง..."
+                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:outline-slate-900 text-xs font-normal text-slate-800"
                 required
               />
               <datalist id="stores-list">
@@ -221,41 +222,41 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="font-bold text-slate-900 flex items-center gap-1.5">
+              <label className="font-normal text-slate-900 flex items-center gap-1.5">
                 <User className="w-4 h-4 text-slate-600" />
-                ผู้ไปจ่ายตลาด:
+                ผู้สั่งซื้อ / ผู้ไปซื้อ:
               </label>
               <input
                 type="text"
                 value={buyerName}
                 onChange={(e) => setBuyerName(e.target.value)}
-                placeholder="ชื่อผู้ไปซื้อ..."
-                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:outline-emerald-600 text-xs font-medium text-slate-800"
+                placeholder="ชื่อผู้สั่งซื้อ..."
+                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:outline-slate-900 text-xs font-normal text-slate-800"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="font-bold text-slate-900 flex items-center gap-1.5">
-                <Calendar className="w-4 h-4 text-emerald-600" />
-                วันที่ไปซื้อ:
+              <label className="font-normal text-slate-900 flex items-center gap-1.5">
+                <Calendar className="w-4 h-4 text-slate-600" />
+                วันที่สั่งซื้อ:
               </label>
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:outline-emerald-600 text-xs font-medium text-slate-800"
+                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:outline-slate-900 text-xs font-normal text-slate-800"
                 required
               />
             </div>
           </div>
 
           {/* Quick Select from Stock */}
-          <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-2.5">
+          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="font-bold text-emerald-950 flex items-center gap-1.5">
+              <span className="font-normal text-slate-900 flex items-center gap-1.5">
                 เลือกวัตถุดิบจากคลังที่ต้องการซื้อเพิ่ม:
               </span>
-              <span className="text-[11px] text-emerald-700">วัตถุดิบในระบบ {availableIngredients.length} รายการ</span>
+              <span className="text-[11px] text-slate-500">วัตถุดิบในระบบ {availableIngredients.length} รายการ</span>
             </div>
 
             <Dropdown
@@ -358,13 +359,13 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
             </div>
           </div>
 
-          {/* Quick Add Custom Item (เช่น ถุงหิ้ว กล่องโฟม แก๊ส ฯลฯ) */}
+          {/* Quick Add Custom Item (เช่น แก้วกาแฟ หลอด กระดาษทิชชู่ ฯลฯ) */}
           <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-            <span className="font-bold text-slate-800">+ พิมพ์เพิ่มรายการพิเศษ / ของใช้ทั่วไป (ไม่ได้อยู่ในคลัง)</span>
+            <span className="font-bold text-slate-800">+ เพิ่มรายการของใช้อื่นๆ (ไม่ได้อยู่ในคลัง)</span>
             <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
               <input
                 type="text"
-                placeholder="เช่น ถุงหิ้ว, กระดาษทิชชู่, ไข่เป็ด..."
+                placeholder="เช่น แก้วกาแฟ 16oz, หลอดดูด, กระดาษทิชชู่..."
                 value={customItemName}
                 onChange={(e) => setCustomItemName(e.target.value)}
                 className="sm:col-span-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs"
@@ -404,19 +405,19 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
           {/* Note & Budget Total */}
           <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pt-1">
             <div className="w-full sm:w-1/2 space-y-1">
-              <label className="font-bold text-slate-800">หมายเหตุ / คำสั่งถึงคนไปซื้อ:</label>
+              <label className="font-bold text-slate-800">หมายเหตุ / คำสั่งเพิ่มเติม:</label>
               <textarea
                 rows={2}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="เช่น ซื้อไข่เบอร์ 2, พริกขี้หนูสวนเม็ดเล็ก..."
+                placeholder="เช่น เลือกรอบคั่วไม่เกิน 7 วัน, ขอนมสดล็อตใหม่..."
                 className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-emerald-600 text-xs"
               />
             </div>
 
             <div className="w-full sm:w-64 p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
               <div className="flex justify-between text-slate-600">
-                <span>จำนวนของที่ซื้อ:</span>
+                <span>จำนวนรายการ:</span>
                 <span className="font-bold text-slate-800">{items.length} รายการ</span>
               </div>
               <div className="flex justify-between text-sm font-black text-slate-900 pt-1 border-t border-slate-200">
@@ -430,20 +431,19 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
 
           {/* Actions */}
           <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition-all text-xs"
             >
               ยกเลิก
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               disabled={items.length === 0}
-              className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all shadow-md shadow-emerald-600/20 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              บันทึกใบรายการจ่ายตลาด
-            </button>
+              บันทึกใบสั่งซื้อ
+            </Button>
           </div>
         </form>
       </div>

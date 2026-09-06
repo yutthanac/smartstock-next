@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sliders, X } from 'lucide-react';
 import { Ingredient } from '@/types';
+import { Button } from '@/components/Button';
 
 interface AdjustStockModalProps {
   adjustTarget: Ingredient | null;
@@ -56,10 +57,10 @@ export const AdjustStockModal: React.FC<AdjustStockModalProps> = ({
               <button
                 type="button"
                 onClick={() => setAdjustType('in')}
-                className={`py-2 rounded-xl font-bold transition-all text-xs ${
+                className={`py-2 rounded-xl font-bold transition-all text-xs cursor-pointer ${
                   adjustType === 'in'
-                    ? 'bg-emerald-600 text-white shadow-sm'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ? 'bg-zinc-950 text-white shadow-xs'
+                    : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
                 }`}
               >
                 + รับเข้า
@@ -67,10 +68,10 @@ export const AdjustStockModal: React.FC<AdjustStockModalProps> = ({
               <button
                 type="button"
                 onClick={() => setAdjustType('waste')}
-                className={`py-2 rounded-xl font-bold transition-all text-xs ${
+                className={`py-2 rounded-xl font-bold transition-all text-xs cursor-pointer ${
                   adjustType === 'waste'
-                    ? 'bg-rose-600 text-white shadow-sm'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ? 'bg-rose-600 text-white shadow-xs'
+                    : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
                 }`}
               >
                 - ของเสีย/ทิ้ง
@@ -78,10 +79,10 @@ export const AdjustStockModal: React.FC<AdjustStockModalProps> = ({
               <button
                 type="button"
                 onClick={() => setAdjustType('adjust')}
-                className={`py-2 rounded-xl font-bold transition-all text-xs ${
+                className={`py-2 rounded-xl font-bold transition-all text-xs cursor-pointer ${
                   adjustType === 'adjust'
-                    ? 'bg-[#12312d] text-white shadow-sm'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ? 'bg-zinc-950 text-white shadow-xs'
+                    : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
                 }`}
               >
                 นับสต็อกใหม่
@@ -110,7 +111,7 @@ export const AdjustStockModal: React.FC<AdjustStockModalProps> = ({
                 const val = parseFloat(e.target.value);
                 setAdjustAmount(isNaN(val) || val <= 0 ? 1 : val);
               }}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4fb0a5]/30 text-sm"
+              className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl font-bold text-zinc-950 focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-950/10 focus:border-zinc-950 text-sm"
             />
           </div>
 
@@ -121,25 +122,24 @@ export const AdjustStockModal: React.FC<AdjustStockModalProps> = ({
               placeholder="เช่น รับของตาม PO #123, ใบเน่าช้ำ, ปรับยอดประจำสัปดาห์"
               value={adjustNote}
               onChange={(e) => setAdjustNote(e.target.value)}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
+              className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:border-zinc-950 focus:ring-2 focus:ring-zinc-950/10"
             />
           </div>
         </div>
 
-        <div className="pt-3 border-t border-slate-100 flex justify-end gap-2">
-          <button
+        <div className="pt-3 border-t border-zinc-100 flex justify-end gap-2">
+          <Button
             type="button"
+            variant="outline"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl font-semibold text-slate-600 hover:bg-slate-100 border border-slate-200"
           >
             ยกเลิก
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
-            className="px-5 py-2 rounded-xl font-bold bg-[#12312d] text-white hover:bg-[#1a423d] shadow-sm"
           >
             ยืนยันปรับสต็อก
-          </button>
+          </Button>
         </div>
       </form>
     </div>

@@ -14,6 +14,7 @@ import {
   QrCode,
   Banknote,
   UtensilsCrossed,
+  Coffee,
   Layers,
   Sparkles,
   LayoutGrid,
@@ -28,6 +29,8 @@ import { MenuItem } from '@/types';
 import { ItemOptionModal, CartItemOption } from './components/ItemOptionModal';
 import { ItemOptionPanel } from './components/ItemOptionPanel';
 import { Dropdown } from '@/components/Dropdown';
+import { Button } from '@/components/Button';
+import { Badge } from '@/components/Badge';
 
 interface CartEntry {
   cartId: string; // Unique ID to support same menu with different notes/options
@@ -64,9 +67,11 @@ export default function POSPage() {
   // Helper to construct readable note string
   const formatOptionNote = (options: CartItemOption) => {
     const parts: string[] = [];
-    if (options.isSpecial) parts.push('พิเศษ (+10฿)');
+    if (options.temperature) parts.push(options.temperature);
+    if (options.sweetness && options.sweetness !== 'หวาน 100%') parts.push(options.sweetness);
+    if (options.isSpecial) parts.push('เพิ่มช็อต (+15฿)');
     if (options.diningOption && options.diningOption !== 'ทานที่ร้าน') parts.push(options.diningOption);
-    if (options.spiciness && options.spiciness !== 'เผ็ดปกติ') parts.push(`เผ็ด: ${options.spiciness}`);
+    if (options.spiciness && options.spiciness !== 'ไม่เผ็ด') parts.push(options.spiciness);
     if (options.customNote) parts.push(options.customNote);
     return parts.join(' • ');
   };
@@ -74,7 +79,8 @@ export default function POSPage() {
   // Quick Add or Open Option Modal
   const addToCart = (menu: MenuItem, options?: CartItemOption) => {
     const defaultOptions: CartItemOption = options || {
-      spiciness: 'เผ็ดปกติ',
+      temperature: 'เย็น',
+      sweetness: 'หวาน 100%',
       diningOption: 'ทานที่ร้าน',
       isSpecial: false,
       customNote: '',
@@ -200,7 +206,7 @@ export default function POSPage() {
     <div className="flex-1 flex flex-col min-h-screen bg-[#ebecf0]">
       <Topbar
         title="ขายหน้าร้าน"
-        subtitle="ระบบสั่งอาหารพร้อมตัดสต็อกตามสูตรวัตถุดิบ"
+        subtitle="ขายหน้าร้าน พร้อมตัดสต็อกอัตโนมัติตามสูตร"
       />
 
       <main className="p-4 sm:p-6 lg:p-8 flex-1 flex flex-col lg:flex-row gap-6 w-full items-start">
@@ -218,7 +224,7 @@ export default function POSPage() {
                     onClick={() => setSelectedCategory(cat)}
                     className={`px-4 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition-all ${
                       isSelected
-                        ? 'neu-pressed text-emerald-800 font-black border border-emerald-500/30'
+                        ? 'neu-pressed text-emerald-800 font-semibold border border-emerald-500/30'
                         : 'neu-raised text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -275,8 +281,8 @@ export default function POSPage() {
           {/* Menu Items Render */}
           {filteredMenu.length === 0 ? (
             <div className="p-12 text-center skeuo-card rounded-3xl text-slate-400 text-sm">
-              <UtensilsCrossed className="w-8 h-8 mx-auto mb-2 opacity-40 text-slate-400" />
-              ไม่พบรายการอาหารในหมวดหมู่นี้
+              <Coffee className="w-8 h-8 mx-auto mb-2 opacity-40 text-slate-400" />
+              ไม่พบรายการเครื่องดื่มหรือสินค้าในหมวดหมู่นี้
             </div>
           ) : viewMode === 'card' ? (
             /* Card View */
@@ -337,8 +343,8 @@ export default function POSPage() {
 
                       <div className="p-4 space-y-1.5">
                         <div className="flex items-start justify-between gap-2">
-                          <h3 className="font-bold text-slate-900 text-sm">{menu.name}</h3>
-                          <span className="font-black text-base text-emerald-800 shrink-0">฿{menu.price.toFixed(2)}</span>
+                          <h3 className="font-medium text-slate-900 text-sm">{menu.name}</h3>
+                          <span className="font-semibold text-sm text-emerald-800 shrink-0 font-mono">฿{menu.price.toFixed(2)}</span>
                         </div>
                         {menu.description && (
                           <p className="text-xs text-slate-500 line-clamp-1">{menu.description}</p>
@@ -369,20 +375,20 @@ export default function POSPage() {
             </div>
           ) : (
             /* List View */
-            <div className="skeuo-card rounded-3xl overflow-hidden">
+            <div className="skeuo-card rounded-3xl overflow-hidden border border-slate-200">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="bg-slate-200/50 border-b border-slate-300/70 text-slate-600 uppercase tracking-wider font-bold">
-                      <th className="py-3.5 px-4">เมนู</th>
-                      <th className="py-3.5 px-4">หมวดหมู่</th>
-                      <th className="py-3.5 px-4 text-right">ราคา</th>
-                      <th className="py-3.5 px-4 text-right">ต้นทุน BOM</th>
-                      <th className="py-3.5 px-4 text-center">สูตร BOM</th>
-                      <th className="py-3.5 px-4 text-center">สั่งซื้อ</th>
+                    <tr className="border-b border-slate-200 text-slate-900 text-sm font-semibold">
+                      <th className="py-3.5 px-4 font-semibold text-slate-900">เมนู</th>
+                      <th className="py-3.5 px-4 font-semibold text-slate-900">หมวดหมู่</th>
+                      <th className="py-3.5 px-4 font-semibold text-slate-900 text-right">ราคา</th>
+                      <th className="py-3.5 px-4 font-semibold text-slate-900 text-right">ต้นทุน BOM</th>
+                      <th className="py-3.5 px-4 font-semibold text-slate-900 text-center">สูตร BOM</th>
+                      <th className="py-3.5 px-4 font-semibold text-slate-900 text-center">สั่งซื้อ</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200/60">
+                  <tbody className="divide-y divide-slate-100">
                     {filteredMenu.map((menu) => {
                       const totalInCartForMenu = cartItems
                         .filter((c) => c.item.id === menu.id)
@@ -390,7 +396,7 @@ export default function POSPage() {
                       const isAvailable = menu.status !== 'sold_out';
 
                       return (
-                        <tr key={menu.id} className="hover:bg-slate-200/30 transition-colors">
+                        <tr key={menu.id} className="hover:bg-slate-50 transition-colors">
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-xl neu-raised overflow-hidden shrink-0 flex items-center justify-center p-1">
@@ -401,7 +407,7 @@ export default function POSPage() {
                                 />
                               </div>
                               <div>
-                                <div className="font-bold text-slate-900 text-sm">{menu.name}</div>
+                                <div className="font-normal text-slate-900 text-sm">{menu.name}</div>
                                 {menu.description && (
                                   <div className="text-[11px] text-slate-500 line-clamp-1">{menu.description}</div>
                                 )}
@@ -409,33 +415,35 @@ export default function POSPage() {
                             </div>
                           </td>
                           <td className="py-3.5 px-4">
-                            <span className="text-xs font-bold px-3 py-1 rounded-full skeuo-badge-green inline-block whitespace-nowrap">
+                            <Badge variant="neutral">
                               {menu.category}
-                            </span>
+                            </Badge>
                           </td>
-                          <td className="py-3.5 px-4 text-right font-black text-emerald-800 text-sm">
+                          <td className="py-3.5 px-4 text-right font-normal text-slate-800 text-sm font-mono">
                             ฿{menu.price.toFixed(2)}
                           </td>
-                          <td className="py-3.5 px-4 text-right font-bold text-amber-700">
+                          <td className="py-3.5 px-4 text-right font-normal text-slate-500">
                             ฿{menu.recipe_cost.toFixed(2)}
                           </td>
                           <td className="py-3.5 px-4 text-center">
-                            <button
+                            <Button
+                              size="sm"
+                              variant="secondary"
                               onClick={() => setPreviewMenu(menu)}
-                              className="p-1.5 rounded-xl skeuo-btn-secondary text-slate-700 hover:text-emerald-800"
                               title="ดูสูตรวัตถุดิบ"
                             >
                               <Eye className="w-3.5 h-3.5" />
-                            </button>
+                            </Button>
                           </td>
                           <td className="py-3.5 px-4 text-center">
-                            <button
+                            <Button
+                              size="sm"
+                              variant="primary"
                               disabled={!isAvailable}
                               onClick={() => handleOpenOptionModal(menu)}
-                              className="px-3.5 py-1.5 rounded-xl skeuo-btn-primary text-xs font-bold inline-flex items-center gap-1 disabled:opacity-50"
                             >
                               <Plus className="w-3.5 h-3.5" /> สั่ง {totalInCartForMenu > 0 && `(${totalInCartForMenu})`}
-                            </button>
+                            </Button>
                           </td>
                         </tr>
                       );
@@ -469,13 +477,13 @@ export default function POSPage() {
               <>
                 <div className="flex items-center justify-between pb-3 border-b border-slate-300/60">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl skeuo-inset flex items-center justify-center text-emerald-700">
+                    <div className="w-8 h-8 rounded-xl skeuo-inset flex items-center justify-center text-slate-700">
                       <ShoppingCart className="w-4 h-4" />
                     </div>
-                    <h3 className="font-black text-slate-900 text-base">รายการสั่งอาหาร</h3>
+                    <h3 className="font-semibold text-slate-900 text-sm">รายการที่สั่ง</h3>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold text-slate-500">โต๊ะ:</span>
+                    <span className="text-xs font-medium text-slate-500">โต๊ะ:</span>
                     <Dropdown
                       value={tableNo}
                       onChange={setTableNo}
@@ -489,7 +497,7 @@ export default function POSPage() {
                       ]}
                       size="sm"
                       className="w-32"
-                      buttonClassName="py-1.5 px-2.5 rounded-xl text-xs font-bold text-slate-800"
+                      buttonClassName="py-1.5 px-2.5 rounded-xl text-xs font-medium text-slate-800"
                     />
                   </div>
                 </div>
@@ -498,7 +506,7 @@ export default function POSPage() {
                 <div className="flex-1 overflow-y-auto py-3 space-y-2.5 pr-1 max-h-72 no-scrollbar">
                   {cartItems.length === 0 ? (
                     <div className="h-full py-12 flex flex-col items-center justify-center text-slate-400 text-xs">
-                      <UtensilsCrossed className="w-10 h-10 mb-2 opacity-30" />
+                      <Coffee className="w-10 h-10 mb-2 opacity-30" />
                       <p className="font-medium">ยังไม่มีรายการ</p>
                     </div>
                   ) : (
@@ -513,16 +521,16 @@ export default function POSPage() {
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1">
-                              <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                              <div className="font-medium text-slate-900 flex items-center gap-1.5">
                                 <span>{entry.item.name}</span>
                                 {entry.options.isSpecial && (
-                                  <span className="text-[10px] skeuo-badge-amber px-1.5 py-0.2 rounded-md font-bold">
+                                  <span className="text-[10px] skeuo-badge-amber px-1.5 py-0.2 rounded-md font-medium">
                                     พิเศษ
                                   </span>
                                 )}
                               </div>
                               <div className="text-[11px] text-slate-500">
-                                ฿{effectivePrice} x {entry.quantity} = <strong className="text-emerald-800">฿{effectivePrice * entry.quantity}</strong>
+                                ฿{effectivePrice} x {entry.quantity} = <strong className="text-slate-900 font-medium">฿{effectivePrice * entry.quantity}</strong>
                               </div>
                             </div>
 
@@ -530,14 +538,14 @@ export default function POSPage() {
                               <div className="flex items-center neu-raised px-1 py-0.5 rounded-xl">
                                 <button
                                   onClick={() => updateQuantity(entry.cartId, -1)}
-                                  className="w-5 h-5 flex items-center justify-center text-slate-600 hover:text-emerald-800"
+                                  className="w-5 h-5 flex items-center justify-center text-slate-600 hover:text-slate-900"
                                 >
                                   <Minus className="w-3 h-3" />
                                 </button>
-                                <span className="w-5 text-center font-black text-slate-900">{entry.quantity}</span>
+                                <span className="w-5 text-center font-semibold text-slate-900 font-mono">{entry.quantity}</span>
                                 <button
                                   onClick={() => updateQuantity(entry.cartId, 1)}
-                                  className="w-5 h-5 flex items-center justify-center text-slate-600 hover:text-emerald-800"
+                                  className="w-5 h-5 flex items-center justify-center text-slate-600 hover:text-slate-900"
                                 >
                                   <Plus className="w-3 h-3" />
                                 </button>
@@ -559,7 +567,7 @@ export default function POSPage() {
                             </span>
                             <button
                               onClick={() => handleOpenOptionModal(entry.item, entry.cartId)}
-                              className="text-emerald-700 hover:text-emerald-800 font-bold text-[10px] shrink-0"
+                              className="text-slate-600 hover:text-slate-900 font-medium text-[10px] shrink-0"
                             >
                               แก้ไข
                             </button>
@@ -573,67 +581,76 @@ export default function POSPage() {
                 {/* Bill Summary & Payment Form */}
                 <div className="pt-3 border-t border-slate-300/60 space-y-3 mt-auto">
                   <div className="space-y-1 text-xs font-medium">
-                    <div className="flex justify-between text-slate-500">
+                    <div className="flex justify-between text-slate-500 font-normal">
                       <span>รวม</span>
-                      <span>฿{subtotal.toFixed(2)}</span>
+                      <span className="font-mono">฿{subtotal.toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between text-slate-500">
+                    <div className="flex justify-between text-slate-500 font-normal">
                       <span>VAT 7%</span>
-                      <span>฿{vat.toFixed(2)}</span>
+                      <span className="font-mono">฿{vat.toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between font-black text-sm text-slate-900 pt-1 border-t border-slate-300/60">
+                    <div className="flex justify-between font-semibold text-sm text-slate-900 pt-1 border-t border-slate-300/60">
                       <span>สุทธิ</span>
-                      <span className="text-base text-emerald-800">฿{grandTotal.toFixed(2)}</span>
+                      <span className="text-base text-slate-900 font-semibold font-mono">฿{grandTotal.toFixed(2)}</span>
                     </div>
                   </div>
 
                   {/* Payment Methods */}
-                  <div className="grid grid-cols-3 gap-1.5 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('qr_promptpay')}
-                      className={`py-2 rounded-xl text-[11px] font-bold flex flex-col items-center gap-1 transition-all ${
-                        paymentMethod === 'qr_promptpay'
-                          ? 'neu-pressed text-emerald-800 border border-emerald-500/40'
-                          : 'neu-raised text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      <QrCode className="w-3.5 h-3.5" />
-                      <span>พร้อมเพย์</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('cash')}
-                      className={`py-2 rounded-xl text-[11px] font-bold flex flex-col items-center gap-1 transition-all ${
-                        paymentMethod === 'cash'
-                          ? 'neu-pressed text-emerald-800 border border-emerald-500/40'
-                          : 'neu-raised text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      <Banknote className="w-3.5 h-3.5" />
-                      <span>เงินสด</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('credit_card')}
-                      className={`py-2 rounded-xl text-[11px] font-bold flex flex-col items-center gap-1 transition-all ${
-                        paymentMethod === 'credit_card'
-                          ? 'neu-pressed text-emerald-800 border border-emerald-500/40'
-                          : 'neu-raised text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      <CreditCard className="w-3.5 h-3.5" />
-                      <span>บัตรเครดิต</span>
-                    </button>
+                  <div className="space-y-1.5 pt-1">
+                    <span className="text-[11px] font-medium text-slate-500 block">วิธีชำระเงิน</span>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('qr_promptpay')}
+                        className={`py-2.5 px-2 rounded-2xl text-xs font-medium flex flex-col items-center gap-1.5 transition-all cursor-pointer ${
+                          paymentMethod === 'qr_promptpay'
+                            ? 'neu-pressed text-slate-900 border border-slate-400/50 bg-slate-100/90 shadow-inner'
+                            : 'neu-raised text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                        }`}
+                      >
+                        <QrCode className="w-4 h-4 text-slate-700" />
+                        <span>พร้อมเพย์</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('cash')}
+                        className={`py-2.5 px-2 rounded-2xl text-xs font-medium flex flex-col items-center gap-1.5 transition-all cursor-pointer ${
+                          paymentMethod === 'cash'
+                            ? 'neu-pressed text-slate-900 border border-slate-400/50 bg-slate-100/90 shadow-inner'
+                            : 'neu-raised text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                        }`}
+                      >
+                        <Banknote className="w-4 h-4 text-slate-700" />
+                        <span>เงินสด</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('credit_card')}
+                        className={`py-2.5 px-2 rounded-2xl text-xs font-medium flex flex-col items-center gap-1.5 transition-all cursor-pointer ${
+                          paymentMethod === 'credit_card'
+                            ? 'neu-pressed text-slate-900 border border-slate-400/50 bg-slate-100/90 shadow-inner'
+                            : 'neu-raised text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                        }`}
+                      >
+                        <CreditCard className="w-4 h-4 text-slate-700" />
+                        <span>บัตรเครดิต</span>
+                      </button>
+                    </div>
                   </div>
 
                   <button
+                    type="button"
                     disabled={cartItems.length === 0}
                     onClick={handleCheckout}
-                    className="w-full py-3 rounded-2xl skeuo-btn-primary font-bold text-xs flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full py-3 px-4 rounded-2xl bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.98] cursor-pointer"
                   >
                     <CheckCircle2 className="w-4 h-4" />
-                    ยืนยันชำระเงิน
+                    <span>ยืนยันชำระเงิน</span>
+                    {cartItems.length > 0 && (
+                      <span className="font-mono text-xs opacity-90 pl-1">
+                        (฿{grandTotal.toFixed(2)})
+                      </span>
+                    )}
                   </button>
                 </div>
               </>
@@ -642,8 +659,8 @@ export default function POSPage() {
 
           {/* Real-time BOM Stock Deduction Preview */}
           <div className="skeuo-card rounded-3xl p-4 space-y-2 text-xs">
-            <div className="flex items-center gap-2 text-slate-800 font-bold text-xs">
-              <Layers className="w-4 h-4 text-emerald-700" />
+            <div className="flex items-center gap-2 text-slate-800 font-semibold text-xs">
+              <Layers className="w-4 h-4 text-slate-700" />
               <span>ตัดสต็อกวัตถุดิบ (BOM)</span>
             </div>
             {Object.keys(cartBOMImpact).length === 0 ? (
@@ -717,19 +734,19 @@ export default function POSPage() {
                 ))}
               </div>
 
-              <div className="p-3 bg-emerald-50 text-emerald-800 rounded-2xl border border-emerald-200 flex justify-between items-center font-bold">
+              <div className="p-3 bg-slate-50 text-slate-800 rounded-2xl border border-slate-200 flex justify-between items-center font-medium">
                 <span>ต้นทุนวัตถุดิบรวม (BOM):</span>
-                <span>฿{previewMenu.recipe_cost}</span>
+                <span className="font-mono font-normal text-slate-900">฿{previewMenu.recipe_cost}</span>
               </div>
             </div>
 
             <div className="pt-2 flex justify-end">
-              <button
+              <Button
+                variant="secondary"
                 onClick={() => setPreviewMenu(null)}
-                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 font-semibold text-slate-700"
               >
                 ปิดหน้าต่าง
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -739,24 +756,24 @@ export default function POSPage() {
       {lastOrderSuccess && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl text-center space-y-4 border border-slate-200 animate-scale-in">
-            <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-emerald-500/10">
+            <div className="w-14 h-14 bg-slate-100 text-slate-800 rounded-2xl mx-auto flex items-center justify-center shadow-xs">
               <CheckCircle2 className="w-8 h-8" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-900">บันทึกออเดอร์สำเร็จ!</h3>
+              <h3 className="text-lg font-semibold text-slate-900">บันทึกออเดอร์สำเร็จ!</h3>
               <p className="text-xs text-slate-500 mt-1">
                 เลขที่บิล: <strong className="text-slate-800">{lastOrderSuccess.order_number}</strong> (โต๊ะ {lastOrderSuccess.table_no})
               </p>
-              <p className="text-xs text-emerald-600 font-medium mt-1">
+              <p className="text-xs text-slate-600 font-normal mt-1">
                 ระบบได้ตัดสต็อกวัตถุดิบตามสูตร (BOM) ลงฐานข้อมูลเรียบร้อยแล้ว
               </p>
             </div>
-            <button
+            <Button
+              className="w-full"
               onClick={() => setLastOrderSuccess(null)}
-              className="w-full py-2.5 rounded-2xl bg-[#12312d] text-white hover:bg-[#1a423d] text-xs font-bold shadow-md shadow-[#12312d]/20"
             >
               รับออเดอร์ถัดไป
-            </button>
+            </Button>
           </div>
         </div>
       )}

@@ -12,23 +12,26 @@ import {
   X,
   Shield,
   Filter,
+  Store,
 } from 'lucide-react';
 import { Topbar } from '@/components/Topbar';
 import { useAuth } from '@/lib/AuthContext';
-import { RoleOption, PermissionOption, StaffUser } from './components/types';
+import { RoleOption, PermissionOption, StaffUser, StaffStoreOption } from './components/types';
 import { StaffCardView } from './components/StaffCardView';
 import { StaffTableView } from './components/StaffTableView';
 import { StaffModal } from './components/StaffModal';
 import { Dropdown } from '@/components/Dropdown';
+import { Button } from '@/components/Button';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 export default function StaffPage() {
-  const { token, user: currentUser } = useAuth();
+  const { token, user: currentUser, activeStore, stores } = useAuth();
 
   const [staffList, setStaffList] = useState<StaffUser[]>([]);
   const [roles, setRoles] = useState<RoleOption[]>([]);
   const [permissions, setPermissions] = useState<PermissionOption[]>([]);
+  const [availableStores, setAvailableStores] = useState<StaffStoreOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -39,6 +42,7 @@ export default function StaffPage() {
   // Search and Filter
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<string>('all');
+  const [selectedStoreFilter, setSelectedStoreFilter] = useState<string>('all');
 
   // Modal State
   const [modalState, setModalState] = useState<{
@@ -57,6 +61,7 @@ export default function StaffPage() {
     email: '',
     password: '',
     roles: [] as string[],
+    storeId: null as number | null,
   });
 
   const fetchUsers = async () => {
@@ -80,6 +85,11 @@ export default function StaffPage() {
       setStaffList(data.users || []);
       setRoles(data.roles || []);
       setPermissions(data.permissions || []);
+      if (data.available_stores) {
+        setAvailableStores(data.available_stores);
+      } else if (stores.length > 0) {
+        setAvailableStores(stores.map(s => ({ id: s.id, name: s.name, type: s.type, logo_url: s.logo_url })));
+      }
     } catch (err: any) {
       console.error('API fetch error in StaffPage:', err);
       setError(err.message || 'ไม่สามารถเชื่อมต่อกับ Backend API ได้');
@@ -98,6 +108,7 @@ export default function StaffPage() {
       email: staff.email,
       password: '',
       roles: staff.roles.map((r) => r.name),
+      storeId: staff.stores?.[0]?.id ?? null,
     });
     setModalState({
       isOpen: true,
@@ -112,6 +123,7 @@ export default function StaffPage() {
       email: '',
       password: '',
       roles: ['cashier'],
+      storeId: activeStore?.id ?? (stores[0]?.id ?? null),
     });
     setModalState({
       isOpen: true,
@@ -147,14 +159,14 @@ export default function StaffPage() {
 
       const method = isEdit ? 'PUT' : 'POST';
 
-      const payload = isEdit
-        ? {
-            name: formData.name,
-            email: formData.email,
-            roles: formData.roles,
-            password: formData.password || undefined,
-          }
-        : formData;
+      const payload = {
+        name: formData.name,
+        email: formData.email,
+        roles: formData.roles,
+        role: formData.roles[0] || 'staff',
+        store_id: formData.storeId,
+        password: formData.password || undefined,
+      };
 
       const res = await fetch(url, {
         method,
@@ -211,82 +223,100 @@ export default function StaffPage() {
       selectedRoleFilter === 'all' ||
       staff.roles.some((r) => r.name === selectedRoleFilter);
 
-    return matchesSearch && matchesRole;
+    const matchesStore =
+      selectedStoreFilter === 'all' ||
+      (staff.stores && staff.stores.some((s) => String(s.id) === selectedStoreFilter)) ||
+      (!staff.stores || staff.stores.length === 0);
+
+    return matchesSearch && matchesRole && matchesStore;
   });
 
+  const roleFilterOptions = [
+    { label: 'บทบาททั้งหมด', value: 'all' },
+    ...roles.map((r) => ({ label: r.display_name, value: r.name })),
+  ];
+
+  const storeFilterOptions = [
+    { label: 'ทุกร้านค้า', value: 'all' },
+    ...availableStores.map((s) => ({ label: s.name, value: String(s.id) })),
+  ];
+
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-slate-50/70">
+    <div className="flex flex-col min-h-screen">
       <Topbar
-        title="จัดการพนักงาน & สิทธิ์ (Staff & RBAC)"
-        subtitle="ดูรายชื่อพนักงานในรูปแบบตาราง (Table) หรือการ์ด (Cards) พร้อมจัดการสิทธิ์"
+        title="รายชื่อพนักงาน & กำหนดสิทธิ์"
+        subtitle="จัดการบัญชีพนักงาน, มอบหมายร้านค้าที่สังกัด, และควบคุมสิทธิ์การใช้งาน"
       />
 
-      <main className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
-        {/* Notifications */}
-        {successMsg && (
-          <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-between text-sm animate-fade-in">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-              <span>{successMsg}</span>
-            </div>
-            <button onClick={() => setSuccessMsg(null)} className="text-emerald-500 hover:text-emerald-700">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
+      <main className="flex-1 p-6 space-y-6 max-w-7xl mx-auto w-full">
+        {/* Alerts */}
         {error && (
-          <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center justify-between text-sm">
+          <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium flex items-center justify-between animate-fade-in">
             <div className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
               <span>{error}</span>
             </div>
-            <button onClick={() => setError(null)} className="text-rose-500 hover:text-rose-700">
+            <button onClick={() => setError(null)} className="text-rose-400 hover:text-rose-600">
               <X className="w-4 h-4" />
             </button>
           </div>
         )}
 
-        {/* Toolbar: Search, Filters, View Mode Toggle, and Add Button */}
-        <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm">
-          {/* Search & Filter */}
-          <div className="flex flex-wrap items-center gap-3 flex-1">
-            <div className="relative flex-1 min-w-[220px]">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="ค้นหาชื่อ, อีเมล หรือรหัส UUID..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 text-xs rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4fb0a5]/30 focus:border-[#4fb0a5] transition-all"
-              />
+        {successMsg && (
+          <div className="p-3.5 rounded-2xl bg-slate-900 text-white text-xs font-normal flex items-center justify-between shadow-xs animate-fade-in">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-slate-300" />
+              <span>{successMsg}</span>
             </div>
+            <button onClick={() => setSuccessMsg(null)} className="text-slate-400 hover:text-white cursor-pointer">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
-            {/* Role Filter Dropdown */}
-            <div className="flex items-center gap-1.5 w-full sm:w-auto">
-              <Filter className="w-4 h-4 text-slate-400 shrink-0" />
+        {/* Toolbar Section */}
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-white p-4 rounded-3xl border border-slate-200/80 shadow-xs">
+          {/* Search Input */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="ค้นหาชื่อ, อีเมล หรือ ID พนักงาน..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 text-xs bg-slate-50 rounded-2xl border border-slate-200/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition-all font-normal"
+            />
+          </div>
+
+          {/* Filters & Actions */}
+          <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+            {/* Store Filter */}
+            {availableStores.length > 1 && (
+              <div className="w-40 shrink-0">
+                <Dropdown
+                  value={selectedStoreFilter}
+                  onChange={setSelectedStoreFilter}
+                  options={storeFilterOptions}
+                />
+              </div>
+            )}
+
+            {/* Role Filter */}
+            <div className="w-44 shrink-0">
               <Dropdown
                 value={selectedRoleFilter}
                 onChange={setSelectedRoleFilter}
-                options={[
-                  { value: 'all', label: 'ทุกบทบาท (All Roles)' },
-                  ...roles.map((r) => ({ value: r.name, label: r.display_name })),
-                ]}
-                className="w-full sm:w-48"
+                options={roleFilterOptions}
               />
             </div>
-          </div>
 
-          {/* View Mode Toggle & Add Button */}
-          <div className="flex items-center justify-between lg:justify-end gap-3 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
-            {/* Toggle Card/Table */}
-            <div className="bg-slate-100 p-1 rounded-2xl flex items-center gap-1">
+            {/* View Mode Toggle */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/80">
               <button
-                type="button"
                 onClick={() => setViewMode('table')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-normal transition-all cursor-pointer ${
                   viewMode === 'table'
-                    ? 'bg-white text-slate-900 shadow-sm'
+                    ? 'bg-white text-slate-900 shadow-xs font-medium'
                     : 'text-slate-500 hover:text-slate-900'
                 }`}
                 title="มุมมองตาราง (Table View)"
@@ -294,13 +324,11 @@ export default function StaffPage() {
                 <ListIcon className="w-4 h-4" />
                 <span className="hidden sm:inline">ตาราง</span>
               </button>
-
               <button
-                type="button"
                 onClick={() => setViewMode('card')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-normal transition-all cursor-pointer ${
                   viewMode === 'card'
-                    ? 'bg-white text-slate-900 shadow-sm'
+                    ? 'bg-white text-slate-900 shadow-xs font-medium'
                     : 'text-slate-500 hover:text-slate-900'
                 }`}
                 title="มุมมองการ์ด (Card View)"
@@ -310,13 +338,13 @@ export default function StaffPage() {
               </button>
             </div>
 
-            <button
+            <Button
               onClick={handleOpenCreate}
-              className="px-4 py-2.5 rounded-2xl bg-[#4fb0a5] hover:bg-[#439e94] text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-[#4fb0a5]/20 transition-all transform active:scale-95 shrink-0"
+              icon={<UserPlus className="w-4 h-4" />}
+              size="md"
             >
-              <UserPlus className="w-4 h-4" />
-              <span>เพิ่มพนักงาน</span>
-            </button>
+              เพิ่มพนักงาน
+            </Button>
           </div>
         </div>
 
@@ -349,6 +377,7 @@ export default function StaffPage() {
           mode={modalState.mode}
           formData={formData}
           roles={roles}
+          stores={availableStores.length > 0 ? availableStores : stores.map(s => ({ id: s.id, name: s.name, type: s.type, logo_url: s.logo_url }))}
           onClose={() => setModalState((prev) => ({ ...prev, isOpen: false }))}
           onSubmit={handleFormSubmit}
           onChange={handleFormChange}
