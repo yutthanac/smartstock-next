@@ -60,7 +60,7 @@ export const MenuCard: React.FC<MenuCardProps> = ({ item, onEdit, onDelete }) =>
           <div className="pt-2 border-t border-slate-100">
             <div className="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <Layers className="w-3.5 h-3.5 text-slate-500" />
-              สูตรวัตถุดิบต่อ 1 จาน (BOM):
+              สูตร:
             </div>
             <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
               {item.recipes && item.recipes.length > 0 ? (

@@ -1,2 +1,5 @@
-import StockPage from '../page';
-export default StockPage;
+import { redirect } from 'next/navigation';
+
+export default function IngredientsRedirectPage() {
+  redirect('/stock');
+}

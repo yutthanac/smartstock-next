@@ -44,13 +44,13 @@ export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
       `"${(item.name || '').replace(/"/g, '""')}"`,
       item.quantity,
       `"${item.unit}"`,
-      item.cost_per_unit.toFixed(2),
-      item.total_price.toFixed(2),
+      item.cost_per_unit != null ? item.cost_per_unit.toFixed(2) : '-',
+      item.total_price != null ? item.total_price.toFixed(2) : '-',
     ]);
 
     const summaryRows = [
       [],
-      ['', '', '', '', '', 'ยอดงบประมาณจัดซื้อรวม', po.totalAmount.toFixed(2)],
+      ['', '', '', '', '', 'ยอดงบประมาณจัดซื้อรวม', (po.totalAmount ?? 0) > 0 ? (po.totalAmount ?? 0).toFixed(2) : '-'],
       [],
       ['เลขที่ใบรายการ:', po.id],
       ['ไปซื้อที่ร้าน/ตลาด:', `"${po.store_name}"`],
@@ -185,7 +185,9 @@ export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
             <div className="text-right">
               <span className="text-slate-500 block text-xs">งบประมาณโดยประมาณ:</span>
               <span className="font-black text-slate-900 text-sm sm:text-base block mt-0.5 text-emerald-800 print:text-black">
-                ฿{po.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {(po.totalAmount ?? 0) > 0
+                  ? `฿${(po.totalAmount ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                  : 'ยังไม่ระบุราคา'}
               </span>
             </div>
           </div>
@@ -229,10 +231,14 @@ export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
                       {item.unit}
                     </td>
                     <td className="py-2 px-3 text-right text-slate-600">
-                      ฿{item.cost_per_unit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {item.cost_per_unit != null && item.cost_per_unit > 0
+                        ? `฿${item.cost_per_unit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : '-'}
                     </td>
                     <td className="py-2 px-4 text-right font-bold text-slate-900">
-                      ฿{item.total_price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {item.total_price != null && item.total_price > 0
+                        ? `฿${item.total_price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : '-'}
                     </td>
                   </tr>
                 ))}
@@ -272,7 +278,9 @@ export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
               <div className="flex justify-between font-black text-slate-900 pt-1.5 border-t border-slate-300 text-sm">
                 <span>งบประมาณรวม:</span>
                 <span className="text-emerald-800 print:text-black font-extrabold text-base">
-                  ฿{po.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {(po.totalAmount ?? 0) > 0
+                    ? `฿${(po.totalAmount ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                    : '-'}
                 </span>
               </div>
             </div>

@@ -12,7 +12,7 @@ import { Dropdown } from '@/components/Dropdown';
 import { Button } from '@/components/Button';
 
 export default function RecipeMenuPage() {
-  const { menuItems, ingredients, addMenuItem, updateMenuItem, deleteMenuItem } = useStock();
+  const { menuItems, ingredients, addMenuItem, updateMenuItem, deleteMenuItem, reorderMenuItems } = useStock();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
@@ -147,9 +147,11 @@ export default function RecipeMenuPage() {
 
       <main className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
         {/* Toolbar: Search, Category Filter, Card/List Switcher & Create button */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm">
-          <div className="flex flex-wrap items-center gap-3 flex-1">
-            <div className="relative flex-1 min-w-[220px]">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm">
+          {/* Left Controls: Search & Category Filter */}
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            {/* Search */}
+            <div className="relative flex-1 min-w-[160px]">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
@@ -160,7 +162,8 @@ export default function RecipeMenuPage() {
               />
             </div>
 
-            <div className="flex items-center gap-1.5 w-full sm:w-auto">
+            {/* Category Filter */}
+            <div className="flex items-center gap-1.5 shrink-0">
               <Filter className="w-4 h-4 text-slate-400 shrink-0" />
               <Dropdown
                 value={selectedCategory}
@@ -169,18 +172,19 @@ export default function RecipeMenuPage() {
                   { value: 'all', label: `ทุกหมวดหมู่ (${menuItems.length})` },
                   ...categories.map((cat) => ({ value: cat, label: cat })),
                 ]}
-                className="w-full sm:w-48"
+                className="w-44"
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-3 justify-end">
+          {/* Right Controls: View Switcher & Add Button */}
+          <div className="flex items-center justify-between lg:justify-end gap-3 shrink-0">
             {/* View Switcher: Card / List */}
             <div className="bg-slate-100 p-1 rounded-2xl flex items-center gap-1 shrink-0">
               <button
                 type="button"
                 onClick={() => setViewMode('card')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   viewMode === 'card'
                     ? 'bg-white text-slate-900 shadow-sm'
                     : 'text-slate-500 hover:text-slate-900'
@@ -194,7 +198,7 @@ export default function RecipeMenuPage() {
               <button
                 type="button"
                 onClick={() => setViewMode('list')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   viewMode === 'list'
                     ? 'bg-white text-slate-900 shadow-sm'
                     : 'text-slate-500 hover:text-slate-900'
@@ -206,12 +210,14 @@ export default function RecipeMenuPage() {
               </button>
             </div>
 
+            {/* Add Button */}
             <Button
               variant="primary"
               onClick={handleOpenCreate}
-              className="shrink-0"
+              icon={<Plus className="w-4 h-4" />}
+              className="shrink-0 whitespace-nowrap"
             >
-              <Plus className="w-4 h-4" /> เพิ่มเมนูใหม่
+              เพิ่มเมนูใหม่
             </Button>
           </div>
         </div>
@@ -238,6 +244,7 @@ export default function RecipeMenuPage() {
             items={filteredMenuItems}
             onEdit={handleOpenEdit}
             onDelete={deleteMenuItem}
+            onReorder={reorderMenuItems}
           />
         )}
       </main>

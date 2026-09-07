@@ -53,11 +53,19 @@ export const MenuModal: React.FC<MenuModalProps> = ({
 
   const numPrice = typeof price === 'number' ? price : parseFloat(price) || 0;
 
-  // Live BOM Cost & Margin calculation
+  // Live BOM Cost & Margin calculation with unit normalization
   const calculatedCost = recipes.reduce((sum, r) => {
     const ing = ingredients.find((i) => i.id === Number(r.ingredient_id));
+    if (!ing) return sum;
     const qty = typeof r.quantity_used === 'number' ? r.quantity_used : parseFloat(r.quantity_used as any) || 0;
-    return sum + (ing ? ing.cost_per_unit * qty : 0);
+    const unitLower = (ing.unit || '').toLowerCase().trim();
+    let unitFactor = 1.0;
+    if (['กก.', 'กก', 'kg', 'กิโลกรัม'].includes(unitLower) && qty >= 1) {
+      unitFactor = 0.001;
+    } else if (['ลิตร', 'l', 'liter', 'litre'].includes(unitLower) && qty >= 1) {
+      unitFactor = 0.001;
+    }
+    return sum + (ing.cost_per_unit * qty * unitFactor);
   }, 0);
 
   const calculatedProfit = numPrice - calculatedCost;
@@ -67,7 +75,7 @@ export const MenuModal: React.FC<MenuModalProps> = ({
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
       <form
         onSubmit={onSubmit}
-        className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col border border-slate-200 animate-scale-in"
+        className="bg-white rounded-3xl max-w-5xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col border border-slate-200 animate-scale-in"
       >
         <div className="flex justify-between items-center pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
@@ -139,17 +147,17 @@ export const MenuModal: React.FC<MenuModalProps> = ({
               />
             </div>
 
-            {/* Custom Image Upload from local folder or URL */}
+            {/* Custom Image Upload */}
             <ImageUpload image={image} onChange={setImage} />
 
-            <div className="sm:col-span-2">
-              <label className="font-semibold text-slate-700 block mb-1">รายละเอียด</label>
+            {/* Description */}
+            <div className="flex flex-col h-full">
+              <label className="font-semibold text-slate-700 block text-xs mb-1">รายละเอียด</label>
               <textarea
-                rows={2}
                 placeholder="รายละเอียด รสชาติ หรือจุดเด่นของเมนู..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
+                className="w-full flex-1 min-h-[72px] p-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none resize-none text-xs leading-relaxed"
               />
             </div>
           </div>
@@ -166,8 +174,8 @@ export const MenuModal: React.FC<MenuModalProps> = ({
           {/* Live BOM Margin Summary Box */}
           <div className="p-4 rounded-2xl bg-slate-900 text-white space-y-2 border border-slate-800">
             <div className="flex items-center justify-between text-xs border-b border-slate-800 pb-2">
-              <span className="text-teal-400 font-bold uppercase tracking-wider text-[10px]">
-                สรุปต้นทุนและกำไรแบบเรียลไทม์ (Live BOM Calculation):
+              <span className="text-slate-400 font-semibold uppercase tracking-wider text-[12px]">
+                สรุปต้นทุนและกำไร
               </span>
             </div>
 

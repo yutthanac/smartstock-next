@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, X, Calculator } from 'lucide-react';
+import { Plus, Edit2, X, Calculator, Package, ArrowRight, Sparkles } from 'lucide-react';
 import { Dropdown } from '@/components/Dropdown';
 import { Button } from '@/components/Button';
 import { useStock } from '@/lib/StockContext';
@@ -14,6 +14,7 @@ interface AddIngredientModalProps {
     name: string;
     unit: string;
     quantity: number | string;
+    max_stock?: number | string;
     reorder_point: number | string;
     cost_per_unit: number | string;
     category: string;
@@ -25,6 +26,7 @@ interface AddIngredientModalProps {
       name: string;
       unit: string;
       quantity: number | string;
+      max_stock?: number | string;
       reorder_point: number | string;
       cost_per_unit: number | string;
       category: string;
@@ -44,6 +46,11 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
 }) => {
   const { units } = useStock();
   const [purchasePrice, setPurchasePrice] = useState<string>('');
+  const [showPackCalc, setShowPackCalc] = useState<boolean>(false);
+  const [packSize, setPackSize] = useState<string>('500');
+  const [packUnit, setPackUnit] = useState<string>('กรัม');
+  const [packCount, setPackCount] = useState<string>('1');
+  const [packTotalCost, setPackTotalCost] = useState<string>('250');
 
   useEffect(() => {
     if (editingTarget) {
@@ -98,6 +105,90 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
     }
   };
 
+  // Auto suggest standard units based on category for 'strict' per-cup tracking
+  const handleCategoryChange = (cat: string) => {
+    let suggestedUnit = formData.unit;
+    if (formData.tracking_type === 'strict') {
+      if (['เมล็ดกาแฟ & ชา', 'ผงชง & ท็อปปิ้ง', 'แป้ง & วัตถุดิบขนม'].includes(cat)) {
+        suggestedUnit = 'กรัม';
+      } else if (['นม & ผลิตภัณฑ์นม', 'ไซรัป & ซอสแต่งกลิ่น'].includes(cat)) {
+        suggestedUnit = 'มล.';
+      } else if (cat === 'แก้ว & บรรจุภัณฑ์') {
+        suggestedUnit = 'ชิ้น';
+      }
+    }
+    setFormData((prev) => ({ ...prev, category: cat, unit: suggestedUnit }));
+  };
+
+  // Convert kg or liters to standard base unit (กรัม or มล.)
+  const handleConvertToStandard = () => {
+    const isKg = formData.unit === 'กก.';
+    const isLiter = formData.unit === 'ลิตร';
+    if (!isKg && !isLiter) return;
+
+    const targetUnit = isKg ? 'กรัม' : 'มล.';
+    const qtyNum = parseFloat(String(formData.quantity)) || 0;
+    const costNum = parseFloat(String(formData.cost_per_unit)) || 0;
+    const priceNum = parseFloat(purchasePrice) || 0;
+    const reorderNum = parseFloat(String(formData.reorder_point)) || 0;
+    const maxStockNum = parseFloat(String(formData.max_stock)) || 0;
+
+    // If qty was already >= 100 (e.g. 500), user typed 500 thinking of grams/ml!
+    const isAlreadySubunit = qtyNum >= 100;
+    const newQty = isAlreadySubunit ? qtyNum : (qtyNum > 0 ? Math.round(qtyNum * 1000 * 100) / 100 : 0);
+
+    let newCost = costNum;
+    if (priceNum > 0 && newQty > 0) {
+      newCost = Math.round((priceNum / newQty) * 10000) / 10000;
+    } else if (costNum >= 10) {
+      newCost = Math.round((costNum / 1000) * 10000) / 10000;
+    }
+
+    const newReorder = reorderNum > 0 && reorderNum < 50 ? reorderNum * 100 : reorderNum;
+    const newMaxStock = maxStockNum > 0 ? (maxStockNum < 100 ? maxStockNum * 1000 : maxStockNum) : (newQty || '');
+
+    setFormData((prev) => ({
+      ...prev,
+      unit: targetUnit,
+      quantity: newQty || '',
+      cost_per_unit: newCost || '',
+      reorder_point: newReorder || '',
+      max_stock: newMaxStock || '',
+    }));
+  };
+
+  // Apply Pack / Package Calculator
+  const handleApplyPackCalc = () => {
+    const size = parseFloat(packSize) || 0;
+    const count = parseFloat(packCount) || 1;
+    const totalCost = parseFloat(packTotalCost) || 0;
+
+    let baseQty = size * count;
+    let standardUnit = packUnit;
+
+    if (packUnit === 'กก.') {
+      baseQty = baseQty * 1000;
+      standardUnit = 'กรัม';
+    } else if (packUnit === 'ลิตร') {
+      baseQty = baseQty * 1000;
+      standardUnit = 'มล.';
+    }
+
+    const unitCost = baseQty > 0 && totalCost > 0 ? Math.round((totalCost / baseQty) * 10000) / 10000 : 0;
+    const suggestedReorder = Math.round(baseQty * 0.2);
+
+    setPurchasePrice(String(totalCost));
+    setFormData((prev) => ({
+      ...prev,
+      unit: standardUnit,
+      quantity: baseQty,
+      cost_per_unit: unitCost,
+      reorder_point: suggestedReorder || prev.reorder_point,
+      max_stock: baseQty,
+    }));
+    setShowPackCalc(false);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -140,12 +231,8 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
               }`}
             >
               <div className="flex items-center gap-1.5">
-                <span className="text-base">☕</span>
-                <span className={`text-xs ${formData.tracking_type === 'strict' ? 'font-medium text-white' : 'font-normal text-slate-800'}`}>ตัดตามแก้ว (BOM)</span>
+                <span className={`text-xs ${formData.tracking_type === 'strict' ? 'font-medium text-white' : 'font-normal text-slate-800'}`}>ตัดตามแก้ว</span>
               </div>
-              <p className={`text-[10px] mt-1 leading-tight ${formData.tracking_type === 'strict' ? 'text-slate-300' : 'text-slate-500'}`}>
-                ตัดอัตโนมัติตามสูตรเมื่อขาย เช่น เมล็ดกาแฟ, นม, ชา, แก้ว
-              </p>
             </button>
 
             <button
@@ -158,12 +245,8 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
               }`}
             >
               <div className="flex items-center gap-1.5">
-                <span className="text-base">🧴</span>
-                <span className={`text-xs ${formData.tracking_type === 'bulk_expense' ? 'font-medium text-white' : 'font-normal text-slate-800'}`}>เปิดใช้ / ของใช้</span>
+                <span className={`text-xs ${formData.tracking_type === 'bulk_expense' ? 'font-medium text-white' : 'font-normal text-slate-800'}`}>เปิดใช้</span>
               </div>
-              <p className={`text-[10px] mt-1 leading-tight ${formData.tracking_type === 'bulk_expense' ? 'text-slate-300' : 'text-slate-500'}`}>
-                ตัดยอดเมื่อเปิดขวดใหม่หรือนับสต็อก เช่น ไซรัป, ซอส, ผงโรย
-              </p>
             </button>
           </div>
         </div>
@@ -185,7 +268,7 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
             <label className="font-semibold text-slate-700 block mb-1">หมวดหมู่</label>
             <Dropdown
               value={formData.category}
-              onChange={(val) => setFormData({ ...formData, category: val })}
+              onChange={handleCategoryChange}
               options={[
                 'เมล็ดกาแฟ & ชา',
                 'นม & ผลิตภัณฑ์นม',
@@ -201,7 +284,14 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
           </div>
 
           <div>
-            <label className="font-semibold text-slate-700 block mb-1">หน่วยนับ</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="font-semibold text-slate-700">หน่วยนับ</label>
+              {formData.tracking_type === 'strict' && (
+                <span className="text-[10px] text-emerald-600 font-medium">
+                  แนะนำ: กรัม, มล., ชิ้น
+                </span>
+              )}
+            </div>
             <Dropdown
               value={formData.unit}
               onChange={(val) => setFormData({ ...formData, unit: val })}
@@ -212,6 +302,122 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
               className="w-full"
               buttonClassName="py-2.5 px-3 rounded-xl bg-slate-50"
             />
+          </div>
+
+          {/* Standard Unit Conversion Alert for 'strict' per-cup BOM */}
+          {formData.tracking_type === 'strict' && (formData.unit === 'กก.' || formData.unit === 'ลิตร') && (
+            <div className="sm:col-span-2 p-3 bg-amber-50/90 border border-amber-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs text-amber-900 animate-fade-in">
+              <div className="flex items-start gap-2">
+                <Calculator className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-amber-900 text-xs">
+                    แนะนำแปลงเป็นหน่วยมาตรฐาน ({formData.unit === 'กก.' ? 'กรัม' : 'มล.'}) สำหรับตัดตามแก้ว
+                  </p>
+                  <p className="text-[11px] text-amber-700 leading-snug">
+                    สูตรชงจะตัดเป็น {formData.unit === 'กก.' ? 'กรัม (เช่น 18-20g)' : 'มล. (เช่น 150ml)'} เพื่อความแม่นยำในการตัดสต็อก
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleConvertToStandard}
+                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-medium rounded-xl text-xs transition-all shrink-0 shadow-2xs cursor-pointer flex items-center gap-1"
+              >
+                <span>แปลงเป็น {formData.unit === 'กก.' ? 'กรัม (x1,000)' : 'มล. (x1,000)'}</span>
+              </button>
+            </div>
+          )}
+
+          {/* Pack / Package Purchase Calculator */}
+          <div className="sm:col-span-2">
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setShowPackCalc(!showPackCalc)}
+                className="text-xs font-semibold text-slate-700 hover:text-slate-900 flex items-center gap-1.5 cursor-pointer py-1"
+              >
+                <Package className="w-3.5 h-3.5 text-emerald-600" />
+                <span>ตัวช่วยคำนวณจากแพ็ค/ถุงที่ซื้อ</span>
+                <span className="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  {showPackCalc ? 'ซ่อนตัวช่วย' : 'คลิกเพื่อคำนวณ'}
+                </span>
+              </button>
+            </div>
+
+            {showPackCalc && (
+              <div className="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5 animate-fade-in">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-slate-800 text-[11px] flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    คำนวณสต็อกและต้นทุนต่อหน่วยมาตรฐานให้อัตโนมัติ
+                  </span>
+                  <span className="text-[10px] text-slate-400">เช่น ซื้อ 1 ถุง 500g 250฿</span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                  <div>
+                    <label className="text-[11px] text-slate-600 block mb-1">ขนาดต่อแพ็ค/ถุง</label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={packSize}
+                      onChange={(e) => setPackSize(e.target.value)}
+                      placeholder="500"
+                      className="w-full p-2 bg-white border border-slate-200 rounded-xl text-center font-bold text-slate-800"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-slate-600 block mb-1">หน่วยของแพ็ค</label>
+                    <select
+                      value={packUnit}
+                      onChange={(e) => setPackUnit(e.target.value)}
+                      className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800"
+                    >
+                      <option value="กรัม">กรัม (g)</option>
+                      <option value="กก.">กก. (kg)</option>
+                      <option value="มล.">มล. (ml)</option>
+                      <option value="ลิตร">ลิตร (L)</option>
+                      <option value="ชิ้น">ชิ้น / ฟอง</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-slate-600 block mb-1">จำนวนที่ซื้อ</label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={packCount}
+                      onChange={(e) => setPackCount(e.target.value)}
+                      placeholder="1"
+                      className="w-full p-2 bg-white border border-slate-200 rounded-xl text-center font-bold text-slate-800"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-slate-600 block mb-1">ราคารวม (บาท)</label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={packTotalCost}
+                      onChange={(e) => setPackTotalCost(e.target.value)}
+                      placeholder="250"
+                      className="w-full p-2 bg-white border border-slate-200 rounded-xl text-center font-bold text-slate-800"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-slate-200/60">
+                  <div className="text-[11px] text-slate-600">
+                    ผลลัพธ์: ได้สต็อก <strong className="text-slate-900">{((parseFloat(packSize) || 0) * (packUnit === 'กก.' || packUnit === 'ลิตร' ? 1000 : 1) * (parseFloat(packCount) || 1)).toLocaleString()} {packUnit === 'กก.' ? 'กรัม' : packUnit === 'ลิตร' ? 'มล.' : packUnit}</strong> (ต้นทุน ~<strong className="text-emerald-600">{(parseFloat(packTotalCost) / Math.max(1, ((parseFloat(packSize) || 0) * (packUnit === 'กก.' || packUnit === 'ลิตร' ? 1000 : 1) * (parseFloat(packCount) || 1)))).toFixed(4)}</strong> ฿/{packUnit === 'กก.' ? 'กรัม' : packUnit === 'ลิตร' ? 'มล.' : packUnit})
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleApplyPackCalc}
+                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-2xs transition-colors cursor-pointer self-end sm:self-auto"
+                  >
+                    นำค่าไปใส่ในฟอร์ม
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Smooth Numeric Input: Initial Quantity */}
@@ -274,6 +480,32 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
                 setFormData({ ...formData, reorder_point: isNaN(val) || val < 0 ? 0 : val });
               }}
               className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-amber-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400"
+            />
+          </div>
+
+          {/* Optional Numeric Input: Max Stock (ความจุสต็อกสูงสุด) */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="font-semibold text-slate-700">
+                ความจุสต็อก ({formData.unit})
+              </label>
+            </div>
+            <input
+              type="text"
+              inputMode="decimal"
+              placeholder={String(formData.quantity || 100)}
+              value={formData.max_stock === undefined || formData.max_stock === '' ? '' : formData.max_stock}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                  setFormData({ ...formData, max_stock: val === '' ? '' : val });
+                }
+              }}
+              onBlur={(e) => {
+                const val = parseFloat(e.target.value);
+                setFormData({ ...formData, max_stock: isNaN(val) || val <= 0 ? '' : val });
+              }}
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10"
             />
           </div>
 

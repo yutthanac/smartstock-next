@@ -125,12 +125,79 @@
 
 ---
 
+### [2026-09-07 - 2026-09-08] Drag & Drop จัดเรียง, AI Scan บิลรับเข้าสต็อก, Sales Analytics & ปฏิทินรายได้แดชบอร์ด
+
+1. **ระบบ Drag & Drop ลากสลับลำดับเมนูและสต็อกวัตถุดิบ (`@dnd-kit`)**:
+   - **Backend (Laravel)**:
+     - สร้าง Migration เพิ่มคอลัมน์ `sort_order` ในตาราง `ingredients` และ `menu_items`
+     - เพิ่ม API Endpoint `POST /api/ingredients/sort` และ `POST /api/menus/sort` รองรับการอัปเดตแบบ batch
+     - `index()` ใน `IngredientController` และ `MenuController` เรียงตาม `sort_order`
+   - **Frontend (Next.js)**:
+     - ติดตั้ง `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`, `@dnd-kit/modifiers`
+     - เพิ่มฟังก์ชัน `reorderIngredients` และ `reorderMenuItems` ใน `StockContext` พร้อม Optimistic Update
+     - เพิ่มคอลัมน์ "ย้าย" (GripVertical) ใน [MenuListView.tsx](file:///c:/meeting/smartStock/src/app/(app)/menu/components/MenuListView.tsx) และ [stock/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/page.tsx)
+     - อัปเกรด `TableRow` ใน `Table.tsx` ให้รองรับ `React.forwardRef` เพื่อให้ dnd-kit ทำงานได้ราบรื่น
+
+2. **ระบบปรับหน่วยสต็อกมาตรฐานสำหรับตัดตามแก้ว (Unit Standardization & Pack Calculator)**:
+   - แนะนำหน่วยมาตรฐานอัตโนมัติ (ผง/เมล็ด -> กรัม, นม/ไซรัป -> มล., อุปกรณ์ -> ชิ้น)
+   - เพิ่ม **1-Click Unit Converter** แปลง กก./ลิตร เป็น กรัม/มล. พร้อมคำนวณต้นทุนต่อหน่วยอัตโนมัติ
+   - เพิ่ม **Pack Calculator** คำนวณจากขนาดถุง/แพ็ค เช่น ถุง 500g ราคา 250 บาท
+   - เพิ่ม **Unit Normalization Factor** ใน OrderController.php และ BOM live preview เพื่อป้องกันการตัดสต็อกผิดพลาด 1,000 เท่า
+
+3. **ระบบ Shopping List & AI Scan ใบเสร็จตรวจสอบราคาจริง**:
+   - ปรับ `CreatePOModal.tsx` เป็น **Flexible Shopping List** ไม่บังคับระบุร้านค้าหรือราคาตายตัว
+   - เพิ่มการสแกนใบเสร็จด้วย AI (Gemini Flash) ใน `ReceiptVerificationModal.tsx` ดึงรายการและราคาจริงจากบิลอัตโนมัติ
+   - รองรับการเปลี่ยนรูปภาพใบเสร็จใหม่ และปุ่มหมุนภาพ 90 องศา
+
+4. **ยุบรวมและสร้างแท็บ "ตรวจสอบและรับเข้าสต็อกจริงจากบิล" (`ReceiptInboundTab.tsx`) ในหน้า `/stock`**:
+   - รวมหน้าตรวจเช็กบิลซื้อและรับเข้าสต็อกไว้ในที่เดียวในหน้า `/stock`
+   - **Auto Match**: ตรวจจับและจับคู่วัตถุดิบในสต็อกเดิมอัตโนมัติ หรือเลือกสร้างเป็นวัตถุดิบใหม่ได้ทันที
+   - ปรับยอดสต็อกและราคาต้นทุนล่าสุดเข้าสู่ระบบจริงด้วยปุ่มเดียว
+   - ปรับแต่งหน้าตาให้เป็นทางการ เรียบหรู ไม่ดูเป็น AI หลอกตา (ตัดไอคอนประกายดาว/สไตล์การ์ตูนออก)
+
+5. **กราฟสถิติยอดขาย & ต้นทุนแบบสลับช่วงเวลา (Sales Analytics Chart)**:
+   - ปรับปรุง [SalesAnalyticsChart.tsx](file:///c:/meeting/smartStock/src/app/(app)/dashboard/components/SalesAnalyticsChart.tsx)
+   - รองรับตัวกรอง 4 รูปแบบ โดยตั้งค่าเริ่มต้น (Default) เป็น **"สถิติยอดขาย & ต้นทุน 7 วันล่าสุด"**
+   - รองรับการดูแบบ: 7 วันล่าสุด, รายสัปดาห์ (4 สัปดาห์), รายเดือน (12 เดือน), รายปี
+
+6. **ระบบปฏิทินรายได้รายวันมุมบนขวาหน้าแดชบอร์ด (Top-Right Revenue Calendar Dropdown)**:
+   - วางรากฐาน UI Library โฟลเดอร์ `src/components/ui/` ตามมาตรฐาน shadcn:
+     - [button.tsx](file:///c:/meeting/smartStock/src/components/ui/button.tsx), [calendar.tsx](file:///c:/meeting/smartStock/src/components/ui/calendar.tsx), [toggle.tsx](file:///c:/meeting/smartStock/src/components/ui/toggle.tsx)
+     - ติดตั้ง `react-day-picker`, `date-fns`, `@radix-ui/react-slot`, `class-variance-authority`, `@radix-ui/react-toggle`
+   - พัฒนาคอมโพเนนต์ [DashboardCalendarDropdown.tsx](file:///c:/meeting/smartStock/src/app/(app)/dashboard/components/DashboardCalendarDropdown.tsx) วางไว้มุมบนขวาของหน้าแดชบอร์ด:
+     - แถบปุ่มแสดง: `📅 วันที่ • ฿ยอดขาย ⌄`
+     - กดแล้วคลี่ Popover เมนูดรอปดาวน์ลงมา
+     - แสดงปฏิทิน **1 เดือน** พร้อมปุ่มเปลี่ยนเดือน
+     - ใต้ตัวเลขแต่ละวันแสดงยอดขายจริง (เช่น `฿5.2k`, `฿188` หรือ `-`)
+     - แก้ไขการ import ไอคอน `Calendar` และปัญหา build ผ่านฉลุย (21 routes, 0 errors)
+
+---
+
+## 🎯 แผนงานสำหรับครั้งถัดไป (Next Session Roadmap)
+
+เมื่อกลับมาเปิดโปรเจกต์ในครั้งถัดไป สามารถอ้างอิงและดำเนินการต่อในหัวข้อเหล่านี้ได้ทันที:
+
+1. **หน้า AI ปรับบิลเพื่อลงสต็อกเพิ่มเติม (`ReceiptInboundTab.tsx` / `ReceiptVerificationModal.tsx`)**:
+   - พัฒนาและปรับปรุงความละเอียดในการตรวจจับบิลและการลงสต็อกสินค้า
+   - เพิ่มฟังก์ชันจัดการกรณีบิลมีหลายหน้า หรือบิลที่มีส่วนลด/Vat ท้ายใบเสร็จ ให้ลงต้นทุนเฉลี่ยได้อย่างแม่นยำยิ่งขึ้น
+
+2. **หน้าแดชบอร์ด: ปรับแต่งส่วน "AI แนะนำเมนูขายดี & กลยุทธ์" (`AiInsightsCard.tsx`)**:
+   - ปรับดีไซน์และโทนการนำเสนอให้มีความเป็นมืออาชีพ (Professional / Business ERP Style)
+   - ไม่ให้ดู "เป็น AI เกินไป" (ลดไอคอนวิบวับ/ประกายดาว ปรับเป็นอินไซต์เชิงวิเคราะห์ธุรกิจที่น่าเชื่อถือและดูจริงจัง)
+
+3. **หน้า AI แนะนำเครื่องดื่ม (`/menu/ai-insights`)**:
+   - ปรับปรุงให้เชื่อมต่อและดึงข้อมูลจริงจาก **Google Gemini API**
+   - มีปุ่มให้ผู้ใช้สามารถกด **"สร้าง/วิเคราะห์ใหม่ (Re-generate)"** ได้ตามต้องการ
+   - นำเข้าบริบทข้อมูลจริงของร้าน (เช่น เมนูขายดี ยอดขาย วัตถุดิบที่มีในคลัง หรือวัตถุดิบที่ค้างสต็อก) ส่งให้ Gemini วิเคราะห์ เสมือนการ Fine-tune/Prompt Context เฉพาะของร้านเรา
+
+4. **หน้ารายงานยอดขาย (`/reports/sales`)**:
+   - พัฒนากราฟและตารางรายงานให้ละเอียด ลึก และครอบคลุมกว่าหน้าแดชบอร์ด (เช่น ดูยอดขายตามช่วงเวลาชั่วโมงพีค, ยอดขายแยกตามหมวดหมู่, Basket Size)
+   - นำ AI เข้ามาช่วยสรุปไฮไลต์และวิเคราะห์อินไซต์ยอดขายประจำสัปดาห์/ประจำเดือนให้อ่านเข้าใจง่ายในหน้าเดียว
+
+---
+
 ## 📌 สรุปสถานะโครงการปัจจุบัน (Current System Status)
-- ✅ UI Theme: สะอาดตา มินิมอล โมโนโครม (Slate/Neutral) ตัดสีเขียวและสีชมพูออก 100%
-- ✅ Component Standards: `Button.tsx`, `Badge.tsx`, `Table.tsx`, `Dropdown.tsx` ใช้งานเป็นมาตรฐานหลักทั่วทั้งระบบ
-- ✅ Table Typography: หัวตารางโปร่งใส ฟอนต์ normal ชัดเจน เนื้อหาตารางนุ่มนวล
-- ✅ Frontend Next.js 16 (Turbopack) & TypeScript พร้อมทดสอบและใช้งาน
-
-- ✅ ระบบไม่มี Native `<select>` หลงเหลือ ทุกส่วนเรียกใช้ `@/components/Dropdown.tsx`
-- ✅ ตัดสีชมพูออกหมดจด คอนทราสต์ภาพรวมระบบ ขาว-ดำ-เทา อ่านง่าย ชัดเจน
-
+- ✅ UI Theme: สะอาดตา มินิมอล โมโนโครม (Slate/Neutral)
+- ✅ Component Standards: `Button.tsx`, `Badge.tsx`, `Table.tsx`, `Dropdown.tsx` และ shadcn `components/ui/` ใช้งานเป็นมาตรฐานหลัก
+- ✅ Frontend Next.js 16 (Turbopack) & TypeScript ผ่านการทดสอบ `npm run build` สำเร็จ 100% (21 routes generated)
+- ✅ Backend Laravel 11 API รองรับ Drag & Drop sorting, Dashboard Analytics, Receipt processing

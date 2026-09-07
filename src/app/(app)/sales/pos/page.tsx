@@ -69,8 +69,9 @@ export default function POSPage() {
     const parts: string[] = [];
     if (options.temperature) parts.push(options.temperature);
     if (options.sweetness && options.sweetness !== 'หวาน 100%') parts.push(options.sweetness);
-    if (options.isSpecial) parts.push('เพิ่มช็อต (+15฿)');
-    if (options.diningOption && options.diningOption !== 'ทานที่ร้าน') parts.push(options.diningOption);
+    const shots = options.extraShots ?? (options.isSpecial ? 1 : 0);
+    if (shots > 0) parts.push(`เพิ่ม ${shots} ช็อต (+฿${shots * 15})`);
+    if (options.diningOption && options.diningOption !== 'ทานที่ร้าน') parts.push('🥤 กลับบ้าน');
     if (options.spiciness && options.spiciness !== 'ไม่เผ็ด') parts.push(options.spiciness);
     if (options.customNote) parts.push(options.customNote);
     return parts.join(' • ');
@@ -82,7 +83,7 @@ export default function POSPage() {
       temperature: 'เย็น',
       sweetness: 'หวาน 100%',
       diningOption: 'ทานที่ร้าน',
-      isSpecial: false,
+      extraShots: 0,
       customNote: '',
     };
 
@@ -149,39 +150,101 @@ export default function POSPage() {
 
   const clearCart = () => setCartItems([]);
 
-  // Calculate totals (including special +10฿ per plate if selected)
+  // Calculate totals: base price + extra shots (+15฿ each) + blend upcharge (+10฿)
   const getItemEffectivePrice = (entry: CartEntry) => {
-    return entry.item.price + (entry.options.isSpecial ? 10 : 0);
+    const shots = entry.options.extraShots ?? (entry.options.isSpecial ? 1 : 0);
+    const blendExtra = entry.options.temperature === 'ปั่น (+10฿)' ? 10 : 0;
+    return entry.item.price + shots * 15 + blendExtra;
   };
 
   const subtotal = cartItems.reduce((sum, c) => sum + getItemEffectivePrice(c) * c.quantity, 0);
-  const vat = Number((subtotal * 0.07).toFixed(2));
-  const grandTotal = Number((subtotal + vat).toFixed(2));
+  // No VAT — ราคาที่เห็นคือราคาสุทธิ
+  const grandTotal = subtotal;
 
   // Compute Total BOM stock impact in current cart
   const cartBOMImpact: {
     [ingId: number]: { name: string; unit: string; current: number; used: number; remaining: number };
   } = {};
+
+  const addBOMImpact = (ingId: number, ingName: string, ingUnit: string, ingCurrent: number, usedQty: number) => {
+    if (!cartBOMImpact[ingId]) {
+      cartBOMImpact[ingId] = { name: ingName, unit: ingUnit, current: ingCurrent, used: 0, remaining: ingCurrent };
+    }
+    cartBOMImpact[ingId].used = Number((cartBOMImpact[ingId].used + usedQty).toFixed(3));
+    cartBOMImpact[ingId].remaining = Math.max(0, Number((cartBOMImpact[ingId].current - cartBOMImpact[ingId].used).toFixed(3)));
+  };
+
   cartItems.forEach(({ item, quantity, options }) => {
-    const qtyMultiplier = options.isSpecial ? 1.3 : 1.0; // Special uses ~30% more ingredients
+    const shots = options.extraShots ?? (options.isSpecial ? 1 : 0);
+    const customNote = options.customNote || '';
+    const sweetness = options.sweetness || 'หวาน 100%';
+
+    // Sweetness multiplier: check 100% before 0%
+    let sweetnessMultiplier = 1.0;
+    if (customNote.includes('ไม่ใส่ไซรัป')) {
+      sweetnessMultiplier = 0.0;
+    } else if (sweetness.includes('125%') || sweetness.includes('หวานมาก')) {
+      sweetnessMultiplier = 1.25;
+    } else if (sweetness.includes('100%')) {
+      sweetnessMultiplier = 1.0;
+    } else if (sweetness.includes('75%')) {
+      sweetnessMultiplier = 0.75;
+    } else if (sweetness.includes('50%') || sweetness.includes('หวานน้อย')) {
+      sweetnessMultiplier = 0.50;
+    } else if (sweetness.includes('25%')) {
+      sweetnessMultiplier = 0.25;
+    } else if (sweetness.includes('0%') || sweetness.includes('ไม่หวาน')) {
+      sweetnessMultiplier = 0.0;
+    }
+
     item.recipes?.forEach((r) => {
       const ing = ingredients.find((i) => i.id === r.ingredient_id);
       if (!ing) return;
-      if (!cartBOMImpact[ing.id]) {
-        cartBOMImpact[ing.id] = {
-          name: ing.name,
-          unit: ing.unit,
-          current: ing.quantity,
-          used: 0,
-          remaining: ing.quantity,
-        };
+
+      const ingNameLower = ing.name.toLowerCase();
+      const ingCatLower = (ing.category || '').toLowerCase();
+
+      const isCoffee =
+        (ingNameLower.includes('เมล็ดกาแฟ') ||
+          ingNameLower.includes('กาแฟคั่ว') ||
+          (ingNameLower.includes('กาแฟ') && !ingNameLower.includes('แก้ว'))) ||
+        (ingCatLower.includes('เมล็ดกาแฟ') ||
+          (ingCatLower.includes('กาแฟ') && !ingCatLower.includes('แก้ว')));
+      const isSweetener =
+        ingNameLower.includes('ไซรัป') ||
+        ingNameLower.includes('syrup') ||
+        ingNameLower.includes('นมข้นหวาน') ||
+        ingNameLower.includes('น้ำผึ้ง') ||
+        ingNameLower.includes('น้ำเชื่อม') ||
+        ingCatLower.includes('ไซรัป');
+
+      let mult = 1.0;
+      if (isCoffee) {
+        mult = 1.0 + shots;
+      } else if (isSweetener) {
+        mult = sweetnessMultiplier;
       }
-      cartBOMImpact[ing.id].used += Number(((r.quantity_used || 0) * quantity * qtyMultiplier).toFixed(3));
-      cartBOMImpact[ing.id].remaining = Math.max(
-        0,
-        Number((cartBOMImpact[ing.id].current - cartBOMImpact[ing.id].used).toFixed(3))
-      );
+
+      const usedQty = (r.quantity_used || 0) * quantity * mult;
+      if (usedQty > 0) {
+        addBOMImpact(ing.id, ing.name, ing.unit, ing.quantity, usedQty);
+      }
     });
+
+    // If takeaway, try to find a cup ingredient and deduct 1 per qty
+    if (options.diningOption === 'กลับบ้าน' || customNote.includes('กลับบ้าน')) {
+      const cupIng = ingredients.find((i) =>
+        i.name.toLowerCase().includes('แก้ว') && (
+          i.name.toLowerCase().includes('takeaway') ||
+          i.name.toLowerCase().includes('กลับบ้าน') ||
+          i.category?.toLowerCase().includes('แก้ว') ||
+          i.category?.toLowerCase().includes('บรรจุภัณฑ์')
+        )
+      ) ?? ingredients.find((i) => i.name.toLowerCase().includes('แก้ว'));
+      if (cupIng) {
+        addBOMImpact(cupIng.id, cupIng.name, cupIng.unit, cupIng.quantity, quantity);
+      }
+    }
   });
 
   const handleCheckout = async () => {
@@ -191,6 +254,7 @@ export default function POSPage() {
       menu_item_id: c.item.id,
       quantity: c.quantity,
       note: formatOptionNote(c.options),
+      options: c.options,
     }));
 
     const result = await createOrder(tableNo, orderData, paymentMethod);
@@ -380,12 +444,12 @@ export default function POSPage() {
                 <table className="w-full text-left text-xs">
                   <thead>
                     <tr className="border-b border-slate-200 text-slate-900 text-sm font-semibold">
-                      <th className="py-3.5 px-4 font-semibold text-slate-900">เมนู</th>
-                      <th className="py-3.5 px-4 font-semibold text-slate-900">หมวดหมู่</th>
-                      <th className="py-3.5 px-4 font-semibold text-slate-900 text-right">ราคา</th>
-                      <th className="py-3.5 px-4 font-semibold text-slate-900 text-right">ต้นทุน BOM</th>
-                      <th className="py-3.5 px-4 font-semibold text-slate-900 text-center">สูตร BOM</th>
-                      <th className="py-3.5 px-4 font-semibold text-slate-900 text-center">สั่งซื้อ</th>
+                      <th className="py-3.5 px-4 font-semibold text-slate-900 whitespace-nowrap">เมนู</th>
+                      <th className="py-3.5 px-4 font-semibold text-slate-900 whitespace-nowrap">หมวดหมู่</th>
+                      <th className="py-3.5 px-4 font-semibold text-slate-900 text-right whitespace-nowrap">ราคา</th>
+                      <th className="py-3.5 px-4 font-semibold text-slate-900 text-right whitespace-nowrap">ต้นทุน BOM</th>
+                      <th className="py-3.5 px-4 font-semibold text-slate-900 text-center whitespace-nowrap w-24">สูตร BOM</th>
+                      <th className="py-3.5 px-4 font-semibold text-slate-900 text-center whitespace-nowrap w-28">สั่งซื้อ</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -414,35 +478,38 @@ export default function POSPage() {
                               </div>
                             </div>
                           </td>
-                          <td className="py-3.5 px-4">
+                          <td className="py-3.5 px-4 whitespace-nowrap">
                             <Badge variant="neutral">
                               {menu.category}
                             </Badge>
                           </td>
-                          <td className="py-3.5 px-4 text-right font-normal text-slate-800 text-sm font-mono">
+                          <td className="py-3.5 px-4 text-right font-normal text-slate-800 text-sm font-mono whitespace-nowrap">
                             ฿{menu.price.toFixed(2)}
                           </td>
-                          <td className="py-3.5 px-4 text-right font-normal text-slate-500">
+                          <td className="py-3.5 px-4 text-right font-normal text-slate-500 whitespace-nowrap font-mono">
                             ฿{menu.recipe_cost.toFixed(2)}
                           </td>
-                          <td className="py-3.5 px-4 text-center">
+                          <td className="py-3.5 px-4 text-center whitespace-nowrap">
                             <Button
                               size="sm"
                               variant="secondary"
                               onClick={() => setPreviewMenu(menu)}
                               title="ดูสูตรวัตถุดิบ"
+                              className="w-8 h-8 p-0 rounded-xl inline-flex items-center justify-center"
                             >
                               <Eye className="w-3.5 h-3.5" />
                             </Button>
                           </td>
-                          <td className="py-3.5 px-4 text-center">
+                          <td className="py-3.5 px-4 text-center whitespace-nowrap">
                             <Button
                               size="sm"
                               variant="primary"
                               disabled={!isAvailable}
                               onClick={() => handleOpenOptionModal(menu)}
+                              icon={<Plus className="w-3.5 h-3.5" />}
+                              className="whitespace-nowrap font-medium"
                             >
-                              <Plus className="w-3.5 h-3.5" /> สั่ง {totalInCartForMenu > 0 && `(${totalInCartForMenu})`}
+                              สั่ง {totalInCartForMenu > 0 && `(${totalInCartForMenu})`}
                             </Button>
                           </td>
                         </tr>
@@ -521,11 +588,28 @@ export default function POSPage() {
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1">
-                              <div className="font-medium text-slate-900 flex items-center gap-1.5">
+                              <div className="font-medium text-slate-900 flex items-center gap-1.5 flex-wrap">
                                 <span>{entry.item.name}</span>
-                                {entry.options.isSpecial && (
-                                  <span className="text-[10px] skeuo-badge-amber px-1.5 py-0.2 rounded-md font-medium">
-                                    พิเศษ
+                                {entry.options.temperature && (
+                                  <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium ${
+                                    entry.options.temperature === 'ร้อน'
+                                      ? 'bg-orange-100 text-orange-700'
+                                      : entry.options.temperature === 'ปั่น (+10฿)'
+                                      ? 'bg-blue-100 text-blue-700'
+                                      : 'bg-sky-100 text-sky-700'
+                                  }`}>
+                                    {entry.options.temperature === 'เย็น' ? '🧊' : entry.options.temperature === 'ร้อน' ? '☕' : '🥤'}{' '}
+                                    {entry.options.temperature}
+                                  </span>
+                                )}
+                                {(() => { const shots = entry.options.extraShots ?? (entry.options.isSpecial ? 1 : 0); return shots > 0 ? (
+                                  <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-md font-medium">
+                                    +{shots}ช็อต
+                                  </span>
+                                ) : null; })()}
+                                {entry.options.diningOption === 'กลับบ้าน' && (
+                                  <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-md font-medium">
+                                    🥤 กลับบ้าน
                                   </span>
                                 )}
                               </div>
@@ -563,7 +647,7 @@ export default function POSPage() {
                           {/* Display Selected Note/Options */}
                           <div className="flex items-center justify-between pt-1 border-t border-slate-300/60 text-[11px]">
                             <span className="text-slate-500 truncate max-w-[200px]" title={formattedNote || 'ไม่มีหมายเหตุ'}>
-                              {formattedNote ? `📝 ${formattedNote}` : '🍽️ ทานที่ร้าน • เผ็ดปกติ'}
+                              {formattedNote ? `📝 ${formattedNote}` : '☕ ทานที่ร้าน • หวาน 100%'}
                             </span>
                             <button
                               onClick={() => handleOpenOptionModal(entry.item, entry.cartId)}
@@ -581,16 +665,8 @@ export default function POSPage() {
                 {/* Bill Summary & Payment Form */}
                 <div className="pt-3 border-t border-slate-300/60 space-y-3 mt-auto">
                   <div className="space-y-1 text-xs font-medium">
-                    <div className="flex justify-between text-slate-500 font-normal">
-                      <span>รวม</span>
-                      <span className="font-mono">฿{subtotal.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-slate-500 font-normal">
-                      <span>VAT 7%</span>
-                      <span className="font-mono">฿{vat.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between font-semibold text-sm text-slate-900 pt-1 border-t border-slate-300/60">
-                      <span>สุทธิ</span>
+                    <div className="flex justify-between font-semibold text-sm text-slate-900 py-1">
+                      <span>ยอดรวม</span>
                       <span className="text-base text-slate-900 font-semibold font-mono">฿{grandTotal.toFixed(2)}</span>
                     </div>
                   </div>
@@ -648,7 +724,7 @@ export default function POSPage() {
                     <span>ยืนยันชำระเงิน</span>
                     {cartItems.length > 0 && (
                       <span className="font-mono text-xs opacity-90 pl-1">
-                        (฿{grandTotal.toFixed(2)})
+                        ฿{grandTotal.toFixed(2)}
                       </span>
                     )}
                   </button>
@@ -657,42 +733,51 @@ export default function POSPage() {
             )}
           </div>
 
-          {/* Real-time BOM Stock Deduction Preview */}
-          <div className="skeuo-card rounded-3xl p-4 space-y-2 text-xs">
-            <div className="flex items-center gap-2 text-slate-800 font-semibold text-xs">
-              <Layers className="w-4 h-4 text-slate-700" />
-              <span>ตัดสต็อกวัตถุดิบ (BOM)</span>
-            </div>
-            {Object.keys(cartBOMImpact).length === 0 ? (
-              <p className="text-[11px] text-slate-400 py-1 font-medium">
-                รายการตัดสต็อกจะแสดงเมื่อมีออเดอร์
-              </p>
-            ) : (
-              <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1 no-scrollbar">
-                {Object.values(cartBOMImpact).map((impact, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between text-[11px] p-2.5 rounded-xl skeuo-inset"
-                  >
-                    <div>
-                      <span className="font-bold text-slate-900">{impact.name}</span>
-                      <div className="text-[10px] text-slate-400">
-                        เดิม {impact.current} {impact.unit}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className="font-bold text-rose-600">
-                        -{impact.used} {impact.unit}
-                      </span>
-                      <div className="text-[10px] text-emerald-700 font-bold">
-                        เหลือ {impact.remaining} {impact.unit}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+          {/* Real-time BOM Stock Deduction Preview (Only show in cart view, not while customizing) */}
+          {!optionTargetMenu && (
+            <div className="skeuo-card rounded-3xl p-4 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-slate-800 font-semibold text-xs">
+                  <Layers className="w-4 h-4 text-slate-700" />
+                  <span>ตัดสต็อกวัตถุดิบ (BOM)</span>
+                </div>
+                {Object.keys(cartBOMImpact).length > 0 && (
+                  <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
+                    {Object.keys(cartBOMImpact).length} รายการ
+                  </span>
+                )}
               </div>
-            )}
-          </div>
+              {Object.keys(cartBOMImpact).length === 0 ? (
+                <p className="text-[11px] text-slate-400 py-1 font-medium">
+                  รายการตัดสต็อกจะแสดงเมื่อมีออเดอร์
+                </p>
+              ) : (
+                <div className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
+                  {Object.values(cartBOMImpact).map((impact, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between text-[11px] p-2.5 rounded-xl skeuo-inset"
+                    >
+                      <div>
+                        <span className="font-bold text-slate-900">{impact.name}</span>
+                        <div className="text-[10px] text-slate-400">
+                          เดิม {impact.current} {impact.unit}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-bold text-rose-600">
+                          -{impact.used} {impact.unit}
+                        </span>
+                        <div className="text-[10px] text-emerald-700 font-bold">
+                          เหลือ {impact.remaining} {impact.unit}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </main>
 

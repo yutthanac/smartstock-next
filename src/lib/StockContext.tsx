@@ -24,7 +24,9 @@ interface StockContextType {
   addMenuItem: (menu: { name: string; category: string; price: number; image?: string; description?: string; recipes: { ingredient_id: number; quantity_used: number }[] }) => Promise<boolean>;
   updateMenuItem: (id: number, menu: { name?: string; category?: string; price?: number; image?: string; description?: string; recipes?: { ingredient_id: number; quantity_used: number }[] }) => Promise<boolean>;
   deleteMenuItem: (id: number) => Promise<boolean>;
-  createOrder: (tableNo: string, items: { menu_item_id: number; quantity: number }[], paymentMethod: 'cash' | 'qr_promptpay' | 'credit_card') => Promise<Order | null>;
+  reorderIngredients: (orderedIds: number[]) => Promise<boolean>;
+  reorderMenuItems: (orderedIds: number[]) => Promise<boolean>;
+  createOrder: (tableNo: string, items: { menu_item_id: number; quantity: number; note?: string; options?: any }[], paymentMethod: 'cash' | 'qr_promptpay' | 'credit_card') => Promise<Order | null>;
 }
 
 const StockContext = createContext<StockContextType | undefined>(undefined);
@@ -385,10 +387,76 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const reorderIngredients = async (orderedIds: number[]): Promise<boolean> => {
+    const prevIngredients = [...ingredients];
+    setIngredients((prev) => {
+      const map = new Map(prev.map((item) => [item.id, item]));
+      const reordered: Ingredient[] = [];
+      orderedIds.forEach((id) => {
+        const item = map.get(id);
+        if (item) {
+          reordered.push(item);
+          map.delete(id);
+        }
+      });
+      return [...reordered, ...map.values()];
+    });
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/ingredients/sort`, {
+        method: 'POST',
+        headers: apiHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ orderedIds }),
+      });
+      if (!res.ok) {
+        setIngredients(prevIngredients);
+        return false;
+      }
+      return true;
+    } catch (e) {
+      console.error('Error sorting ingredients:', e);
+      setIngredients(prevIngredients);
+      return false;
+    }
+  };
+
+  const reorderMenuItems = async (orderedIds: number[]): Promise<boolean> => {
+    const prevMenus = [...menuItems];
+    setMenuItems((prev) => {
+      const map = new Map(prev.map((item) => [item.id, item]));
+      const reordered: MenuItem[] = [];
+      orderedIds.forEach((id) => {
+        const item = map.get(id);
+        if (item) {
+          reordered.push(item);
+          map.delete(id);
+        }
+      });
+      return [...reordered, ...map.values()];
+    });
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/menus/sort`, {
+        method: 'POST',
+        headers: apiHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ orderedIds }),
+      });
+      if (!res.ok) {
+        setMenuItems(prevMenus);
+        return false;
+      }
+      return true;
+    } catch (e) {
+      console.error('Error sorting menus:', e);
+      setMenuItems(prevMenus);
+      return false;
+    }
+  };
+
   // Create POS order via backend API (executes BOM deduction in MySQL/SQLite transaction)
   const createOrder = async (
     tableNo: string,
-    items: { menu_item_id: number; quantity: number; note?: string }[],
+    items: { menu_item_id: number; quantity: number; note?: string; options?: any }[],
     paymentMethod: 'cash' | 'qr_promptpay' | 'credit_card'
   ): Promise<Order | null> => {
     try {
@@ -438,6 +506,8 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
         addMenuItem,
         updateMenuItem,
         deleteMenuItem,
+        reorderIngredients,
+        reorderMenuItems,
         createOrder,
       }}
     >

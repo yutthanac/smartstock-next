@@ -191,7 +191,7 @@ export const Sidebar: React.FC<SidebarProps> = () => {
       title: 'คลังสินค้า (Stock)',
       items: [
         {
-          label: 'จัดการสต็อก',
+          label: 'จัดการสต็อกวัตถุดิบ',
           href: '/stock',
           icon: Boxes,
           alertCount: dashboard.low_stock_count > 0 ? dashboard.low_stock_count : undefined,
@@ -199,14 +199,7 @@ export const Sidebar: React.FC<SidebarProps> = () => {
           allowedRoles: ['admin', 'owner', 'manager', 'chef'],
         },
         {
-          label: 'วัตถุดิบทั้งหมด',
-          href: '/stock/ingredients',
-          icon: Carrot,
-          moduleKey: 'ingredients',
-          allowedRoles: ['admin', 'owner', 'manager', 'chef'],
-        },
-        {
-          label: 'รายการซื้อของ/จ่ายตลาด',
+          label: 'รายการซื้อของ & ใบเสร็จ',
           href: '/stock/purchase-orders',
           icon: ShoppingBag,
           moduleKey: 'purchase_orders',

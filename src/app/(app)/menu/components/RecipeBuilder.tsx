@@ -85,10 +85,35 @@ export const RecipeBuilder: React.FC<RecipeBuilderProps> = ({
 
               {/* Unit & Live Calculated Cost */}
               <div className="w-24 text-right pr-1 shrink-0">
-                <div className="text-xs font-normal text-slate-800 font-mono">
-                  ฿{((selectedIng?.cost_per_unit || 0) * (typeof row.quantity_used === 'number' ? row.quantity_used : parseFloat(row.quantity_used as any) || 0)).toFixed(2)}
-                </div>
-                <div className="text-[10px] text-slate-400 font-medium">{selectedIng?.unit || ''}</div>
+                {(() => {
+                  const rawQty = typeof row.quantity_used === 'number' ? row.quantity_used : parseFloat(row.quantity_used as any) || 0;
+                  const unitLower = (selectedIng?.unit || '').toLowerCase().trim();
+                  let unitFactor = 1.0;
+                  let displayUnit = selectedIng?.unit || '';
+                  if (['กก.', 'กก', 'kg', 'กิโลกรัม'].includes(unitLower) && rawQty >= 1) {
+                    unitFactor = 0.001;
+                    displayUnit = 'กรัม';
+                  } else if (['ลิตร', 'l', 'liter', 'litre'].includes(unitLower) && rawQty >= 1) {
+                    unitFactor = 0.001;
+                    displayUnit = 'มล.';
+                  }
+                  const rowCost = (selectedIng?.cost_per_unit || 0) * rawQty * unitFactor;
+                  return (
+                    <>
+                      <div className="text-xs font-normal text-slate-800 font-mono">
+                        ฿{rowCost.toFixed(2)}
+                      </div>
+                      <div className="text-[10px] text-slate-400 font-medium">
+                        {displayUnit}
+                        {unitFactor < 1 && (
+                          <span className="text-[9px] text-amber-600 block leading-tight">
+                            (แปลงจาก {selectedIng?.unit})
+                          </span>
+                        )}
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
 
               {/* Delete row button */}

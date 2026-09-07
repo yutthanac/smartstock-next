@@ -21,13 +21,13 @@ export const StaffTableView: React.FC<StaffTableViewProps> = ({
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-transparent border-b border-slate-200 text-sm font-semibold text-slate-900">
-              <th className="py-4 px-6 font-semibold">พนักงาน (Staff)</th>
-              <th className="py-4 px-6 font-semibold">อีเมล (Email)</th>
-              <th className="py-4 px-6 font-semibold">สังกัดร้านค้า (Store)</th>
-              <th className="py-4 px-6 font-semibold">บทบาท & สิทธิ์ (Roles)</th>
-              <th className="py-4 px-6 font-semibold">จำนวนสิทธิ์</th>
-              <th className="py-4 px-6 font-semibold">วันที่สร้าง</th>
-              <th className="py-4 px-6 text-right font-semibold">จัดการ</th>
+              <th className="py-4 px-6 font-semibold whitespace-nowrap">พนักงาน (Staff)</th>
+              <th className="py-4 px-6 font-semibold whitespace-nowrap">อีเมล (Email)</th>
+              <th className="py-4 px-6 font-semibold whitespace-nowrap">สังกัดร้านค้า (Store)</th>
+              <th className="py-4 px-6 font-semibold whitespace-nowrap">บทบาท & สิทธิ์ (Roles)</th>
+              <th className="py-4 px-6 font-semibold whitespace-nowrap">จำนวนสิทธิ์</th>
+              <th className="py-4 px-6 font-semibold whitespace-nowrap">วันที่สร้าง</th>
+              <th className="py-4 px-6 text-right font-semibold whitespace-nowrap w-24">จัดการ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-xs">
@@ -126,8 +126,8 @@ export const StaffTableView: React.FC<StaffTableViewProps> = ({
                   </td>
 
                   {/* Actions */}
-                  <td className="py-4 px-6 text-right">
-                    <div className="flex items-center justify-end gap-1">
+                  <td className="py-4 px-6 text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1 shrink-0">
                       <button
                         onClick={() => onEdit(staff)}
                         title="แก้ไขสิทธิ์"

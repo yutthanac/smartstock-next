@@ -275,9 +275,9 @@ export default function StaffPage() {
         )}
 
         {/* Toolbar Section */}
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-white p-4 rounded-3xl border border-slate-200/80 shadow-xs">
+        <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-4 bg-white p-4 rounded-3xl border border-slate-200/80 shadow-xs">
           {/* Search Input */}
-          <div className="relative flex-1">
+          <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
@@ -289,7 +289,7 @@ export default function StaffPage() {
           </div>
 
           {/* Filters & Actions */}
-          <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+          <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap shrink-0">
             {/* Store Filter */}
             {availableStores.length > 1 && (
               <div className="w-40 shrink-0">
@@ -311,7 +311,7 @@ export default function StaffPage() {
             </div>
 
             {/* View Mode Toggle */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/80">
+            <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/80 shrink-0">
               <button
                 onClick={() => setViewMode('table')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-normal transition-all cursor-pointer ${
@@ -342,6 +342,7 @@ export default function StaffPage() {
               onClick={handleOpenCreate}
               icon={<UserPlus className="w-4 h-4" />}
               size="md"
+              className="shrink-0 whitespace-nowrap"
             >
               เพิ่มพนักงาน
             </Button>

@@ -259,6 +259,7 @@ export default function StoresSettingsPage() {
           }}
           icon={<Plus className="w-4 h-4" />}
           size="sm"
+          className="shrink-0 whitespace-nowrap"
         >
           เพิ่มร้านใหม่
         </Button>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Boxes,
   Plus,
@@ -17,7 +17,26 @@ import {
   Zap,
   Edit2,
   Calendar,
+  GripVertical,
+  FileCheck,
 } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { useStock } from '@/lib/StockContext';
 import { Topbar } from '@/components/Topbar';
 import { Ingredient } from '@/types';
@@ -36,14 +55,188 @@ import {
 } from '@/components/Table';
 import { AddIngredientModal } from './components/AddIngredientModal';
 import { AdjustStockModal } from './components/AdjustStockModal';
+import { ReceiptInboundTab } from './components/ReceiptInboundTab';
+
+interface SortableIngredientRowProps {
+  item: Ingredient;
+  ratio: number;
+  maxStock: number;
+  onOpenEdit: (item: Ingredient) => void;
+  onAdjust: (item: Ingredient) => void;
+  onDelete: (id: number, name: string) => void;
+}
+
+function SortableIngredientRow({
+  item,
+  ratio,
+  maxStock,
+  onOpenEdit,
+  onAdjust,
+  onDelete,
+}: SortableIngredientRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+    position: isDragging ? 'relative' : undefined,
+    zIndex: isDragging ? 30 : undefined,
+  };
+
+  return (
+    <TableRow
+      ref={setNodeRef}
+      style={style}
+      className={isDragging ? 'bg-slate-100 shadow-md ring-1 ring-slate-300' : ''}
+    >
+      {/* Drag Handle */}
+      <TableCell className="w-10 px-2 text-center whitespace-nowrap">
+        <button
+          type="button"
+          className="cursor-grab touch-none p-1.5 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100 active:cursor-grabbing transition-colors inline-flex items-center justify-center"
+          title="คลิกค้างเพื่อลากสลับลำดับ"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="w-4 h-4" />
+        </button>
+      </TableCell>
+
+      <TableCell className="font-normal text-slate-800">
+        <div>
+          <div className="font-medium text-slate-900">{item.name}</div>
+          {item.supplier && (
+            <div className="text-[11px] text-slate-400">{item.supplier}</div>
+          )}
+        </div>
+      </TableCell>
+
+      <TableCell>
+        <span className="text-slate-600 text-xs font-normal">{item.category}</span>
+      </TableCell>
+
+      <TableCell className="text-center">
+        {item.tracking_type === 'bulk_expense' ? (
+          <Badge variant="warning" size="sm">
+            ตัดรอบก้อน
+          </Badge>
+        ) : (
+          <Badge variant="neutral" size="sm">
+            วัตถุดิบหลัก
+          </Badge>
+        )}
+      </TableCell>
+
+      <TableCell className="text-right">
+        <span className="px-2 py-0.5 rounded-full border border-slate-200 bg-slate-50/80 text-slate-500 text-xs font-mono inline-block font-normal">
+          ฿{item.cost_per_unit}/{item.unit}
+        </span>
+      </TableCell>
+
+      {/* Sleek Stock Level Tube */}
+      <TableCell className="text-center w-36">
+        <div className="flex flex-col gap-1 w-28 mx-auto">
+          <div className="flex items-center justify-between text-[10px] text-slate-400 font-normal">
+            <span>{ratio}%</span>
+            <span>{item.quantity}/{maxStock}</span>
+          </div>
+
+          <div className="w-full bg-slate-100 border border-slate-200 h-1.5 rounded-full overflow-hidden relative">
+            <div
+              className={`h-full rounded-full transition-all duration-300 ${
+                item.status === 'out'
+                  ? 'bg-transparent'
+                  : item.status === 'low'
+                  ? 'bg-amber-400'
+                  : 'bg-slate-700'
+              }`}
+              style={{ width: `${Math.max(item.status === 'out' ? 0 : 4, ratio)}%` }}
+            ></div>
+          </div>
+        </div>
+      </TableCell>
+
+      <TableCell className="text-right font-normal text-slate-700 text-xs font-mono">
+        {item.quantity} {item.unit}
+      </TableCell>
+      <TableCell className="text-right text-slate-400 font-normal text-xs font-mono">
+        {item.reorder_point} {item.unit}
+      </TableCell>
+      <TableCell className="text-center">
+        {item.status === 'normal' && (
+          <Badge variant="outline" size="sm">
+            ปกติ
+          </Badge>
+        )}
+        {item.status === 'low' && (
+          <Badge variant="warning" size="sm">
+            ใกล้หมด
+          </Badge>
+        )}
+        {item.status === 'out' && (
+          <Badge variant="danger" size="sm">
+            สต็อกหมด
+          </Badge>
+        )}
+      </TableCell>
+      <TableCell className="text-center">
+        <div className="flex items-center justify-center gap-1.5">
+          <button
+            onClick={() => onOpenEdit(item)}
+            className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            title="แก้ไขข้อมูลวัตถุดิบ"
+          >
+            <Edit2 className="w-3.5 h-3.5" />
+          </button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onAdjust(item)}
+            className="h-7 px-2.5 text-[11px] font-normal"
+          >
+            ปรับสต็อก
+          </Button>
+          <button
+            onClick={() => onDelete(item.id, item.name)}
+            className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+            title="ลบรายการ"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
 
 export default function StockPage() {
-  const { ingredients, movements, addIngredient, updateIngredient, deleteIngredient, adjustStock, bulkUseIngredient } = useStock();
+  const { ingredients, movements, addIngredient, updateIngredient, deleteIngredient, adjustStock, bulkUseIngredient, reorderIngredients } = useStock();
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState<'inventory' | 'movements'>('inventory');
+  const [activeTab, setActiveTab] = useState<'inventory' | 'inbound' | 'movements'>('inventory');
+  const [pendingReceiptsCount, setPendingReceiptsCount] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 8;
+
+  // Track pending receipts from POs in localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('smartstock_shopping_orders');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const count = parsed.filter((p: any) => p.status === 'receipt_uploaded').length;
+        setPendingReceiptsCount(count);
+      }
+    } catch {}
+  }, [activeTab]);
 
   // Modal States
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -58,6 +251,7 @@ export default function StockPage() {
     name: string;
     unit: string;
     quantity: number | string;
+    max_stock?: number | string;
     reorder_point: number | string;
     cost_per_unit: number | string;
     category: string;
@@ -65,10 +259,11 @@ export default function StockPage() {
     tracking_type: 'strict' | 'bulk_expense';
   }>({
     name: '',
-    unit: 'กก.',
+    unit: 'กรัม',
     quantity: '',
-    reorder_point: '2',
-    cost_per_unit: '350',
+    max_stock: '',
+    reorder_point: '200',
+    cost_per_unit: '0.5',
     category: 'เมล็ดกาแฟ & ชา',
     supplier: '',
     tracking_type: 'strict',
@@ -85,14 +280,43 @@ export default function StockPage() {
     currentPage * pageSize
   );
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+    useSensor(KeyboardSensor)
+  );
+
+  const paginatedIngredientIds = React.useMemo(
+    () => paginatedIngredients.map((i) => i.id),
+    [paginatedIngredients]
+  );
+
+  const handleDragEndIngredients = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = paginatedIngredientIds.indexOf(active.id as number);
+    const newIndex = paginatedIngredientIds.indexOf(over.id as number);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reorderedPage = arrayMove(paginatedIngredients, oldIndex, newIndex);
+    const updatedFullList = [...ingredients];
+    const startIndex = (currentPage - 1) * pageSize;
+    updatedFullList.splice(startIndex, paginatedIngredients.length, ...reorderedPage);
+
+    await reorderIngredients(updatedFullList.map((i) => i.id));
+  };
+
   const handleOpenCreate = () => {
     setEditingTarget(null);
     setFormData({
       name: '',
-      unit: 'กก.',
+      unit: 'กรัม',
       quantity: '',
-      reorder_point: '2',
-      cost_per_unit: '350',
+      max_stock: '',
+      reorder_point: '200',
+      cost_per_unit: '0.5',
       category: 'เมล็ดกาแฟ & ชา',
       supplier: '',
       tracking_type: 'strict',
@@ -106,6 +330,7 @@ export default function StockPage() {
       name: ing.name,
       unit: ing.unit,
       quantity: ing.quantity,
+      max_stock: ing.max_stock ?? ing.quantity,
       reorder_point: ing.reorder_point,
       cost_per_unit: ing.cost_per_unit,
       category: ing.category || 'เมล็ดกาแฟ & ชา',
@@ -123,6 +348,7 @@ export default function StockPage() {
     }
 
     const qty = typeof formData.quantity === 'number' ? formData.quantity : parseFloat(formData.quantity) || 0;
+    const maxStock = typeof formData.max_stock === 'number' ? formData.max_stock : parseFloat(String(formData.max_stock || '')) || qty;
     const reorder = typeof formData.reorder_point === 'number' ? formData.reorder_point : parseFloat(formData.reorder_point) || 0;
     const cost = typeof formData.cost_per_unit === 'number' ? formData.cost_per_unit : parseFloat(formData.cost_per_unit) || 0;
 
@@ -132,6 +358,7 @@ export default function StockPage() {
         name: formData.name.trim(),
         unit: formData.unit,
         quantity: qty,
+        max_stock: Math.max(qty, maxStock),
         reorder_point: reorder,
         cost_per_unit: cost,
         category: formData.category,
@@ -143,6 +370,7 @@ export default function StockPage() {
         name: formData.name.trim(),
         unit: formData.unit,
         quantity: qty,
+        max_stock: Math.max(qty, maxStock),
         reorder_point: reorder,
         cost_per_unit: cost,
         category: formData.category,
@@ -158,6 +386,7 @@ export default function StockPage() {
         name: '',
         unit: 'กก.',
         quantity: '',
+        max_stock: '',
         reorder_point: '2',
         cost_per_unit: '350',
         category: 'เมล็ดกาแฟ & ชา',
@@ -220,6 +449,22 @@ export default function StockPage() {
               </span>
             </button>
             <button
+              onClick={() => setActiveTab('inbound')}
+              className={`px-4 py-1.5 rounded-full text-xs transition-all flex items-center gap-2 cursor-pointer ${
+                activeTab === 'inbound'
+                  ? 'bg-white text-emerald-800 border border-emerald-300 font-medium shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-900 font-normal'
+              }`}
+            >
+              <FileCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>ตรวจสอบ & รับเข้าจากบิล</span>
+              {pendingReceiptsCount > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-emerald-600 text-white font-medium shadow-2xs">
+                  {pendingReceiptsCount} บิลใหม่
+                </span>
+              )}
+            </button>
+            <button
               onClick={() => setActiveTab('movements')}
               className={`px-4 py-1.5 rounded-full text-xs transition-all flex items-center gap-2 cursor-pointer ${
                 activeTab === 'movements'
@@ -232,16 +477,19 @@ export default function StockPage() {
             </button>
           </div>
 
-          <Button
-            onClick={handleOpenCreate}
-            icon={<Plus className="w-3.5 h-3.5" />}
-            size="sm"
-          >
-            เพิ่มวัตถุดิบใหม่
-          </Button>
+          {activeTab === 'inventory' && (
+            <Button
+              onClick={handleOpenCreate}
+              icon={<Plus className="w-3.5 h-3.5" />}
+              size="sm"
+              className="shrink-0 whitespace-nowrap"
+            >
+              เพิ่มวัตถุดิบใหม่
+            </Button>
+          )}
         </div>
 
-        {activeTab === 'inventory' ? (
+        {activeTab === 'inventory' && (
           /* Inventory Table View */
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
             {/* Filter Bar */}
@@ -290,139 +538,57 @@ export default function StockPage() {
 
             {/* Table */}
             <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead>ชื่อวัตถุดิบ</TableHead>
-                    <TableHead>หมวดหมู่</TableHead>
-                    <TableHead className="text-center">การตัดสต็อก</TableHead>
-                    <TableHead className="text-right">ต้นทุน/หน่วย</TableHead>
-                    <TableHead className="text-center w-36">ระดับสต็อก</TableHead>
-                    <TableHead className="text-right">คงเหลือ</TableHead>
-                    <TableHead className="text-right">จุดสั่งซื้อ</TableHead>
-                    <TableHead className="text-center">สถานะ</TableHead>
-                    <TableHead className="text-center">จัดการ</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedIngredients.map((item) => {
-                    const ratio = Math.min(100, Math.round((item.quantity / (item.reorder_point * 2 || 1)) * 100));
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                modifiers={[restrictToVerticalAxis]}
+                onDragEnd={handleDragEndIngredients}
+              >
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="w-10 px-2 text-center whitespace-nowrap text-slate-400 font-normal text-xs" title="ลากเพื่อสลับลำดับ">
+                        ย้าย
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap">ชื่อวัตถุดิบ</TableHead>
+                      <TableHead className="whitespace-nowrap">หมวดหมู่</TableHead>
+                      <TableHead className="text-center whitespace-nowrap">การตัดสต็อก</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">ต้นทุน/หน่วย</TableHead>
+                      <TableHead className="text-center w-36 whitespace-nowrap">ระดับสต็อก</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">คงเหลือ</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">จุดสั่งซื้อ</TableHead>
+                      <TableHead className="text-center whitespace-nowrap">สถานะ</TableHead>
+                      <TableHead className="text-center whitespace-nowrap w-28">จัดการ</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <SortableContext items={paginatedIngredientIds} strategy={verticalListSortingStrategy}>
+                      {paginatedIngredients.map((item) => {
+                        const maxStock = item.max_stock && item.max_stock > 0 
+                          ? Math.max(item.max_stock, item.quantity) 
+                          : Math.max(item.quantity, item.reorder_point * 2 || 1);
+                        const ratio = Math.min(100, Math.round((item.quantity / (maxStock || 1)) * 100));
 
-                    return (
-                      <TableRow key={item.id}>
-                        <TableCell>
-                          <div className="font-normal text-slate-800">{item.name}</div>
-                          {item.supplier && (
-                            <div className="text-[10px] text-slate-400 font-normal">ซัพพลายเออร์: {item.supplier}</div>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-slate-500 font-normal">{item.category || '-'}</TableCell>
-                        <TableCell className="text-center">
-                          {item.tracking_type === 'bulk_expense' ? (
-                            <Badge
-                              variant="warning"
-                              size="sm"
-                              title="ตัดสต็อกเมื่อเปิดใช้/หมดจริง ไม่ตัดเศษตามจานขาย"
-                            >
-                              เบิกใช้/หมดจริง
-                            </Badge>
-                          ) : (
-                            <Badge
-                              variant="neutral"
-                              size="sm"
-                              title="ตัดสต็อกอัตโนมัติตามจานขายของ POS"
-                            >
-                              วัตถุดิบหลัก
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <span className="px-2 py-0.5 rounded-full border border-slate-200 bg-slate-50/80 text-slate-500 text-xs font-mono inline-block font-normal">
-                            ฿{item.cost_per_unit}/{item.unit}
-                          </span>
-                        </TableCell>
-
-                        {/* Sleek Stock Level Tube */}
-                        <TableCell className="text-center w-36">
-                          <div className="flex flex-col gap-1 w-28 mx-auto">
-                            <div className="flex items-center justify-between text-[10px] text-slate-400 font-normal">
-                              <span>{ratio}%</span>
-                              <span>{item.quantity}/{Math.round(item.reorder_point * 2 || 1)}</span>
-                            </div>
-
-                            <div className="w-full bg-slate-100 border border-slate-200 h-1.5 rounded-full overflow-hidden relative">
-                              <div
-                                className={`h-full rounded-full transition-all duration-300 ${
-                                  item.status === 'out'
-                                    ? 'bg-transparent'
-                                    : item.status === 'low'
-                                    ? 'bg-amber-400'
-                                    : 'bg-slate-700'
-                                }`}
-                                style={{ width: `${Math.max(item.status === 'out' ? 0 : 4, ratio)}%` }}
-                              ></div>
-                            </div>
-                          </div>
-                        </TableCell>
-
-                        <TableCell className="text-right font-normal text-slate-700 text-xs font-mono">
-                          {item.quantity} {item.unit}
-                        </TableCell>
-                        <TableCell className="text-right text-slate-400 font-normal text-xs font-mono">
-                          {item.reorder_point} {item.unit}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {item.status === 'normal' && (
-                            <Badge variant="outline" size="sm">
-                              ปกติ
-                            </Badge>
-                          )}
-                          {item.status === 'low' && (
-                            <Badge variant="warning" size="sm">
-                              ใกล้หมด
-                            </Badge>
-                          )}
-                          {item.status === 'out' && (
-                            <Badge variant="danger" size="sm">
-                              สต็อกหมด
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              onClick={() => handleOpenEdit(item)}
-                              className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-                              title="แก้ไขข้อมูลวัตถุดิบ"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setAdjustTarget(item);
-                                setAdjustType('in');
-                                setAdjustAmount(1);
-                              }}
-                              className="h-7 px-2.5 text-[11px] font-normal"
-                            >
-                              ปรับสต็อก
-                            </Button>
-                            <button
-                              onClick={() => handleDelete(item.id, item.name)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
-                              title="ลบรายการ"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                        return (
+                          <SortableIngredientRow
+                            key={item.id}
+                            item={item}
+                            ratio={ratio}
+                            maxStock={maxStock}
+                            onOpenEdit={handleOpenEdit}
+                            onAdjust={(target) => {
+                              setAdjustTarget(target);
+                              setAdjustType('in');
+                              setAdjustAmount(1);
+                            }}
+                            onDelete={handleDelete}
+                          />
+                        );
+                      })}
+                    </SortableContext>
+                  </TableBody>
+                </Table>
+              </DndContext>
             </div>
 
             {/* Pagination: only displays if items > 8 */}
@@ -435,8 +601,15 @@ export default function StockPage() {
               />
             </div>
           </div>
-        ) : (
-          /* Movement History Log View */
+        )}
+
+        {/* Receipt Inbound Tab */}
+        {activeTab === 'inbound' && (
+          <ReceiptInboundTab />
+        )}
+
+        {/* Movement History Log View */}
+        {activeTab === 'movements' && (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-5 space-y-3">
             <h3 className="font-normal text-slate-800 text-sm flex items-center gap-2">
               <History className="w-4 h-4 text-slate-500" />

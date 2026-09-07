@@ -301,8 +301,9 @@ export default function RolesPermissionPage() {
                     disabled={saving || selectedRole.name === 'admin'}
                     isLoading={saving}
                     variant="primary"
+                    icon={<Save className="w-4 h-4" />}
+                    className="shrink-0 whitespace-nowrap"
                   >
-                    <Save className="w-4 h-4" />
                     บันทึกการตั้งค่าสิทธิ์
                   </Button>
                 </div>

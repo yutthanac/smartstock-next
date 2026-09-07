@@ -1,117 +1,173 @@
-import React from 'react';
-import { Upload, Image as ImageIcon, X } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Upload, X } from 'lucide-react';
 
 interface ImageUploadProps {
   image: string;
   onChange: (imageVal: string) => void;
+  className?: string;
 }
 
-export const ImageUpload: React.FC<ImageUploadProps> = ({ image, onChange }) => {
+export const ImageUpload: React.FC<ImageUploadProps> = ({ image, onChange, className = '' }) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const processFile = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      alert('กรุณาเลือกไฟล์รูปภาพเท่านั้น (JPG, PNG, WEBP)');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('ขนาดไฟล์รูปภาพต้องไม่เกิน 5MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxDim = 800; // Resize to max 800px width/height for optimal storage and quality
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxDim) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          }
+        } else {
+          if (height > maxDim) {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.82);
+          onChange(compressedBase64);
+        }
+      };
+      if (typeof event.target?.result === 'string') {
+        img.src = event.target.result;
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      processFile(file);
+    }
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        alert('ขนาดไฟล์รูปภาพต้องไม่เกิน 10MB');
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const maxDim = 800; // Resize to max 800px width/height for optimal storage and quality
-          let width = img.width;
-          let height = img.height;
-
-          if (width > height) {
-            if (width > maxDim) {
-              height = Math.round((height * maxDim) / width);
-              width = maxDim;
-            }
-          } else {
-            if (height > maxDim) {
-              width = Math.round((width * maxDim) / height);
-              height = maxDim;
-            }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, width, height);
-            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.82);
-            onChange(compressedBase64);
-          }
-        };
-        if (typeof event.target?.result === 'string') {
-          img.src = event.target.result;
-        }
-      };
-      reader.readAsDataURL(file);
+      processFile(file);
+    }
+    if (e.target) {
+      e.target.value = '';
     }
   };
 
   return (
-    <div className="sm:col-span-2">
-      <label className="font-semibold text-slate-700 block mb-1">รูปภาพเมนูอาหาร</label>
+    <div className={`flex flex-col h-full ${className}`}>
+      <div className="mb-1">
+        <label className="font-semibold text-slate-700 block text-xs">รูปภาพประกอบ</label>
+      </div>
 
-      {/* Image Preview & Upload Container */}
-      <div className="flex flex-col sm:flex-row gap-3 items-start">
-        {/* Preview Box */}
-        <div className="w-24 h-24 rounded-2xl bg-slate-100 border-2 border-dashed border-slate-200 flex items-center justify-center relative overflow-hidden shrink-0 group">
-          {image ? (
-            <>
-              <img
-                src={image}
-                alt="Menu Preview"
-                className="w-full h-full object-cover rounded-2xl"
-              />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileUpload}
+        className="hidden"
+      />
+
+      {image ? (
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`relative w-full flex-1 min-h-[72px] rounded-xl border transition-all p-2 flex items-center gap-2.5 ${
+            isDragging
+              ? 'border-[#4fb0a5] bg-[#4fb0a5]/5 ring-2 ring-[#4fb0a5]/20'
+              : 'border-slate-200 bg-slate-50'
+          }`}
+        >
+          {/* Thumbnail */}
+          <div className="w-14 h-14 rounded-lg overflow-hidden bg-slate-200 shrink-0 border border-slate-200 relative group">
+            <img
+              src={image}
+              alt="Menu Preview"
+              className="w-full h-full object-cover"
+            />
+          </div>
+
+          {/* Details & Actions */}
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] font-semibold text-slate-700 truncate mb-1">
+              {image.startsWith('data:') ? 'รูปภาพที่เลือก' : image}
+            </p>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="px-2 py-1 text-[11px] font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg transition-colors shadow-2xs flex items-center gap-1"
+              >
+                <Upload className="w-3 h-3 text-[#4fb0a5]" />
+                <span>เปลี่ยน</span>
+              </button>
               <button
                 type="button"
                 onClick={() => onChange('')}
-                className="absolute top-1 right-1 p-1 bg-slate-900/70 hover:bg-rose-600 text-white rounded-full transition-colors"
-                title="ลบรูปภาพ"
+                className="px-2 py-1 text-[11px] font-semibold bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition-colors flex items-center gap-1"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3 h-3" />
+                <span>ลบ</span>
               </button>
-            </>
-          ) : (
-            <div className="text-center p-2 text-slate-400">
-              <ImageIcon className="w-6 h-6 mx-auto opacity-50 mb-1" />
-              <span className="text-[10px]">ไม่มีรูปภาพ</span>
             </div>
-          )}
-        </div>
-
-        {/* Upload button & URL Input */}
-        <div className="flex-1 space-y-2 w-full">
-          <div className="flex items-center gap-2">
-            <label className="cursor-pointer px-4 py-2 bg-white hover:bg-[#4fb0a5]/10 border border-slate-200 hover:border-[#4fb0a5] rounded-xl text-slate-700 text-xs font-bold flex items-center gap-2 transition-all shadow-2xs">
-              <Upload className="w-4 h-4 text-[#4fb0a5]" />
-              <span>เลือกไฟล์รูปจากเครื่อง...</span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-            </label>
-            <span className="text-[11px] text-slate-400">JPG, PNG, WEBP (สูงสุด 5MB)</span>
-          </div>
-
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="หรือวาง URL รูปภาพที่นี่..."
-              value={image}
-              onChange={(e) => onChange(e.target.value)}
-              className="w-full p-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#4fb0a5]"
-            />
           </div>
         </div>
-      </div>
+      ) : (
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+          className={`w-full flex-1 min-h-[72px] py-3 px-3 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-center text-center select-none ${
+            isDragging
+              ? 'border-[#4fb0a5] border-dashed bg-[#4fb0a5]/10 text-[#4fb0a5]'
+              : 'border-transparent bg-slate-100/90 hover:bg-slate-200/80 text-slate-500'
+          }`}
+        >
+          <p className="text-xs font-medium">
+            คลิกหรือลากไฟล์ภาพมาวางที่นี่ <span className="opacity-75 text-[10px] sm:block">(ไม่เกิน 5MB/ไฟล์)</span>
+          </p>
+        </div>
+      )}
     </div>
   );
 };
+

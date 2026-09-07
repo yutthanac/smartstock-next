@@ -19,12 +19,14 @@ export interface Ingredient {
   name: string;
   unit: string;
   quantity: number;
+  max_stock?: number;
   reorder_point: number;
   cost_per_unit: number;
   status: 'normal' | 'low' | 'out';
   tracking_type?: 'strict' | 'bulk_expense';
   category?: string;
   supplier?: string;
+  sort_order?: number;
   updated_at?: string;
 }
 
@@ -49,6 +51,7 @@ export interface MenuItem {
   status: 'available' | 'sold_out';
   recipes: RecipeItem[];
   available_plates?: number; // Calculated from current stock
+  sort_order?: number;
 }
 
 export interface OrderItem {
@@ -95,6 +98,24 @@ export interface DashboardKPI {
   low_stock_count: number;
   total_orders_today: number;
   sales_7days: {
+    day: string;
+    sales: number;
+    cost: number;
+    profit: number;
+  }[];
+  sales_weekly?: {
+    day: string;
+    sales: number;
+    cost: number;
+    profit: number;
+  }[];
+  sales_monthly?: {
+    day: string;
+    sales: number;
+    cost: number;
+    profit: number;
+  }[];
+  sales_yearly?: {
     day: string;
     sales: number;
     cost: number;
