@@ -68,7 +68,7 @@ export default function AIInsightsPage() {
 
                 <div className="grid grid-cols-2 gap-3 pt-2">
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                    <div className="text-[11px] text-slate-400">กำไรขั้นต้น (BOM Margin)</div>
+                    <div className="text-[11px] text-slate-400">กำไรขั้นต้น </div>
                     <div className="text-base font-bold text-emerald-700 mt-0.5">{item.margin}%</div>
                   </div>
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">

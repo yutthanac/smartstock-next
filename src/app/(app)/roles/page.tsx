@@ -43,12 +43,12 @@ interface PermissionCategories {
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 const categoryLabels: { [key: string]: { label: string; desc: string } } = {
-  dashboard: { label: '📊 แดชบอร์ด & รายงาน', desc: 'การเข้าถึงหน้าภาพรวม ยอดขาย และผลกำไร' },
-  inventory: { label: '📦 คลังสต็อก & วัตถุดิบ', desc: 'การดูและปรับยอดสต็อก นำเข้า ของเสีย' },
-  menu: { label: '🍽️ เมนูอาหาร & สูตร BOM', desc: 'การจัดการเมนู ราคา และอัตราการใช้วัตถุดิบ' },
-  pos: { label: '🛒 ระบบขายหน้าร้าน (POS)', desc: 'การเปิดโต๊ะ เลือกเมนู และรับชำระเงิน' },
-  system: { label: '⚙️ ระบบ & จัดการผู้ใช้', desc: 'การเพิ่ม ลบ แก้ไข และกำหนดสิทธิ์พนักงาน' },
-  general: { label: '📌 สิทธิ์ทั่วไป', desc: 'สิทธิ์การใช้งานพื้นฐาน' },
+  dashboard: { label: 'แดชบอร์ด & รายงาน', desc: 'การเข้าถึงหน้าภาพรวม ยอดขาย และผลกำไร' },
+  inventory: { label: 'คลังสต็อก & วัตถุดิบ', desc: 'การดูและปรับยอดสต็อก นำเข้า ของเสีย' },
+  menu: { label: 'เมนูอาหาร & สูตร', desc: 'การจัดการเมนู ราคา และอัตราการใช้วัตถุดิบ' },
+  pos: { label: 'ระบบขายหน้าร้าน', desc: 'การเปิดโต๊ะ เลือกเมนู และรับชำระเงิน' },
+  system: { label: 'ระบบ & จัดการผู้ใช้', desc: 'การเพิ่ม ลบ แก้ไข และกำหนดสิทธิ์พนักงาน' },
+  general: { label: 'สิทธิ์ทั่วไป', desc: 'สิทธิ์การใช้งานพื้นฐาน' },
 };
 
 export default function RolesPermissionPage() {

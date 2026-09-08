@@ -447,8 +447,8 @@ export default function POSPage() {
                       <th className="py-3.5 px-4 font-semibold text-slate-900 whitespace-nowrap">เมนู</th>
                       <th className="py-3.5 px-4 font-semibold text-slate-900 whitespace-nowrap">หมวดหมู่</th>
                       <th className="py-3.5 px-4 font-semibold text-slate-900 text-right whitespace-nowrap">ราคา</th>
-                      <th className="py-3.5 px-4 font-semibold text-slate-900 text-right whitespace-nowrap">ต้นทุน BOM</th>
-                      <th className="py-3.5 px-4 font-semibold text-slate-900 text-center whitespace-nowrap w-24">สูตร BOM</th>
+                      <th className="py-3.5 px-4 font-semibold text-slate-900 text-right whitespace-nowrap">ต้นทุน</th>
+                      <th className="py-3.5 px-4 font-semibold text-slate-900 text-center whitespace-nowrap w-24">สูตร</th>
                       <th className="py-3.5 px-4 font-semibold text-slate-900 text-center whitespace-nowrap w-28">สั่งซื้อ</th>
                     </tr>
                   </thead>
@@ -549,24 +549,6 @@ export default function POSPage() {
                     </div>
                     <h3 className="font-semibold text-slate-900 text-sm">รายการที่สั่ง</h3>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-medium text-slate-500">โต๊ะ:</span>
-                    <Dropdown
-                      value={tableNo}
-                      onChange={setTableNo}
-                      options={[
-                        { value: 'T-01', label: 'T-01' },
-                        { value: 'T-02', label: 'T-02' },
-                        { value: 'T-03', label: 'T-03' },
-                        { value: 'T-04', label: 'T-04' },
-                        { value: 'VIP-1', label: 'VIP-1' },
-                        { value: 'TakeAway', label: 'กลับบ้าน (TakeAway)' },
-                      ]}
-                      size="sm"
-                      className="w-32"
-                      buttonClassName="py-1.5 px-2.5 rounded-xl text-xs font-medium text-slate-800"
-                    />
-                  </div>
                 </div>
 
                 {/* Cart Items List */}
@@ -584,21 +566,21 @@ export default function POSPage() {
                       return (
                         <div
                           key={entry.cartId}
-                          className="p-3 rounded-2xl skeuo-inset text-xs space-y-1.5"
+                          className="p-3 rounded-2xl skeuo-inset text-sm space-y-1.5"
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1">
-                              <div className="font-medium text-slate-900 flex items-center gap-1.5 flex-wrap">
+                              <div className="font-normal text-slate-900 flex items-center gap-1.5 flex-wrap">
                                 <span>{entry.item.name}</span>
                                 {entry.options.temperature && (
-                                  <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium ${
+                                  <span className={`text-sm px-1.5 py-0.5 rounded-md font-bold ${
                                     entry.options.temperature === 'ร้อน'
                                       ? 'bg-orange-100 text-orange-700'
                                       : entry.options.temperature === 'ปั่น (+10฿)'
                                       ? 'bg-blue-100 text-blue-700'
                                       : 'bg-sky-100 text-sky-700'
                                   }`}>
-                                    {entry.options.temperature === 'เย็น' ? '🧊' : entry.options.temperature === 'ร้อน' ? '☕' : '🥤'}{' '}
+                                    {entry.options.temperature === 'เย็น' ? '' : entry.options.temperature === 'ร้อน' ? '' : ''}{' '}
                                     {entry.options.temperature}
                                   </span>
                                 )}
@@ -609,7 +591,7 @@ export default function POSPage() {
                                 ) : null; })()}
                                 {entry.options.diningOption === 'กลับบ้าน' && (
                                   <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-md font-medium">
-                                    🥤 กลับบ้าน
+                                    กลับบ้าน
                                   </span>
                                 )}
                               </div>
@@ -647,7 +629,7 @@ export default function POSPage() {
                           {/* Display Selected Note/Options */}
                           <div className="flex items-center justify-between pt-1 border-t border-slate-300/60 text-[11px]">
                             <span className="text-slate-500 truncate max-w-[200px]" title={formattedNote || 'ไม่มีหมายเหตุ'}>
-                              {formattedNote ? `📝 ${formattedNote}` : '☕ ทานที่ร้าน • หวาน 100%'}
+                              {formattedNote ? ` ${formattedNote}` : ' ทานที่ร้าน • หวาน 100%'}
                             </span>
                             <button
                               onClick={() => handleOpenOptionModal(entry.item, entry.cartId)}
@@ -739,7 +721,7 @@ export default function POSPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-slate-800 font-semibold text-xs">
                   <Layers className="w-4 h-4 text-slate-700" />
-                  <span>ตัดสต็อกวัตถุดิบ (BOM)</span>
+                  <span>ตัดสต็อกวัตถุดิบ</span>
                 </div>
                 {Object.keys(cartBOMImpact).length > 0 && (
                   <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
@@ -802,8 +784,7 @@ export default function POSPage() {
 
             <div className="space-y-3">
               <div className="font-bold text-slate-800 flex items-center gap-1.5">
-                <Layers className="w-4 h-4 text-[#4fb0a5]" />
-                <span>สูตรวัตถุดิบที่ใช้ตัดสต็อกต่อ 1 จาน:</span>
+                <span>สูตร:</span>
               </div>
               <div className="space-y-1.5 max-h-48 overflow-y-auto">
                 {previewMenu.recipes?.map((r, idx) => (
@@ -812,7 +793,7 @@ export default function POSPage() {
                     className="flex justify-between items-center py-2 px-3 rounded-xl bg-slate-50 border border-slate-100"
                   >
                     <span className="font-medium text-slate-700">{r.ingredient_name || `วัตถุดิบ #${r.ingredient_id}`}</span>
-                    <span className="font-bold text-slate-800 bg-white px-2 py-0.5 rounded-lg border border-slate-200 shadow-2xs">
+                    <span className="font-bold text-slate-800 bg-white px-2 py-0.1 rounded-lg border border-slate-200">
                       {r.quantity_used} {r.ingredient_unit}
                     </span>
                   </div>
@@ -820,14 +801,14 @@ export default function POSPage() {
               </div>
 
               <div className="p-3 bg-slate-50 text-slate-800 rounded-2xl border border-slate-200 flex justify-between items-center font-medium">
-                <span>ต้นทุนวัตถุดิบรวม (BOM):</span>
+                <span>ต้นทุนวัตถุดิบรวม:</span>
                 <span className="font-mono font-normal text-slate-900">฿{previewMenu.recipe_cost}</span>
               </div>
             </div>
 
             <div className="pt-2 flex justify-end">
               <Button
-                variant="secondary"
+                variant="primary"
                 onClick={() => setPreviewMenu(null)}
               >
                 ปิดหน้าต่าง
@@ -850,7 +831,7 @@ export default function POSPage() {
                 เลขที่บิล: <strong className="text-slate-800">{lastOrderSuccess.order_number}</strong> (โต๊ะ {lastOrderSuccess.table_no})
               </p>
               <p className="text-xs text-slate-600 font-normal mt-1">
-                ระบบได้ตัดสต็อกวัตถุดิบตามสูตร (BOM) ลงฐานข้อมูลเรียบร้อยแล้ว
+                ตัดสต็อกวัตถุดิบตามสูตรเรียบร้อย
               </p>
             </div>
             <Button

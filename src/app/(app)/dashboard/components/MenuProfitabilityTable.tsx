@@ -14,7 +14,7 @@ export const MenuProfitabilityTable: React.FC<MenuProfitabilityTableProps> = ({ 
     <section className="skeuo-card rounded-3xl p-6">
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h3 className="font-semibold text-slate-900 text-base">ตารางวิเคราะห์ต้นทุนและกำไรต่อเมนู (BOM Margin)</h3>
+          <h3 className="font-semibold text-slate-900 text-base">ตารางวิเคราะห์ต้นทุนและกำไรต่อเมนู</h3>
           <p className="text-sm text-slate-500 mt-0.5 font-normal">คำนวณต้นทุนวัตถุดิบจริงตามสูตรชง/เสิร์ฟ x ปริมาณที่ใช้ต่อแก้ว</p>
         </div>
         <Link
@@ -32,9 +32,9 @@ export const MenuProfitabilityTable: React.FC<MenuProfitabilityTableProps> = ({ 
               <TableHead>ชื่อเมนู</TableHead>
               <TableHead>หมวดหมู่</TableHead>
               <TableHead className="text-right">ราคาขาย</TableHead>
-              <TableHead className="text-right">ต้นทุนวัตถุดิบ (BOM)</TableHead>
+              <TableHead className="text-right">ต้นทุนวัตถุดิบ</TableHead>
               <TableHead className="text-right">กำไรต่อเสิร์ฟ</TableHead>
-              <TableHead className="text-right">มาร์จิ้น (% Margin)</TableHead>
+              <TableHead className="text-right">มาร์จิ้น</TableHead>
               <TableHead className="text-right">ยอดขายวันนี้</TableHead>
             </TableRow>
           </TableHeader>

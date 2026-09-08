@@ -200,10 +200,10 @@ export const MenuListView: React.FC<MenuListViewProps> = ({ items, onEdit, onDel
                 <TableHead className="whitespace-nowrap">รูปภาพ & เมนู</TableHead>
                 <TableHead className="whitespace-nowrap">หมวดหมู่</TableHead>
                 <TableHead className="text-right whitespace-nowrap">ราคาขาย</TableHead>
-                <TableHead className="text-right whitespace-nowrap">ต้นทุน BOM</TableHead>
+                <TableHead className="text-right whitespace-nowrap">ต้นทุน</TableHead>
                 <TableHead className="text-right whitespace-nowrap">กำไร/จาน</TableHead>
-                <TableHead className="text-center whitespace-nowrap">มาร์จิ้น (% Margin)</TableHead>
-                <TableHead className="whitespace-nowrap">สูตรวัตถุดิบ (BOM Recipes)</TableHead>
+                <TableHead className="text-center whitespace-nowrap">มาร์จิ้น</TableHead>
+                <TableHead className="whitespace-nowrap">สูตรวัตถุดิบ </TableHead>
                 <TableHead className="text-center whitespace-nowrap w-24">จัดการ</TableHead>
               </TableRow>
             </TableHeader>
