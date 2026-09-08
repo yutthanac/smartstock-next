@@ -56,6 +56,7 @@ import {
 import { AddIngredientModal } from './components/AddIngredientModal';
 import { AdjustStockModal } from './components/AdjustStockModal';
 import { ReceiptInboundTab } from './components/ReceiptInboundTab';
+import { TableSkeleton } from '@/components/Skeleton';
 
 interface SortableIngredientRowProps {
   item: Ingredient;
@@ -218,7 +219,7 @@ function SortableIngredientRow({
 }
 
 export default function StockPage() {
-  const { ingredients, movements, addIngredient, updateIngredient, deleteIngredient, adjustStock, bulkUseIngredient, reorderIngredients } = useStock();
+  const { ingredients, movements, addIngredient, updateIngredient, deleteIngredient, adjustStock, bulkUseIngredient, reorderIngredients, isLoading } = useStock();
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<'inventory' | 'inbound' | 'movements'>('inventory');
@@ -562,30 +563,38 @@ export default function StockPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    <SortableContext items={paginatedIngredientIds} strategy={verticalListSortingStrategy}>
-                      {paginatedIngredients.map((item) => {
-                        const maxStock = item.max_stock && item.max_stock > 0 
-                          ? Math.max(item.max_stock, item.quantity) 
-                          : Math.max(item.quantity, item.reorder_point * 2 || 1);
-                        const ratio = Math.min(100, Math.round((item.quantity / (maxStock || 1)) * 100));
+                    {isLoading ? (
+                      <tr>
+                        <td colSpan={10} className="p-0">
+                          <TableSkeleton rows={6} cols={7} />
+                        </td>
+                      </tr>
+                    ) : (
+                      <SortableContext items={paginatedIngredientIds} strategy={verticalListSortingStrategy}>
+                        {paginatedIngredients.map((item) => {
+                          const maxStock = item.max_stock && item.max_stock > 0 
+                            ? Math.max(item.max_stock, item.quantity) 
+                            : Math.max(item.quantity, item.reorder_point * 2 || 1);
+                          const ratio = Math.min(100, Math.round((item.quantity / (maxStock || 1)) * 100));
 
-                        return (
-                          <SortableIngredientRow
-                            key={item.id}
-                            item={item}
-                            ratio={ratio}
-                            maxStock={maxStock}
-                            onOpenEdit={handleOpenEdit}
-                            onAdjust={(target) => {
-                              setAdjustTarget(target);
-                              setAdjustType('in');
-                              setAdjustAmount(1);
-                            }}
-                            onDelete={handleDelete}
-                          />
-                        );
-                      })}
-                    </SortableContext>
+                          return (
+                            <SortableIngredientRow
+                              key={item.id}
+                              item={item}
+                              ratio={ratio}
+                              maxStock={maxStock}
+                              onOpenEdit={handleOpenEdit}
+                              onAdjust={(target) => {
+                                setAdjustTarget(target);
+                                setAdjustType('in');
+                                setAdjustAmount(1);
+                              }}
+                              onDelete={handleDelete}
+                            />
+                          );
+                        })}
+                      </SortableContext>
+                    )}
                   </TableBody>
                 </Table>
               </DndContext>

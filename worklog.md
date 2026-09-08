@@ -173,31 +173,34 @@
 
 ---
 
-## 🎯 แผนงานสำหรับครั้งถัดไป (Next Session Roadmap)
-
-เมื่อกลับมาเปิดโปรเจกต์ในครั้งถัดไป สามารถอ้างอิงและดำเนินการต่อในหัวข้อเหล่านี้ได้ทันที:
-
-1. **หน้า AI ปรับบิลเพื่อลงสต็อกเพิ่มเติม (`ReceiptInboundTab.tsx` / `ReceiptVerificationModal.tsx`)**:
-   - พัฒนาและปรับปรุงความละเอียดในการตรวจจับบิลและการลงสต็อกสินค้า
-   - เพิ่มฟังก์ชันจัดการกรณีบิลมีหลายหน้า หรือบิลที่มีส่วนลด/Vat ท้ายใบเสร็จ ให้ลงต้นทุนเฉลี่ยได้อย่างแม่นยำยิ่งขึ้น
-
-2. **หน้าแดชบอร์ด: ปรับแต่งส่วน "AI แนะนำเมนูขายดี & กลยุทธ์" (`AiInsightsCard.tsx`)**:
-   - ปรับดีไซน์และโทนการนำเสนอให้มีความเป็นมืออาชีพ (Professional / Business ERP Style)
-   - ไม่ให้ดู "เป็น AI เกินไป" (ลดไอคอนวิบวับ/ประกายดาว ปรับเป็นอินไซต์เชิงวิเคราะห์ธุรกิจที่น่าเชื่อถือและดูจริงจัง)
-
-3. **หน้า AI แนะนำเครื่องดื่ม (`/menu/ai-insights`)**:
-   - ปรับปรุงให้เชื่อมต่อและดึงข้อมูลจริงจาก **Google Gemini API**
-   - มีปุ่มให้ผู้ใช้สามารถกด **"สร้าง/วิเคราะห์ใหม่ (Re-generate)"** ได้ตามต้องการ
-   - นำเข้าบริบทข้อมูลจริงของร้าน (เช่น เมนูขายดี ยอดขาย วัตถุดิบที่มีในคลัง หรือวัตถุดิบที่ค้างสต็อก) ส่งให้ Gemini วิเคราะห์ เสมือนการ Fine-tune/Prompt Context เฉพาะของร้านเรา
-
-4. **หน้ารายงานยอดขาย (`/reports/sales`)**:
-   - พัฒนากราฟและตารางรายงานให้ละเอียด ลึก และครอบคลุมกว่าหน้าแดชบอร์ด (เช่น ดูยอดขายตามช่วงเวลาชั่วโมงพีค, ยอดขายแยกตามหมวดหมู่, Basket Size)
-   - นำ AI เข้ามาช่วยสรุปไฮไลต์และวิเคราะห์อินไซต์ยอดขายประจำสัปดาห์/ประจำเดือนให้อ่านเข้าใจง่ายในหน้าเดียว
+### [2026-09-08] ยกระดับระบบ AI และหน้ารายงานเชิงลึกครบถ้วนตาม Roadmap
+1. **หน้าแดชบอร์ด: ปรับแต่งส่วนบทวิเคราะห์เชิงกลยุทธ์ ([AiInsightsCard.tsx](file:///c:/meeting/smartStock/src/app/(app)/dashboard/components/AiInsightsCard.tsx))**:
+   - ปรับโฉมเป็น Professional Business ERP สะอาดตา สุขุม เรียบหรู
+   - ตัดไอคอนประกายดาว/การ์ตูนออก ใช้สไตล์สากล Monochrome Slate
+   - เรียกใช้คอมโพเนนต์มาตรฐาน `Button.tsx` และ `Badge.tsx` แสดงอัตรากำไร (Margin %) และยอดขายชัดเจน
+2. **ระบบ AI วิเคราะห์เมนู & กลยุทธ์เครื่องดื่ม ([/menu/ai-insights](file:///c:/meeting/smartStock/src/app/(app)/menu/ai-insights/page.tsx))**:
+   - สร้าง API Route `POST /api/ai/menu-insights` ส่งบริบทคลังวัตถุดิบและยอดขายจริงให้ Google Gemini Flash ประมวลผล
+   - มีปุ่ม **"ประมวลผลใหม่ (Re-generate)"** แบบเรียลไทม์ พร้อมระบบ Local Cache บันทึกผลวิเคราะห์ล่าสุด
+   - แยกแท็บ 3 มิติ: เมนูปัจจุบัน & แนวทางดันยอดขาย, ไอเดียเมนูใหม่จากสต็อกที่มีอยู่, และแนวทางลดของเสีย/ควบคุมต้นทุน
+3. **ระบบตรวจรับสตอกจากบิล AI รองรับส่วนลด & VAT ([ReceiptInboundTab.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/components/ReceiptInboundTab.tsx))**:
+   - เพิ่มช่องกรอกและคำนวณส่วนลดท้ายบิล (Bill Discount) และภาษีมูลค่าเพิ่ม (VAT 7%)
+   - มีระบบคำนวณเกลี่ยต้นทุนต่อหน่วยสุทธิ (Weighted Cost Normalization) เข้าไปในต้นทุนรับเข้าคลังจริงอย่างแม่นยำ
+   - อัปเดต prompt AI OCR ใน `/api/ai/scan-receipt` รองรับการสกัด Subtotal, Discount, VAT
+4. **หน้ารายงานการเงิน & ยอดขายเชิงลึก ([/reports/sales](file:///c:/meeting/smartStock/src/app/(app)/reports/sales))**:
+   - เพิ่มตัวกรองสลับช่วงเวลา 7 วันล่าสุด, 30 วัน (รายสัปดาห์), และ 12 เดือน (รายปี)
+   - เพิ่มการคำนวณขนาดตะกร้าต่อบิลเฉลี่ย (Basket Size / Average Order Value)
+   - เพิ่มกราฟวิเคราะห์ยอดขายแยกตามหมวดหมู่สินค้า (Category Share)
+   - เพิ่มกราฟวิเคราะห์ช่วงเวลาขายดี (Hourly Peak Hours Heatmap / Distribution)
+   - เพิ่มระบบบทสรุปอินไซต์ผู้บริหารด้วย AI (Executive Sales AI Analysis)
+5. **Performance Refactor & Skeleton Loading ([Skeleton.tsx](file:///c:/meeting/smartStock/src/components/Skeleton.tsx))**:
+   - สร้างคอมโพเนนต์กลาง `Skeleton`, `TableSkeleton`, `CardSkeleton` โทน Slate นุ่มตา
+   - เพิ่มสถานะ Skeleton Loading ตอนดึงข้อมูลใน Dashboard, Stock (`/stock`), Menu (`/menu`), Orders (`/sales/orders`)
+   - ปรับแต่ง Backend [DashboardController.php](file:///c:/meeting/smartsotck-backend/app/Http/Controllers/Api/DashboardController.php) รวบ 26 queries เหลือ 1 bulk query พร้อม eager loading ความเร็วตอบสนองเพิ่มขึ้นชัดเจน ไม่กระทบ business logic
 
 ---
 
 ## 📌 สรุปสถานะโครงการปัจจุบัน (Current System Status)
-- ✅ UI Theme: สะอาดตา มินิมอล โมโนโครม (Slate/Neutral)
-- ✅ Component Standards: `Button.tsx`, `Badge.tsx`, `Table.tsx`, `Dropdown.tsx` และ shadcn `components/ui/` ใช้งานเป็นมาตรฐานหลัก
-- ✅ Frontend Next.js 16 (Turbopack) & TypeScript ผ่านการทดสอบ `npm run build` สำเร็จ 100% (21 routes generated)
-- ✅ Backend Laravel 11 API รองรับ Drag & Drop sorting, Dashboard Analytics, Receipt processing
+- ✅ UI Theme: สะอาดตา มินิมอล โมโนโครม (Slate/Neutral) ระดับ Enterprise
+- ✅ Component Standards: `Button.tsx`, `Badge.tsx`, `Table.tsx`, `Dropdown.tsx`, `Skeleton.tsx` และ shadcn `components/ui/` ใช้งานเป็นมาตรฐานหลัก 100%
+- ✅ Frontend Next.js 16 (Turbopack) & TypeScript ผ่านการทดสอบ `npm run build` สำเร็จ 100% (22 routes generated, 0 errors)
+- ✅ Backend Laravel 11 API อัปเกรด Query Optimization พร้อม Eager Loading

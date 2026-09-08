@@ -3,6 +3,7 @@
 import React from 'react';
 import { useStock } from '@/lib/StockContext';
 import { Topbar } from '@/components/Topbar';
+import { Skeleton, CardSkeleton } from '@/components/Skeleton';
 import { KpiCards } from './components/KpiCards';
 import { SalesAnalyticsChart } from './components/SalesAnalyticsChart';
 import { SalesDonutCard } from './components/SalesDonutCard';
@@ -12,7 +13,7 @@ import { LowStockAlertCard } from './components/LowStockAlertCard';
 import { MenuProfitabilityTable } from './components/MenuProfitabilityTable';
 
 export default function DashboardPage() {
-  const { dashboard } = useStock();
+  const { dashboard, isLoading } = useStock();
 
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-[#ebecf0]">
@@ -37,37 +38,67 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* 1. KPI Summary Cards */}
-        <KpiCards dashboard={dashboard} />
-
-        {/* 2. Visual Charts: Recharts Period Filter Chart & Framer-Motion DonutChart */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-7">
-            <SalesAnalyticsChart
-              sales7days={dashboard.sales_7days}
-              salesWeekly={dashboard.sales_weekly}
-              salesMonthly={dashboard.sales_monthly}
-              salesYearly={dashboard.sales_yearly}
-            />
+        {isLoading ? (
+          <div className="space-y-6">
+            <CardSkeleton count={4} />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-7 bg-white p-6 rounded-3xl border border-slate-200/80 space-y-4">
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-64 w-full rounded-2xl" />
+              </div>
+              <div className="lg:col-span-5 bg-white p-6 rounded-3xl border border-slate-200/80 space-y-4">
+                <Skeleton className="h-6 w-40" />
+                <Skeleton className="h-64 w-full rounded-2xl" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white p-6 rounded-3xl border border-slate-200/80 space-y-4">
+                <Skeleton className="h-6 w-44" />
+                <Skeleton className="h-20 w-full rounded-2xl" />
+                <Skeleton className="h-20 w-full rounded-2xl" />
+              </div>
+              <div className="bg-white p-6 rounded-3xl border border-slate-200/80 space-y-4">
+                <Skeleton className="h-6 w-44" />
+                <Skeleton className="h-20 w-full rounded-2xl" />
+                <Skeleton className="h-20 w-full rounded-2xl" />
+              </div>
+            </div>
           </div>
-          <div className="lg:col-span-5">
-            <SalesDonutCard
-              sales7days={dashboard.sales_7days}
-              totalSales={dashboard.today_sales}
-              totalCost={dashboard.today_cost}
-              totalProfit={dashboard.today_profit}
-            />
-          </div>
-        </section>
+        ) : (
+          <>
+            {/* 1. KPI Summary Cards */}
+            <KpiCards dashboard={dashboard} />
 
-        {/* 3. AI Insights & Low Stock Alerts */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-          <AiInsightsCard recommendations={dashboard.ai_recommendations} />
-          <LowStockAlertCard alerts={dashboard.low_stock_alerts} />
-        </section>
+            {/* 2. Visual Charts: Recharts Period Filter Chart & Framer-Motion DonutChart */}
+            <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-7">
+                <SalesAnalyticsChart
+                  sales7days={dashboard.sales_7days}
+                  salesWeekly={dashboard.sales_weekly}
+                  salesMonthly={dashboard.sales_monthly}
+                  salesYearly={dashboard.sales_yearly}
+                />
+              </div>
+              <div className="lg:col-span-5">
+                <SalesDonutCard
+                  sales7days={dashboard.sales_7days}
+                  totalSales={dashboard.today_sales}
+                  totalCost={dashboard.today_cost}
+                  totalProfit={dashboard.today_profit}
+                />
+              </div>
+            </section>
 
-        {/* 4. Cost & Profit Margin Per Dish Table */}
-        <MenuProfitabilityTable menuProfitability={dashboard.menu_profitability} />
+            {/* 3. AI Insights & Low Stock Alerts */}
+            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+              <AiInsightsCard recommendations={dashboard.ai_recommendations} />
+              <LowStockAlertCard alerts={dashboard.low_stock_alerts} />
+            </section>
+
+            {/* 4. Cost & Profit Margin Per Dish Table */}
+            <MenuProfitabilityTable menuProfitability={dashboard.menu_profitability} />
+          </>
+        )}
       </main>
     </div>
   );

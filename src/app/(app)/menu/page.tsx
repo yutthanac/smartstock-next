@@ -10,9 +10,10 @@ import { MenuListView } from './components/MenuListView';
 import { MenuModal } from './components/MenuModal';
 import { Dropdown } from '@/components/Dropdown';
 import { Button } from '@/components/Button';
+import { Skeleton } from '@/components/Skeleton';
 
 export default function RecipeMenuPage() {
-  const { menuItems, ingredients, addMenuItem, updateMenuItem, deleteMenuItem, reorderMenuItems } = useStock();
+  const { menuItems, ingredients, addMenuItem, updateMenuItem, deleteMenuItem, reorderMenuItems, isLoading } = useStock();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
@@ -223,7 +224,25 @@ export default function RecipeMenuPage() {
         </div>
 
         {/* Menu Items Render (Card View or List View) */}
-        {filteredMenuItems.length === 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-3xl border border-slate-200/80 p-5 space-y-4">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="w-16 h-16 rounded-2xl shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                </div>
+                <div className="pt-3 border-t border-slate-100 flex justify-between items-center">
+                  <Skeleton className="h-5 w-16" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredMenuItems.length === 0 ? (
           <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 text-slate-400 text-sm">
             <Coffee className="w-8 h-8 mx-auto mb-2 opacity-40 text-slate-400" />
             ไม่พบรายการเมนูที่ค้นหา

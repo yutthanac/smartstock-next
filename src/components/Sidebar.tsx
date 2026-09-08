@@ -294,7 +294,7 @@ export const Sidebar: React.FC<SidebarProps> = () => {
             title="คลิกเพื่อสลับร้านค้า / เลือกระบบ"
           >
             {/* Store Logo or Default Circular Logo */}
-            <div className="w-8 h-8 rounded-full items-center justify-center shrink-0 overflow-hidden bg-slate-900 text-white border border-slate-200/80 p-0.5 flex shadow-2xs">
+            <div className="w-8 h-8 rounded-full items-center justify-center shrink-0 overflow-hidden bg-white text-slate-900 border border-slate-200 p-0.5 flex shadow-2xs">
               {activeStore?.logo_url ? (
                 <img
                   src={activeStore.logo_url}
@@ -308,7 +308,7 @@ export const Sidebar: React.FC<SidebarProps> = () => {
                 <img
                   src="/images/logo_ss.png"
                   alt="SmartStock Logo"
-                  className="w-full h-full object-contain invert"
+                  className="w-full h-full object-contain"
                 />
               )}
             </div>
@@ -338,7 +338,7 @@ export const Sidebar: React.FC<SidebarProps> = () => {
           <button
             onClick={() => setIsStoreDropdownOpen(!isStoreDropdownOpen)}
             title={activeStore ? `สลับร้าน: ${activeStore.name}` : 'สลับร้าน'}
-            className="w-9 h-9 rounded-full items-center justify-center shrink-0 hover:scale-105 transition-transform overflow-hidden bg-slate-900 text-white border border-slate-200 p-0.5 flex cursor-pointer"
+            className="w-9 h-9 rounded-full items-center justify-center shrink-0 hover:scale-105 transition-transform overflow-hidden bg-white text-slate-900 border border-slate-200 p-0.5 flex cursor-pointer shadow-2xs"
           >
             {activeStore?.logo_url ? (
               <img
@@ -350,7 +350,7 @@ export const Sidebar: React.FC<SidebarProps> = () => {
               <img
                 src="/images/logo_ss.png"
                 alt="SmartStock Logo"
-                className="w-full h-full object-contain invert"
+                className="w-full h-full object-contain"
               />
             )}
           </button>

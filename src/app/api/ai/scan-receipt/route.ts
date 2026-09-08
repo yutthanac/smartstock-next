@@ -59,7 +59,10 @@ If it IS a valid receipt/bill, extract:
   - unit: Unit of measurement (e.g. กก., กรัม, ลิตร, มล., ถุง, แก้ว, ชิ้น, กล่อง, ลัง, ขวด, แพ็ค)
   - cost_per_unit: Unit cost in Thai Baht (number)
   - total_price: Line total in Thai Baht (quantity * cost_per_unit)
-- total_amount: Grand total amount on the receipt (number)
+- subtotal: Subtotal before discounts/taxes if printed (number, default same as total_amount)
+- discount: Total discount amount deducted at the bottom of receipt (number, default 0)
+- vat: Value Added Tax (VAT 7%) amount if printed (number, default 0)
+- total_amount: Grand total amount paid on the receipt (number)
 - confidence: Estimated confidence score from 0 to 100 (number)
 - is_receipt: true
 

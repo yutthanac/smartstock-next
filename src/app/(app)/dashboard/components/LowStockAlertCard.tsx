@@ -32,7 +32,7 @@ export const LowStockAlertCard: React.FC<LowStockAlertCardProps> = ({ alerts }) 
         <div className="space-y-3.5 mt-5">
           {alerts.length === 0 ? (
             <div className="text-center py-8 text-slate-400 text-sm font-normal">
-              ✅ วัตถุดิบทุกรายการมีเพียงพอต่อการขาย
+              วัตถุดิบทุกรายการมีเพียงพอต่อการขาย
             </div>
           ) : (
             alerts.map((alert) => (
@@ -49,7 +49,7 @@ export const LowStockAlertCard: React.FC<LowStockAlertCardProps> = ({ alerts }) 
 
                 <div className="flex items-center justify-between text-sm text-slate-600">
                   <span className="text-rose-700 font-medium">
-                    ⚡ ทำได้อีกประมาณ ~{alert.plates_left} จาน (พอสำหรับ ~{alert.days_left} วัน)
+                                  ทำได้อีกประมาณ ~{alert.plates_left} จาน (พอสำหรับ ~{alert.days_left} วัน)
                   </span>
                   <span className="text-slate-400 font-normal">จุดสั่งซื้อ: {alert.reorder_point} {alert.unit}</span>
                 </div>

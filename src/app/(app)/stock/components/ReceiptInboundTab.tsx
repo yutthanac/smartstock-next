@@ -50,6 +50,8 @@ export const ReceiptInboundTab: React.FC = () => {
   const [inboundItems, setInboundItems] = useState<InboundItemState[]>([]);
   const [isShowingPhoto, setIsShowingPhoto] = useState<boolean>(true);
   const [photoRotation, setPhotoRotation] = useState<number>(0);
+  const [billDiscount, setBillDiscount] = useState<number>(0);
+  const [billVat, setBillVat] = useState<number>(0);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -79,8 +81,13 @@ export const ReceiptInboundTab: React.FC = () => {
   useEffect(() => {
     if (!selectedPO) {
       setInboundItems([]);
+      setBillDiscount(0);
+      setBillVat(0);
       return;
     }
+
+    setBillDiscount(selectedPO.discount || 0);
+    setBillVat(selectedPO.vat || 0);
 
     const items = selectedPO.items || [];
     const mapped: InboundItemState[] = items.map((item, idx) => {
@@ -188,7 +195,12 @@ export const ReceiptInboundTab: React.FC = () => {
   const selectedItems = inboundItems.filter((it) => it.selected);
   const existingItemsCount = selectedItems.filter((it) => it.mode === 'existing' && it.ingredient_id).length;
   const newItemsCount = selectedItems.filter((it) => it.mode === 'new').length;
-  const totalSelectedMoney = selectedItems.reduce((sum, it) => sum + (it.total_price || 0), 0);
+  const subtotalSelectedMoney = selectedItems.reduce((sum, it) => sum + (it.total_price || 0), 0);
+  const finalNetTotal = Math.max(0, subtotalSelectedMoney - (Number(billDiscount) || 0) + (Number(billVat) || 0));
+
+  // Factor to distribute discount and VAT proportionately to each unit cost
+  const costAdjustmentFactor =
+    subtotalSelectedMoney > 0 ? finalNetTotal / subtotalSelectedMoney : 1;
 
   const handleConfirmBatchInbound = async () => {
     if (!selectedPO) return;
@@ -205,12 +217,17 @@ export const ReceiptInboundTab: React.FC = () => {
       let newLoaded = 0;
 
       for (const item of selectedItems) {
+        // Effective unit cost adjusted for discount and VAT
+        const rawUnitCost = item.cost_per_unit || 0;
+        const normalizedUnitCost =
+          Math.round(rawUnitCost * costAdjustmentFactor * 100) / 100;
+
         if (item.mode === 'existing' && item.ingredient_id) {
           // 1. Existing ingredient: Adjust stock IN + update unit cost
           const note = `รับเข้าจากบิล #${selectedPO.id} (${selectedPO.store_name || 'ตลาด/ร้านค้า'})`;
           await adjustStock(item.ingredient_id, 'in', item.quantity, note);
-          if (item.cost_per_unit > 0) {
-            await updateIngredient(item.ingredient_id, { cost_per_unit: item.cost_per_unit });
+          if (normalizedUnitCost > 0) {
+            await updateIngredient(item.ingredient_id, { cost_per_unit: normalizedUnitCost });
           }
           existingLoaded++;
         } else if (item.mode === 'new') {
@@ -220,7 +237,7 @@ export const ReceiptInboundTab: React.FC = () => {
             category: item.new_category || 'other',
             unit: item.unit.trim() || 'ชิ้น',
             quantity: item.quantity,
-            cost_per_unit: item.cost_per_unit || 0,
+            cost_per_unit: normalizedUnitCost,
             reorder_point: item.new_reorder_point || 5,
             max_stock: item.new_max_stock || 50,
             tracking_type: 'strict',
@@ -236,7 +253,10 @@ export const ReceiptInboundTab: React.FC = () => {
           ? {
               ...po,
               status: 'completed' as const,
-              totalAmount: totalSelectedMoney > 0 ? totalSelectedMoney : po.totalAmount,
+              subtotal: subtotalSelectedMoney,
+              discount: Number(billDiscount) || 0,
+              vat: Number(billVat) || 0,
+              totalAmount: finalNetTotal > 0 ? finalNetTotal : po.totalAmount,
               verified_at: new Date().toISOString(),
             }
           : po
@@ -644,40 +664,92 @@ export const ReceiptInboundTab: React.FC = () => {
               </div>
             </div>
 
-            {/* Bottom Inbound Action Bar */}
-            <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="text-xs text-slate-600 space-y-1">
-                <div>
-                  เลือกรับเข้า: <strong className="text-slate-800 font-semibold">{selectedItems.length}</strong> จาก{' '}
-                  {inboundItems.length} รายการ
-                  {existingItemsCount > 0 && (
-                    <span className="text-slate-500 ml-1.5">
-                      (สต็อกเดิม {existingItemsCount})
-                    </span>
-                  )}
-                  {newItemsCount > 0 && (
-                    <span className="text-slate-500 ml-1.5">
-                      (สร้างใหม่ {newItemsCount})
-                    </span>
-                  )}
+            {/* Bottom Inbound Action Bar with Discount & VAT */}
+            <div className="pt-4 border-t border-slate-200/80 flex flex-col gap-4">
+              {/* Discount & VAT Calculator Row */}
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="text-xs text-slate-500">
+                  <span className="font-medium text-slate-700">คำนวณส่วนลด &amp; ภาษีท้ายบิล:</span>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    ระบบจะเกลี่ยส่วนลดและภาษีเข้าต้นทุนต่อหน่วยของแต่ละรายการอย่างแม่นยำอัตโนมัติ
+                  </p>
                 </div>
-                <div className="text-sm font-medium text-slate-800">
-                  ยอดรวมที่เลือก:{' '}
-                  <span className="font-mono font-semibold text-slate-900">
-                    ฿{totalSelectedMoney.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
+
+                <div className="flex flex-wrap items-center gap-4 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-600">ส่วนลดท้ายบิล:</span>
+                    <div className="relative">
+                      <span className="absolute left-2.5 top-1.5 text-slate-400 font-mono text-xs">฿</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={billDiscount || ''}
+                        placeholder="0"
+                        onChange={(e) => setBillDiscount(parseFloat(e.target.value) || 0)}
+                        className="w-24 pl-6 pr-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-mono text-slate-800 text-right focus:outline-none focus:border-slate-400"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-600">ภาษีมูลค่าเพิ่ม (VAT):</span>
+                    <div className="relative">
+                      <span className="absolute left-2.5 top-1.5 text-slate-400 font-mono text-xs">฿</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={billVat || ''}
+                        placeholder="0"
+                        onChange={(e) => setBillVat(parseFloat(e.target.value) || 0)}
+                        className="w-24 pl-6 pr-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-mono text-slate-800 text-right focus:outline-none focus:border-slate-400"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <Button
-                variant="primary"
-                size="md"
-                onClick={handleConfirmBatchInbound}
-                disabled={isSubmitting || selectedItems.length === 0}
-                isLoading={isSubmitting}
-              >
-                บันทึกรับเข้าสต็อก ({selectedItems.length} รายการ)
-              </Button>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="text-xs text-slate-600 space-y-1">
+                  <div>
+                    เลือกรับเข้า: <strong className="text-slate-800 font-semibold">{selectedItems.length}</strong> จาก{' '}
+                    {inboundItems.length} รายการ
+                    {existingItemsCount > 0 && (
+                      <span className="text-slate-500 ml-1.5">
+                        (สต็อกเดิม {existingItemsCount})
+                      </span>
+                    )}
+                    {newItemsCount > 0 && (
+                      <span className="text-slate-500 ml-1.5">
+                        (สร้างใหม่ {newItemsCount})
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-slate-500">
+                      ยอดก่อนลด: ฿{subtotalSelectedMoney.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                    <span>•</span>
+                    <span className="text-sm font-medium text-slate-800">
+                      ยอดจ่ายจริงสุทธิ:{' '}
+                      <span className="font-mono font-semibold text-slate-900 text-base">
+                        ฿{finalNetTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={handleConfirmBatchInbound}
+                  disabled={isSubmitting || selectedItems.length === 0}
+                  isLoading={isSubmitting}
+                >
+                  บันทึกรับเข้าสต็อก ({selectedItems.length} รายการ)
+                </Button>
+              </div>
             </div>
           </div>
         </div>

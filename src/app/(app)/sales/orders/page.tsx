@@ -13,9 +13,10 @@ import {
 } from 'lucide-react';
 import { useStock } from '@/lib/StockContext';
 import { Topbar } from '@/components/Topbar';
+import { TableSkeleton } from '@/components/Skeleton';
 
 export default function OrdersHistoryPage() {
-  const { orders } = useStock();
+  const { orders, isLoading } = useStock();
 
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-slate-50/70">
@@ -44,7 +45,13 @@ export default function OrdersHistoryPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {orders.length === 0 ? (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={7} className="p-0">
+                      <TableSkeleton rows={6} cols={6} />
+                    </td>
+                  </tr>
+                ) : orders.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-8 text-center text-slate-400">
                       ยังไม่มีรายการสั่งซื้อใหม่

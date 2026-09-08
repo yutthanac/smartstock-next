@@ -22,6 +22,8 @@ export interface PurchaseOrder {
   status: 'pending' | 'receipt_uploaded' | 'completed' | 'draft';
   items: PurchaseOrderItem[];
   subtotal?: number;
+  discount?: number; // ส่วนลดท้ายบิล
+  vat?: number; // ภาษีมูลค่าเพิ่ม 7%
   totalAmount?: number;
   note?: string;
   receipt_image?: string; // ภาพถ่ายใบเสร็จ/บิลเงินสด
