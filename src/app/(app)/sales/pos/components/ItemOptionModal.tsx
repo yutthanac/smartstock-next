@@ -161,28 +161,28 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
       <form
         onSubmit={handleSave}
-        className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs border border-slate-200 animate-scale-in"
+        className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs border border-stone-200 animate-scale-in"
       >
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="flex items-center justify-between pb-3 border-b border-stone-100">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-slate-100 text-slate-800 flex items-center justify-center font-bold">
+            <div className="w-9 h-9 rounded-xl bg-stone-100 border border-stone-200 text-stone-800 flex items-center justify-center font-bold">
               <Coffee className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-semibold text-slate-900 text-base">{item.name}</h3>
-              <p className="text-slate-500 text-[11px]">เลือกอุณหภูมิ ความหวาน และรายละเอียด</p>
+              <h3 className="font-bold text-stone-900 text-base">{item.name}</h3>
+              <p className="text-stone-500 text-xs">เลือกอุณหภูมิ ความหวาน และรายละเอียด</p>
             </div>
           </div>
           <div className="text-right">
-            <span className="font-semibold text-base text-slate-900">฿{currentPrice.toFixed(2)}</span>
+            <span className="font-bold text-base text-stone-900 font-mono tabular-nums">฿{currentPrice.toFixed(2)}</span>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-xl text-slate-400 hover:text-slate-700 cursor-pointer"
+            className="p-1 rounded-xl text-stone-400 hover:text-stone-700 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -191,7 +191,7 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
         <div className="space-y-3.5">
           {/* Option: Temperature */}
           <div>
-            <label className="font-medium text-slate-700 block mb-1">อุณหภูมิ</label>
+            <label className="font-semibold text-stone-700 block mb-1">อุณหภูมิ</label>
             <div className="grid grid-cols-3 gap-2">
               {[
                 { label: '🧊 เย็น', value: 'เย็น' },
@@ -204,8 +204,8 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
                   onClick={() => setTemperature(value)}
                   className={`py-2.5 px-2 rounded-xl font-medium transition-all border text-center cursor-pointer ${
                     temperature === value
-                      ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
-                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                      ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
+                      : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
                   }`}
                 >
                   {label}
@@ -216,17 +216,17 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
 
           {/* Option: Sweetness */}
           <div>
-            <label className="font-medium text-slate-700 block mb-1">ระดับความหวาน</label>
+            <label className="font-semibold text-stone-700 block mb-1">ระดับความหวาน</label>
             <div className="grid grid-cols-4 gap-1.5">
               {['ไม่หวาน (0%)', 'หวานน้อย (50%)', 'หวาน 100%', 'หวานมาก'].map((sw) => (
                 <button
                   key={sw}
                   type="button"
                   onClick={() => setSweetness(sw)}
-                  className={`py-2 px-1 rounded-xl font-medium text-[10.5px] transition-all border text-center cursor-pointer ${
+                  className={`py-2 px-1 rounded-xl font-medium text-xs transition-all border text-center cursor-pointer ${
                     sweetness === sw
-                      ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
-                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                      ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
+                      : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
                   }`}
                 >
                   {sw}
@@ -237,22 +237,22 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
 
           {/* Option: Extra Shots */}
           <div>
-            <label className="font-medium text-slate-700 block mb-1.5 flex items-center gap-1">
+            <label className="font-semibold text-stone-700 block mb-1.5 flex items-center gap-1">
               <span>ช็อตเอสเพรสโซ่</span>
-              <span className="ml-1 text-slate-400 font-normal">(+15฿ / ช็อตเพิ่ม)</span>
+              <span className="ml-1 text-stone-400 font-normal">(+15฿ / ช็อตเพิ่ม)</span>
             </label>
-            <div className="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-200 w-fit">
+            <div className="flex items-center gap-3 p-2.5 bg-stone-50 rounded-xl border border-stone-200 w-fit">
               <button
                 type="button"
                 onClick={() => setExtraShots(Math.max(0, extraShots - 1))}
                 disabled={extraShots === 0}
-                className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-slate-200 shadow-xs text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-stone-200 shadow-xs text-stone-700 hover:bg-stone-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
               >
                 <Minus className="w-3.5 h-3.5" />
               </button>
               <div className="text-center w-24">
-                <span className="font-bold text-slate-900 text-lg font-mono">{extraShots}</span>
-                <span className="text-slate-500 ml-1.5 text-xs">
+                <span className="font-bold text-stone-900 text-lg font-mono tabular-nums">{extraShots}</span>
+                <span className="text-stone-500 ml-1.5 text-xs">
                   {extraShots === 0 ? 'ช็อตปกติ' : `ช็อตเพิ่ม ${extraShots > 0 ? `(+฿${extraShots * 15})` : ''}`}
                 </span>
               </div>
@@ -260,7 +260,7 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
                 type="button"
                 onClick={() => setExtraShots(Math.min(3, extraShots + 1))}
                 disabled={extraShots === 3}
-                className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-slate-200 shadow-xs text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-stone-200 shadow-xs text-stone-700 hover:bg-stone-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
               </button>
@@ -269,15 +269,15 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
 
           {/* Option: Dine-in vs Takeaway */}
           <div>
-            <label className="font-medium text-slate-700 block mb-1">รูปแบบการเสิร์ฟ</label>
+            <label className="font-semibold text-stone-700 block mb-1">รูปแบบการเสิร์ฟ</label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setDiningOption('ทานที่ร้าน')}
                 className={`py-2.5 px-3 rounded-xl font-medium transition-all border cursor-pointer ${
                   diningOption === 'ทานที่ร้าน'
-                    ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
-                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                    ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
+                    : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
                 }`}
               >
                 ☕ ทานที่ร้าน
@@ -287,15 +287,15 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
                 onClick={() => setDiningOption('กลับบ้าน')}
                 className={`py-2.5 px-3 rounded-xl font-medium transition-all border cursor-pointer ${
                   diningOption === 'กลับบ้าน'
-                    ? 'bg-emerald-700 text-white border-emerald-700 shadow-xs'
-                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                    ? 'bg-[#f5efe6] text-[#78350f] border border-[#e8ded0] shadow-xs font-semibold'
+                    : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
                 }`}
               >
                 🥤 กลับบ้าน (Takeaway)
               </button>
             </div>
             {diningOption === 'กลับบ้าน' && (
-              <p className="text-[10px] text-emerald-700 mt-1.5 font-medium">
+              <p className="text-xs text-[#78350f] mt-1.5 font-medium">
                 ✓ ระบบจะตัดสต็อกแก้ว Takeaway อัตโนมัติ
               </p>
             )}
@@ -303,17 +303,17 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
 
           {/* Quick Tags */}
           <div>
-            <label className="font-medium text-slate-700 block mb-1.5">ตัวเลือกเพิ่มเติม</label>
+            <label className="font-semibold text-stone-700 block mb-1.5">ตัวเลือกเพิ่มเติม</label>
             <div className="flex flex-wrap gap-1.5">
               {quickTags.map((tag) => (
                 <button
                   key={tag}
                   type="button"
                   onClick={() => handleToggleTag(tag)}
-                  className={`px-2.5 py-1 rounded-lg text-[10.5px] font-medium border transition-colors cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
                     customNote.split(',').map((t) => t.trim()).includes(tag)
-                      ? 'bg-slate-900 text-white border-slate-900'
-                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                      ? 'bg-stone-900 text-white border-stone-900'
+                      : 'bg-stone-50 text-stone-600 border border-stone-200 hover:bg-stone-100'
                   }`}
                 >
                   {tag}
@@ -329,18 +329,18 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
               placeholder="หมายเหตุเพิ่มเติม..."
               value={customNote}
               onChange={(e) => setCustomNote(e.target.value)}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-400"
+              className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-stone-400 text-stone-900 text-xs"
             />
           </div>
 
           {/* Real-time BOM Stock Deduction Preview */}
-          <div className="p-3 rounded-2xl bg-slate-100/90 border border-slate-200/80 space-y-2">
+          <div className="p-3 rounded-xl bg-stone-50 border border-stone-200 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-slate-800 text-xs flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-slate-600" />
+              <span className="font-semibold text-stone-800 text-xs flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-stone-600" />
                 <span>ตัดสต็อกแก้วนี้ (Preview)</span>
               </span>
-              <span className="text-[10px] text-slate-500 font-medium">
+              <span className="text-xs text-stone-500 font-medium">
                 {previewDeductions.length + (takeawayCup ? 1 : 0)} รายการ
               </span>
             </div>
@@ -349,39 +349,39 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
               {previewDeductions.map((d) => (
                 <div
                   key={d.id}
-                  className="flex items-center justify-between text-[11px] p-2 rounded-xl bg-white border border-slate-200/60 shadow-2xs"
+                  className="flex items-center justify-between text-xs p-2 rounded-xl bg-white border border-stone-200/80 shadow-2xs"
                 >
                   <div className="min-w-0 pr-2">
-                    <div className="font-medium text-slate-900 truncate flex items-center gap-1">
+                    <div className="font-medium text-stone-900 truncate flex items-center gap-1">
                       <span>{d.name}</span>
                       {d.badgeText && (
                         <span
-                          className={`text-[9.5px] px-1.5 py-0.2 rounded font-semibold ${
+                          className={`text-xs px-1.5 py-0.2 rounded font-semibold ${
                             d.deductedQty === 0
                               ? 'bg-rose-100 text-rose-700'
                               : d.isSweetener && d.deductedQty < d.baseQty
-                              ? 'bg-amber-100 text-amber-700'
-                              : 'bg-emerald-100 text-emerald-700'
+                              ? 'bg-[#f5efe6] text-[#78350f] border border-[#e8ded0]'
+                              : 'bg-stone-100 text-stone-700 border border-stone-200'
                           }`}
                         >
                           {d.badgeText}
                         </span>
                       )}
                     </div>
-                    <div className="text-[10px] text-slate-400">
+                    <div className="text-xs text-stone-400 font-mono tabular-nums">
                       เดิม {d.currentQty} {d.unit}{' '}
                       {d.deductedQty !== d.baseQty ? `(สูตร ${d.baseQty} ${d.unit})` : ''}
                     </div>
                   </div>
-                  <div className="text-right shrink-0 font-mono">
+                  <div className="text-right shrink-0 font-mono tabular-nums">
                     <div
                       className={`font-semibold ${
-                        d.deductedQty === 0 ? 'text-slate-400 line-through' : 'text-rose-600'
+                        d.deductedQty === 0 ? 'text-stone-400 line-through' : 'text-stone-900'
                       }`}
                     >
                       -{d.deductedQty} {d.unit}
                     </div>
-                    <div className="text-[10px] text-emerald-700 font-medium">
+                    <div className="text-xs text-stone-500 font-medium">
                       เหลือ {d.remainingQty} {d.unit}
                     </div>
                   </div>
@@ -389,21 +389,21 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
               ))}
 
               {takeawayCup && (
-                <div className="flex items-center justify-between text-[11px] p-2 rounded-xl bg-white border border-slate-200/60 shadow-2xs">
+                <div className="flex items-center justify-between text-xs p-2 rounded-xl bg-white border border-stone-200/80 shadow-2xs">
                   <div className="min-w-0 pr-2">
-                    <div className="font-medium text-slate-900 truncate flex items-center gap-1">
+                    <div className="font-medium text-stone-900 truncate flex items-center gap-1">
                       <span>{takeawayCup.name}</span>
-                      <span className="text-[9.5px] bg-sky-100 text-sky-700 px-1.5 py-0.2 rounded font-semibold">
+                      <span className="text-xs bg-stone-100 text-stone-700 px-1.5 py-0.2 rounded font-semibold border border-stone-200">
                         🥤 บรรจุภัณฑ์กลับบ้าน
                       </span>
                     </div>
-                    <div className="text-[10px] text-slate-400">
+                    <div className="text-xs text-stone-400 font-mono tabular-nums">
                       เดิม {takeawayCup.quantity} {takeawayCup.unit}
                     </div>
                   </div>
-                  <div className="text-right shrink-0 font-mono">
-                    <div className="font-semibold text-rose-600">-1 {takeawayCup.unit}</div>
-                    <div className="text-[10px] text-emerald-700 font-medium">
+                  <div className="text-right shrink-0 font-mono tabular-nums">
+                    <div className="font-semibold text-stone-900">-1 {takeawayCup.unit}</div>
+                    <div className="text-xs text-stone-500 font-medium">
                       เหลือ {Math.max(0, takeawayCup.quantity - 1)} {takeawayCup.unit}
                     </div>
                   </div>
@@ -413,15 +413,15 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
           </div>
         </div>
 
-        <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-          <span className="text-[11px] text-slate-500">
-            ราคารวม: <span className="font-bold text-slate-900 font-mono">฿{currentPrice.toFixed(2)}</span>
+        <div className="pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
+          <span className="text-xs text-stone-500">
+            ราคารวม: <span className="font-bold text-stone-900 font-mono tabular-nums text-sm">฿{currentPrice.toFixed(2)}</span>
           </span>
           <div className="flex gap-2">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} className="rounded-xl border-stone-300 text-stone-700 hover:bg-stone-100">
               ยกเลิก
             </Button>
-            <Button type="submit" variant="primary">
+            <Button type="submit" variant="primary" className="rounded-xl bg-stone-900 text-white hover:bg-stone-800">
               ยืนยัน
             </Button>
           </div>

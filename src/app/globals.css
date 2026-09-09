@@ -2,43 +2,52 @@
 
 @layer base {
   :root {
-    /* 60-30-10 Color System: Clean White & Emerald (ขาว-เขียว สบายตา) */
-    /* 60% Dominant Canvas (ขาว/เทาอ่อน สว่าง สบายตา) */
-    --bg-main: #f8fafc;
+    /* 60-30-10 Cafe Monochrome & Warm Wood System */
+    /* 60% Dominant Canvas (Warm Cream / Cafe Paper White) */
+    --bg-main: #faf9f5;
     --bg-card: #ffffff;
-    --border-subtle: #e2e8f0;
-    --text-main: #0f172a;
-    --text-muted: #64748b;
+    --border-subtle: #e7e5e4;
+    --border-strong: #d6d3d1;
+    --text-main: #1c1917;
+    --text-muted: #57534e;
 
-    /* 30% Structural / Surfaces (Sidebar ขาว คลีน นุ่มนวล โทนเขียวอ่อนธรรมชาติ) */
+    /* 30% Structural / Surfaces (Deep Charcoal & Crisp Minimal Cafe) */
     --sidebar-bg: #ffffff;
-    --sidebar-border: #f1f5f9;
-    --sidebar-card: #f8fafc;
-    --sidebar-text: #64748b;
-    --sidebar-text-active: #065f46;
+    --sidebar-border: #f0eee9;
+    --sidebar-card: #f9f8f5;
+    --sidebar-text: #57534e;
+    --sidebar-text-active: #1c1917;
 
-    /* 10% Brand Accent (เขียวมรกตธรรมชาติ นุ่ม ไม่แสบตา) */
-    --primary: #059669;             /* Emerald 600 */
-    --primary-hover: #047857;       /* Emerald 700 */
-    --primary-light: #ecfdf5;       /* Emerald 50 */
-    --primary-badge: #d1fae5;       /* Emerald 100 */
-    --accent: #10b981;              /* Emerald 500 */
+    /* 10% Accent (Warm Wood, Walnut & Artisan Coffee Timber) */
+    --primary: #1c1917;             /* Deep Cafe Charcoal */
+    --primary-hover: #292524;       /* Warm Charcoal Hover */
+    --primary-light: #f5efe6;       /* Warm Cream / Light Latte */
+    --wood-accent: #78350f;         /* Rich Timber Amber */
+    --wood-badge: #fef3c7;          /* Soft Wood Badge */
+    --wood-border: #fde68a;
   }
 }
 
 body {
   font-family: var(--font-noto-thai), var(--font-noto-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: #f8fafc;
-  color: #1e293b;
-  font-size: 16px;
+  background-color: #faf9f5;
+  color: #1c1917;
+  font-size: 15px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Typography refinement: clean, crisp, not excessively bold */
+/* Ensure Thai text in any font-mono container renders seamlessly with Noto Sans Thai */
+.font-mono {
+  font-family: var(--font-noto-thai), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Typography refinement: clean, crisp, cafe aesthetic */
 h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
   letter-spacing: -0.01em;
+  color: #1c1917;
 }
 
 /* =========================================================
@@ -103,39 +112,41 @@ h1, h2, h3, h4, h5, h6 {
   background: #1e293b;
 }
 
-/* 1. Raised Cards */
+/* 1. Raised Cards (Modern Tactile Pro) */
 .skeuo-card {
   background: #ffffff;
   border-radius: 20px;
-  box-shadow: 4px 4px 12px rgba(166, 175, 195, 0.22), -3px -3px 10px rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.03);
+  border: 1px solid rgba(226, 232, 240, 0.9);
 }
 
 .skeuo-card-interactive {
   background: #ffffff;
   border-radius: 18px;
-  box-shadow: 4px 4px 10px rgba(166, 175, 195, 0.2), -3px -3px 8px rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 6px 18px -4px rgba(15, 23, 42, 0.05);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .skeuo-card-interactive:hover {
   transform: translateY(-2px);
-  border-color: #cbd5e1;
-  box-shadow: 6px 6px 16px rgba(166, 175, 195, 0.3), -4px -4px 12px rgba(255, 255, 255, 1);
+  border-color: rgba(203, 213, 225, 0.9);
+  box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.05), 0 12px 24px -6px rgba(15, 23, 42, 0.08);
 }
 
 /* 2. Inset Wells / Debossed Surfaces */
 .skeuo-inset {
-  background: #ebecf0;
-  box-shadow: inset 2px 2px 4px var(--neu-shadow-inset), inset -2px -2px 4px var(--neu-light);
-  border-radius: 16px;
+  background: #f1f5f9;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  border-radius: 14px;
 }
 
 .skeuo-input {
-  background: #ebecf0;
-  border: none;
-  box-shadow: inset 2px 2px 4px var(--neu-shadow-inset), inset -2px -2px 4px var(--neu-light);
+  background: #f8fafc;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.03);
   transition: all 0.15s ease;
 }
 

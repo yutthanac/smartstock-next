@@ -86,7 +86,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-[#ebecf0]">
+    <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
       <Topbar
         title="ตั้งค่าระบบ"
         subtitle="จัดการเมนู ร้านค้า หน่วยนับ และข้อมูลระบบ"
@@ -94,13 +94,13 @@ export default function SettingsPage() {
 
       <main className="p-6 md:p-8 space-y-6 max-w-5xl mx-auto w-full">
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 skeuo-inset p-1.5 rounded-2xl w-fit flex-wrap">
+        <div className="flex items-center gap-1.5 bg-stone-100 p-1.5 rounded-2xl border border-stone-200/80 w-fit flex-wrap">
           <button
             onClick={() => setActiveTab('sidebar')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'sidebar'
-                ? 'neu-raised text-emerald-800'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-stone-900 text-white shadow-xs'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
             }`}
           >
             <Sliders className="w-4 h-4" />
@@ -108,10 +108,10 @@ export default function SettingsPage() {
           </button>
           <button
             onClick={() => setActiveTab('stores')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'stores'
-                ? 'neu-raised text-emerald-800'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-stone-900 text-white shadow-xs'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
             }`}
           >
             <Layers className="w-4 h-4" />
@@ -119,10 +119,10 @@ export default function SettingsPage() {
           </button>
           <button
             onClick={() => setActiveTab('units')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'units'
-                ? 'neu-raised text-emerald-800'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-stone-900 text-white shadow-xs'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
             }`}
           >
             <Scale className="w-4 h-4" />
@@ -130,10 +130,10 @@ export default function SettingsPage() {
           </button>
           <button
             onClick={() => setActiveTab('store')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'store'
-                ? 'neu-raised text-emerald-800'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-stone-900 text-white shadow-xs'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
             }`}
           >
             <Store className="w-4 h-4" />
@@ -141,10 +141,10 @@ export default function SettingsPage() {
           </button>
           <button
             onClick={() => setActiveTab('api')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'api'
-                ? 'neu-raised text-emerald-800'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-stone-900 text-white shadow-xs'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
             }`}
           >
             <Database className="w-4 h-4" />
@@ -159,7 +159,7 @@ export default function SettingsPage() {
 
         {/* Tab: Stores Management */}
         {activeTab === 'stores' && (
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden">
+          <div className="bg-white rounded-3xl shadow-xs border border-stone-200/90 overflow-hidden">
             <StoresSettingsPage />
           </div>
         )}
@@ -168,29 +168,29 @@ export default function SettingsPage() {
         {activeTab === 'units' && (
           <div className="space-y-6">
             {/* Add New Unit Card */}
-            <div className="skeuo-card rounded-3xl p-6 space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-300/60">
+            <div className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-stone-100">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-2xl skeuo-inset flex items-center justify-center text-emerald-800">
+                  <div className="w-9 h-9 rounded-2xl bg-stone-100 border border-stone-200/80 flex items-center justify-center text-stone-800">
                     <Plus className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-slate-900 text-base">เพิ่มหน่วยนับใหม่เข้าระบบ</h3>
-                    <p className="text-xs text-slate-500">
+                    <h3 className="font-semibold text-stone-900 text-base">เพิ่มหน่วยนับใหม่เข้าระบบ</h3>
+                    <p className="text-xs text-stone-500">
                       หน่วยที่บันทึกตรงนี้จะปรากฏให้เลือกในระบบสต็อกและใบจัดซื้อ/จ่ายตลาดทันที
                     </p>
                   </div>
                 </div>
                 {saveToast && (
-                  <span className="inline-flex items-center gap-1 text-xs font-normal text-slate-800 bg-slate-100 px-3 py-1 rounded-full border border-slate-200 animate-fade-in">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-slate-700" /> บันทึกสำเร็จ!
+                  <span className="inline-flex items-center gap-1 text-xs font-normal text-stone-800 bg-stone-100 px-3 py-1 rounded-full border border-stone-200 animate-fade-in">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-stone-700" /> บันทึกสำเร็จ!
                   </span>
                 )}
               </div>
 
               <form onSubmit={handleAddUnitSubmit} className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                 <div className="sm:col-span-1 space-y-1">
-                  <label className="font-bold text-slate-800">
+                  <label className="font-medium text-stone-800">
                     ชื่อหน่วยนับ / ตัวย่อ <span className="text-rose-500">*</span>
                   </label>
                   <input
@@ -199,25 +199,25 @@ export default function SettingsPage() {
                     placeholder="เช่น กก., กรัม, ลิตร, ขวด, แพ็ค..."
                     value={newUnitName}
                     onChange={(e) => setNewUnitName(e.target.value)}
-                    className="w-full p-2.5 skeuo-input rounded-xl text-slate-800 font-bold focus:outline-none"
+                    className="w-full px-3.5 py-2.5 bg-stone-50 rounded-xl border border-stone-200/80 text-stone-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 transition-all"
                   />
                 </div>
 
                 <div className="sm:col-span-1 space-y-1">
-                  <label className="font-bold text-slate-800">คำอธิบายเพิ่มเติม (ไม่บังคับ)</label>
+                  <label className="font-medium text-stone-800">คำอธิบายเพิ่มเติม (ไม่บังคับ)</label>
                   <input
                     type="text"
                     placeholder="เช่น กิโลกรัม, ขวดแก้ว..."
                     value={newUnitDesc}
                     onChange={(e) => setNewUnitDesc(e.target.value)}
-                    className="w-full p-2.5 skeuo-input rounded-xl text-slate-800 font-medium focus:outline-none"
+                    className="w-full px-3.5 py-2.5 bg-stone-50 rounded-xl border border-stone-200/80 text-stone-900 font-normal focus:bg-white focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 transition-all"
                   />
                 </div>
 
                 <div className="sm:col-span-1 flex items-end">
                   <button
                     type="submit"
-                    className="w-full py-2.5 px-4 rounded-xl skeuo-btn-primary font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                    className="w-full py-2.5 px-4 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-medium text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs"
                   >
                     <Save className="w-4 h-4" /> + บันทึกหน่วยนับ
                   </button>
@@ -226,54 +226,54 @@ export default function SettingsPage() {
             </div>
 
             {/* Units List Table */}
-            <div className="skeuo-card rounded-3xl p-6 space-y-4">
+            <div className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-xs space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                    <Scale className="w-5 h-5 text-emerald-800" />
+                  <h3 className="font-semibold text-stone-900 text-base flex items-center gap-2">
+                    <Scale className="w-5 h-5 text-stone-800" />
                     รายการหน่วยนับที่มีอยู่ในระบบ ({units.length} หน่วย)
                   </h3>
-                  <p className="text-xs text-slate-500">หน่วยนับเหล่านี้จะปรากฏในเมนูเลือกของระบบสต็อกและจัดซื้อทันที</p>
+                  <p className="text-xs text-stone-500">หน่วยนับเหล่านี้จะปรากฏในเมนูเลือกของระบบสต็อกและจัดซื้อทันที</p>
                 </div>
               </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="bg-slate-200/60 border-b border-slate-300/70 text-slate-700 uppercase tracking-wider font-bold">
+                    <tr className="bg-stone-50/50 border-b border-stone-200 text-stone-600 uppercase tracking-wider font-semibold">
                       <th className="py-3 px-4 w-16 text-center">#</th>
-                      <th className="py-3 px-4 font-bold">ชื่อหน่วยนับ</th>
-                      <th className="py-3 px-4 font-bold">คำอธิบาย</th>
+                      <th className="py-3 px-4 font-semibold">ชื่อหน่วยนับ</th>
+                      <th className="py-3 px-4 font-semibold">คำอธิบาย</th>
                       <th className="py-3 px-4 text-center w-24">การจัดการ</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200/60">
+                  <tbody className="divide-y divide-stone-100">
                     {units.map((unit, idx) => {
                       const isEditing = editingUnitId === unit.id;
                       return (
-                        <tr key={unit.id} className="hover:bg-slate-200/30 transition-colors">
-                          <td className="py-3 px-4 text-center text-slate-400 font-medium">{idx + 1}</td>
+                        <tr key={unit.id} className="hover:bg-stone-50/60 transition-colors">
+                          <td className="py-3 px-4 text-center text-stone-400 font-mono tabular-nums">{idx + 1}</td>
                           <td className="py-3 px-4">
                             {isEditing ? (
                               <input
                                 type="text"
                                 value={editingName}
                                 onChange={(e) => setEditingName(e.target.value)}
-                                className="w-28 p-1.5 skeuo-input rounded-lg font-bold text-slate-900 text-sm focus:outline-none"
+                                className="w-28 px-2 py-1 bg-stone-50 rounded-lg border border-stone-300 font-medium text-stone-900 text-sm focus:outline-none focus:ring-1 focus:ring-stone-900"
                                 autoFocus
                               />
                             ) : (
-                              <span className="font-black text-slate-900 text-base">{unit.name}</span>
+                              <span className="font-semibold text-stone-900 text-sm">{unit.name}</span>
                             )}
                           </td>
-                          <td className="py-3 px-4 text-slate-600 font-medium">
+                          <td className="py-3 px-4 text-stone-600">
                             {isEditing ? (
                               <input
                                 type="text"
                                 value={editingDesc}
                                 onChange={(e) => setEditingDesc(e.target.value)}
                                 placeholder="คำอธิบายเพิ่มเติม..."
-                                className="w-full max-w-sm p-1.5 skeuo-input rounded-lg text-slate-700 text-xs focus:outline-none"
+                                className="w-full max-w-sm px-2 py-1 bg-stone-50 rounded-lg border border-stone-300 text-stone-700 text-xs focus:outline-none focus:ring-1 focus:ring-stone-900"
                               />
                             ) : (
                               <span>{unit.description || '-'}</span>
@@ -285,7 +285,7 @@ export default function SettingsPage() {
                                 <button
                                   type="button"
                                   onClick={() => handleSaveEdit(unit.id)}
-                                  className="p-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white transition-colors cursor-pointer shadow-xs"
+                                  className="p-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white transition-colors cursor-pointer shadow-xs"
                                   title="บันทึกการแก้ไข"
                                 >
                                   <Check className="w-4 h-4" />
@@ -293,7 +293,7 @@ export default function SettingsPage() {
                                 <button
                                   type="button"
                                   onClick={handleCancelEdit}
-                                  className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors cursor-pointer border border-slate-200"
+                                  className="p-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-600 transition-colors cursor-pointer border border-stone-200"
                                   title="ยกเลิก"
                                 >
                                   <X className="w-4 h-4" />
@@ -304,7 +304,7 @@ export default function SettingsPage() {
                                 <button
                                   type="button"
                                   onClick={() => handleStartEdit(unit)}
-                                  className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-800 transition-colors cursor-pointer"
+                                  className="p-1.5 rounded-xl hover:bg-stone-100 text-stone-400 hover:text-stone-800 transition-colors cursor-pointer"
                                   title="แก้ไขหน่วยนี้"
                                 >
                                   <Pencil className="w-4 h-4" />
@@ -312,7 +312,7 @@ export default function SettingsPage() {
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteUnit(unit.id, unit.name)}
-                                  className="p-1.5 rounded-xl hover:bg-rose-100 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                                  className="p-1.5 rounded-xl hover:bg-stone-100 text-stone-400 hover:text-rose-600 transition-colors cursor-pointer"
                                   title="ลบหน่วยนี้"
                                 >
                                   <Trash2 className="w-4 h-4" />
@@ -332,49 +332,49 @@ export default function SettingsPage() {
 
         {/* Tab 2: Store Information */}
         {activeTab === 'store' && (
-          <div className="skeuo-card rounded-3xl p-6 space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-slate-300/60">
-              <Store className="w-5 h-5 text-emerald-700" />
-              <h3 className="font-bold text-slate-900 text-base">ข้อมูลร้านอาหาร</h3>
+          <div className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-xs space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-stone-100">
+              <Store className="w-5 h-5 text-stone-800" />
+              <h3 className="font-semibold text-stone-900 text-base">ข้อมูลร้านอาหาร</h3>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">ชื่อร้านอาหาร</label>
+                <label className="font-medium text-stone-700 block mb-1">ชื่อร้านอาหาร</label>
                 <input
                   type="text"
                   defaultValue="Smart Gourmet & Bistro"
-                  className="w-full p-2.5 skeuo-input rounded-xl focus:outline-none font-bold text-slate-900"
+                  className="w-full px-3.5 py-2.5 bg-stone-50 rounded-xl border border-stone-200/80 focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 font-medium text-stone-900"
                 />
               </div>
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">สาขา</label>
+                <label className="font-medium text-stone-700 block mb-1">สาขา</label>
                 <input
                   type="text"
                   defaultValue="สาขาหลัก (Main Kitchen)"
-                  className="w-full p-2.5 skeuo-input rounded-xl focus:outline-none"
+                  className="w-full px-3.5 py-2.5 bg-stone-50 rounded-xl border border-stone-200/80 focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 text-stone-900"
                 />
               </div>
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">อัตราภาษีมูลค่าเพิ่ม (VAT %)</label>
+                <label className="font-medium text-stone-700 block mb-1">อัตราภาษีมูลค่าเพิ่ม (VAT %)</label>
                 <input
                   type="number"
                   defaultValue="7"
-                  className="w-full p-2.5 skeuo-input rounded-xl focus:outline-none"
+                  className="w-full px-3.5 py-2.5 bg-stone-50 rounded-xl border border-stone-200/80 focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 text-stone-900 font-mono tabular-nums"
                 />
               </div>
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">เบอร์โทรศัพท์</label>
+                <label className="font-medium text-stone-700 block mb-1">เบอร์โทรศัพท์</label>
                 <input
                   type="text"
                   defaultValue="02-123-4567"
-                  className="w-full p-2.5 skeuo-input rounded-xl focus:outline-none"
+                  className="w-full px-3.5 py-2.5 bg-stone-50 rounded-xl border border-stone-200/80 focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 text-stone-900 font-mono"
                 />
               </div>
             </div>
 
             <div className="pt-2 flex justify-end">
-              <button className="px-5 py-2.5 rounded-xl skeuo-btn-primary font-bold text-xs flex items-center gap-2 cursor-pointer">
+              <button className="px-5 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-medium text-xs flex items-center gap-2 cursor-pointer shadow-xs">
                 <Save className="w-4 h-4" /> บันทึกข้อมูลร้าน
               </button>
             </div>
@@ -383,35 +383,35 @@ export default function SettingsPage() {
 
         {/* Tab 3: Backend API */}
         {activeTab === 'api' && (
-          <div className="skeuo-card rounded-3xl p-6 space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-slate-300/60">
-              <Database className="w-5 h-5 text-emerald-700" />
-              <h3 className="font-bold text-slate-900 text-base">การเชื่อมต่อ Backend (Laravel API)</h3>
+          <div className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-xs space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-stone-100">
+              <Database className="w-5 h-5 text-stone-800" />
+              <h3 className="font-semibold text-stone-900 text-base">การเชื่อมต่อ Backend (Laravel API)</h3>
             </div>
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">
+                <label className="font-medium text-stone-700 block mb-1">
                   Laravel API Endpoint (NEXT_PUBLIC_API_URL)
                 </label>
                 <input
                   type="text"
                   defaultValue="http://localhost:8000/api"
-                  className="w-full p-2.5 skeuo-input rounded-xl focus:outline-none font-mono text-slate-800"
+                  className="w-full px-3.5 py-2.5 bg-stone-50 rounded-xl border border-stone-200/80 focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 font-mono text-stone-800"
                 />
-                <p className="text-[11px] text-slate-400 mt-1">
+                <p className="text-xs text-stone-400 mt-1">
                   เชื่อมต่อ Laravel REST API บน Laragon (เช่น http://stockapp.test/api หรือ http://localhost:8000/api)
                 </p>
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs flex items-center justify-between">
+              <div className="p-3 rounded-xl bg-stone-50 border border-stone-200 text-stone-700 text-xs flex items-center justify-between">
                 <span>สถานะเชื่อมต่อ: พร้อมใช้งาน (โหมด Local Client-Side Cache & Fallback เปิดใช้งานอยู่)</span>
-                <span className="font-medium text-slate-900">Online</span>
+                <span className="font-medium text-emerald-700">Online</span>
               </div>
             </div>
 
             <div className="pt-2 flex justify-end">
-              <button className="px-5 py-2.5 rounded-xl skeuo-btn-primary font-bold text-xs flex items-center gap-2 cursor-pointer">
+              <button className="px-5 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-medium text-xs flex items-center gap-2 cursor-pointer shadow-xs">
                 <Save className="w-4 h-4" /> บันทึกการเชื่อมต่อ
               </button>
             </div>

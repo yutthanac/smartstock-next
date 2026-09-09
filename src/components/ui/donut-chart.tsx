@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export interface DonutChartSegment {
   value: number;
-  color: string; // Should be a valid CSS color (e.g., #059669, #3b82f6)
+  color: string; // Valid CSS color string
   label: string;
   [key: string]: any; // Allow other data
 }

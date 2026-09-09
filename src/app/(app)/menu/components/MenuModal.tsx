@@ -72,22 +72,22 @@ export const MenuModal: React.FC<MenuModalProps> = ({
   const calculatedMargin = numPrice > 0 ? ((calculatedProfit / numPrice) * 100).toFixed(1) : '0';
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
       <form
         onSubmit={onSubmit}
-        className="bg-white rounded-3xl max-w-5xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col border border-slate-200 animate-scale-in"
+        className="bg-white rounded-2xl max-w-5xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col border border-stone-200 animate-scale-in"
       >
-        <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+        <div className="flex justify-between items-center pb-3 border-b border-stone-100">
           <div className="flex items-center gap-2">
-            <Coffee className="w-5 h-5 text-slate-700" />
-            <h3 className="font-semibold text-slate-900 text-base">
+            <Coffee className="w-5 h-5 text-stone-700" />
+            <h3 className="font-bold text-stone-900 text-base">
               {editingItem ? 'แก้ไขเมนู' : 'เพิ่มเมนูใหม่'}
             </h3>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-xl text-slate-400 hover:text-slate-600"
+            className="p-1 rounded-xl text-stone-400 hover:text-stone-600 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -97,19 +97,19 @@ export const MenuModal: React.FC<MenuModalProps> = ({
           {/* Menu Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="sm:col-span-2">
-              <label className="font-medium text-slate-700 block mb-1">ชื่อเมนู</label>
+              <label className="font-semibold text-stone-700 block mb-1">ชื่อเมนู</label>
               <input
                 type="text"
                 required
                 placeholder="เช่น เอสเปรสโซ่เย็น, ลาเต้, มัทฉะ, ครัวซองต์"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-400"
+                className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-stone-400 text-stone-900"
               />
             </div>
 
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">หมวดหมู่</label>
+              <label className="font-semibold text-stone-700 block mb-1">หมวดหมู่</label>
               <Dropdown
                 value={category}
                 onChange={setCategory}
@@ -121,12 +121,12 @@ export const MenuModal: React.FC<MenuModalProps> = ({
                   'อาหารจานเดียว (Food)',
                 ]}
                 className="w-full"
-                buttonClassName="py-2.5 px-3 rounded-xl bg-slate-50"
+                buttonClassName="py-2.5 px-3 rounded-xl bg-stone-50 border border-stone-200 text-stone-800"
               />
             </div>
 
             <div>
-              <label className="font-medium text-slate-700 block mb-1">ราคาขาย (บาท)</label>
+              <label className="font-semibold text-stone-700 block mb-1">ราคาขาย (บาท)</label>
               <input
                 type="text"
                 inputMode="decimal"
@@ -143,7 +143,7 @@ export const MenuModal: React.FC<MenuModalProps> = ({
                   const val = parseFloat(e.target.value);
                   setPrice(isNaN(val) || val < 0 ? 0 : val);
                 }}
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none font-normal text-slate-900 focus:ring-2 focus:ring-slate-400"
+                className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:outline-none font-medium text-stone-900 focus:ring-2 focus:ring-stone-400 font-mono tabular-nums"
               />
             </div>
 
@@ -152,12 +152,12 @@ export const MenuModal: React.FC<MenuModalProps> = ({
 
             {/* Description */}
             <div className="flex flex-col h-full">
-              <label className="font-semibold text-slate-700 block text-xs mb-1">รายละเอียด</label>
+              <label className="font-semibold text-stone-700 block text-xs mb-1">รายละเอียด</label>
               <textarea
                 placeholder="รายละเอียด รสชาติ หรือจุดเด่นของเมนู..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full flex-1 min-h-[72px] p-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none resize-none text-xs leading-relaxed"
+                className="w-full flex-1 min-h-[72px] p-2 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:outline-none resize-none text-xs leading-relaxed text-stone-800"
               />
             </div>
           </div>
@@ -172,50 +172,52 @@ export const MenuModal: React.FC<MenuModalProps> = ({
           />
 
           {/* Live BOM Margin Summary Box */}
-          <div className="p-4 rounded-2xl bg-slate-900 text-white space-y-2 border border-slate-800">
-            <div className="flex items-center justify-between text-xs border-b border-slate-800 pb-2">
-              <span className="text-slate-400 font-semibold uppercase tracking-wider text-[12px]">
-                สรุปต้นทุนและกำไร
+          <div className="p-4 rounded-xl bg-stone-900 text-white space-y-2 border border-stone-800">
+            <div className="flex items-center justify-between text-xs border-b border-stone-800 pb-2">
+              <span className="text-stone-400 font-semibold uppercase tracking-wider text-xs">
+                สรุปต้นทุนและกำไร (BOM Margin Calculation)
               </span>
             </div>
 
             <div className="grid grid-cols-3 gap-2 text-center pt-1">
-              <div className="p-2 rounded-xl bg-slate-800/90 border border-slate-700/60">
-                <div className="text-[10px] text-slate-400 flex items-center justify-center gap-1">
-                  <PieChart className="w-3 h-3 text-amber-400" /> ต้นทุนสูตร
+              <div className="p-2.5 rounded-lg bg-stone-800/90 border border-stone-700/60">
+                <div className="text-xs text-stone-400 flex items-center justify-center gap-1">
+                  <PieChart className="w-3.5 h-3.5 text-stone-300" /> ต้นทุนสูตร
                 </div>
-                <div className="text-sm font-bold text-amber-300 mt-0.5">฿{calculatedCost.toFixed(2)}</div>
+                <div className="text-sm font-bold text-white mt-0.5 font-mono tabular-nums">฿{calculatedCost.toFixed(2)}</div>
               </div>
 
-              <div className="p-2 rounded-xl bg-slate-800/90 border border-slate-700/60">
-                <div className="text-[10px] text-slate-400 flex items-center justify-center gap-1">
-                  <DollarSign className="w-3 h-3 text-emerald-400" /> กำไรต่อเสิร์ฟ/แก้ว
+              <div className="p-2.5 rounded-lg bg-stone-800/90 border border-stone-700/60">
+                <div className="text-xs text-stone-400 flex items-center justify-center gap-1">
+                  <DollarSign className="w-3.5 h-3.5 text-[#f5efe6]" /> กำไรต่อแก้ว
                 </div>
-                <div className="text-sm font-bold text-emerald-300 mt-0.5">฿{calculatedProfit.toFixed(2)}</div>
+                <div className="text-sm font-bold text-white mt-0.5 font-mono tabular-nums">฿{calculatedProfit.toFixed(2)}</div>
               </div>
 
-              <div className="p-2 rounded-xl bg-slate-800/90 border border-slate-700/60">
-                <div className="text-[10px] text-slate-400 flex items-center justify-center gap-1">
-                  <TrendingUp className="w-3 h-3 text-teal-400" /> มาร์จิ้น (% Margin)
+              <div className="p-2.5 rounded-lg bg-stone-800/90 border border-stone-700/60">
+                <div className="text-xs text-stone-400 flex items-center justify-center gap-1">
+                  <TrendingUp className="w-3.5 h-3.5 text-amber-300" /> อัตรากำไร (% Margin)
                 </div>
-                <div className="text-sm font-bold text-teal-300 mt-0.5">{calculatedMargin}%</div>
+                <div className="text-sm font-bold text-amber-200 mt-0.5 font-mono tabular-nums">{calculatedMargin}%</div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Modal Actions */}
-        <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2 text-xs">
+        <div className="pt-3 border-t border-stone-100 flex items-center justify-end gap-2 text-xs">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
+            className="rounded-xl border-stone-300 text-stone-700 hover:bg-stone-100"
           >
             ยกเลิก
           </Button>
           <Button
             type="submit"
             variant="primary"
+            className="rounded-xl bg-stone-900 text-white hover:bg-stone-800"
           >
             {editingItem ? 'บันทึกการแก้ไข' : 'สร้างเมนูและสูตร'}
           </Button>

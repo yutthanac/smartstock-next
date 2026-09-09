@@ -5,15 +5,9 @@ import {
   BarChart3,
   TrendingUp,
   Clock,
-  PieChart,
   ShoppingBag,
   Sparkles,
-  ArrowUpRight,
   Filter,
-  Calendar,
-  Layers,
-  ChevronRight,
-  CheckCircle2,
 } from 'lucide-react';
 import {
   BarChart,
@@ -23,9 +17,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell,
-  PieChart as RechartsPie,
-  Pie,
   AreaChart,
   Area,
 } from 'recharts';
@@ -33,6 +24,7 @@ import { useStock } from '@/lib/StockContext';
 import { Topbar } from '@/components/Topbar';
 import { Button } from '@/components/Button';
 import { Badge } from '@/components/Badge';
+import { SalesDonutCard } from '../../dashboard/components/SalesDonutCard';
 
 type PeriodFilter = '7days' | '30days' | 'year';
 
@@ -51,10 +43,8 @@ const PEAK_HOURS_DATA = [
   { hour: '18:00', orders: 10, sales: 700 },
 ];
 
-const CATEGORY_COLORS = ['#0f172a', '#334155', '#475569', '#64748b', '#94a3b8', '#cbd5e1'];
-
 export default function SalesReportPage() {
-  const { dashboard, orders, menuItems } = useStock();
+  const { dashboard, orders } = useStock();
   const [period, setPeriod] = useState<PeriodFilter>('7days');
   const [aiAnalyzing, setAiAnalyzing] = useState<boolean>(false);
   const [executiveSummary, setExecutiveSummary] = useState<string | null>(null);
@@ -120,47 +110,47 @@ export default function SalesReportPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-[#f8fafc]">
+    <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
       <Topbar
         title="รายงานการเงิน & ยอดขายเชิงลึก"
         subtitle="วิเคราะห์แนวโน้มรายได้ สถิติช่วงเวลาขายดี และขนาดตะกร้าเฉลี่ยต่อบิล"
       />
 
-      <main className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
+      <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
         {/* Filter Period Toolbar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
-          <div className="flex items-center gap-2 text-xs text-slate-600 font-medium">
-            <Filter className="w-4 h-4 text-slate-500" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200/90 shadow-2xs">
+          <div className="flex items-center gap-2 text-xs text-stone-600 font-medium">
+            <Filter className="w-4 h-4 text-stone-500" />
             <span>ช่วงเวลาวิเคราะห์:</span>
           </div>
 
-          <div className="inline-flex rounded-full border border-slate-200 p-0.5 bg-slate-100">
+          <div className="inline-flex rounded-xl border border-stone-200/80 p-1 bg-stone-100 overflow-x-auto no-scrollbar max-w-full">
             <button
               onClick={() => setPeriod('7days')}
-              className={`px-3.5 py-1.5 text-xs rounded-full transition-all cursor-pointer font-medium ${
+              className={`h-9 px-3.5 text-xs rounded-lg transition-all cursor-pointer font-medium whitespace-nowrap ${
                 period === '7days'
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-stone-900 text-white shadow-xs font-semibold'
+                  : 'text-stone-600 hover:text-stone-900'
               }`}
             >
               7 วันล่าสุด
             </button>
             <button
               onClick={() => setPeriod('30days')}
-              className={`px-3.5 py-1.5 text-xs rounded-full transition-all cursor-pointer font-medium ${
+              className={`h-9 px-3.5 text-xs rounded-lg transition-all cursor-pointer font-medium whitespace-nowrap ${
                 period === '30days'
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-stone-900 text-white shadow-xs font-semibold'
+                  : 'text-stone-600 hover:text-stone-900'
               }`}
             >
               30 วัน (รายสัปดาห์)
             </button>
             <button
               onClick={() => setPeriod('year')}
-              className={`px-3.5 py-1.5 text-xs rounded-full transition-all cursor-pointer font-medium ${
+              className={`h-9 px-3.5 text-xs rounded-lg transition-all cursor-pointer font-medium whitespace-nowrap ${
                 period === 'year'
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-stone-900 text-white shadow-xs font-semibold'
+                  : 'text-stone-600 hover:text-stone-900'
               }`}
             >
               12 เดือน (รายปี)
@@ -170,79 +160,79 @@ export default function SalesReportPage() {
 
         {/* 4 Core Financial KPIs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
+          <div className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500 font-normal">ยอดขายรวม</span>
-              <span className="p-1.5 rounded-lg bg-slate-100 text-slate-700">
+              <span className="text-xs text-stone-500 font-normal">ยอดขายรวม</span>
+              <span className="p-1.5 rounded-xl bg-stone-100 border border-stone-200/80 text-stone-700">
                 <BarChart3 className="w-4 h-4" />
               </span>
             </div>
-            <div className="text-2xl font-semibold text-slate-900 mt-2 font-mono">
+            <div className="text-2xl font-bold text-stone-900 mt-2 font-mono tabular-nums">
               ฿{totalSales.toLocaleString()}
             </div>
-            <div className="text-[11px] text-slate-400 mt-1 font-normal">
+            <div className="text-xs text-stone-400 mt-1 font-normal">
               จากฐานข้อมูลคำสั่งซื้อจริง
             </div>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
+          <div className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500 font-normal">กำไรสุทธิรวม</span>
-              <span className="p-1.5 rounded-lg bg-slate-100 text-slate-700">
+              <span className="text-xs text-stone-500 font-normal">กำไรสุทธิรวม</span>
+              <span className="p-1.5 rounded-xl bg-stone-100 border border-stone-200/80 text-stone-700">
                 <TrendingUp className="w-4 h-4" />
               </span>
             </div>
-            <div className="text-2xl font-semibold text-slate-900 mt-2 font-mono">
+            <div className="text-2xl font-bold text-stone-900 mt-2 font-mono tabular-nums">
               ฿{totalProfit.toLocaleString()}
             </div>
-            <div className="text-[11px] text-emerald-700 mt-1 font-medium">
+            <div className="text-xs text-[#78350f] mt-1 font-semibold">
               มาร์จิ้นเฉลี่ย {profitMargin}%
             </div>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
+          <div className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500 font-normal">ยอดต่อบิลเฉลี่ย (Basket Size)</span>
-              <span className="p-1.5 rounded-lg bg-slate-100 text-slate-700">
+              <span className="text-xs text-stone-500 font-normal">ยอดต่อบิลเฉลี่ย (Basket Size)</span>
+              <span className="p-1.5 rounded-xl bg-stone-100 border border-stone-200/80 text-stone-700">
                 <ShoppingBag className="w-4 h-4" />
               </span>
             </div>
-            <div className="text-2xl font-semibold text-slate-900 mt-2 font-mono">
+            <div className="text-2xl font-bold text-stone-900 mt-2 font-mono tabular-nums">
               ฿{avgBasketSize.toLocaleString()}
             </div>
-            <div className="text-[11px] text-slate-400 mt-1 font-normal">
+            <div className="text-xs text-stone-400 mt-1 font-normal">
               เฉลี่ย 1.8 แก้ว/บิล
             </div>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
+          <div className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500 font-normal">ช่วงเวลาขายดีที่สุด</span>
-              <span className="p-1.5 rounded-lg bg-slate-100 text-slate-700">
+              <span className="text-xs text-stone-500 font-normal">ช่วงเวลาขายดีที่สุด</span>
+              <span className="p-1.5 rounded-xl bg-stone-100 border border-stone-200/80 text-stone-700">
                 <Clock className="w-4 h-4" />
               </span>
             </div>
-            <div className="text-xl font-semibold text-slate-900 mt-2 font-mono">
+            <div className="text-xl font-bold text-stone-900 mt-2 font-mono tabular-nums">
               12:00 - 13:00
             </div>
-            <div className="text-[11px] text-slate-400 mt-1 font-normal">
+            <div className="text-xs text-stone-400 mt-1 font-normal">
               คิดเป็น 28% ของยอดออเดอร์วัน
             </div>
           </div>
         </div>
 
         {/* AI Executive Summary Card */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-3">
-          <div className="flex items-center justify-between">
+        <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200/90 shadow-2xs space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-800">
-                <Sparkles className="w-4 h-4 text-slate-700" />
+              <div className="w-8 h-8 rounded-xl bg-stone-100 border border-stone-200/80 flex items-center justify-center text-[#78350f] shrink-0">
+                <Sparkles className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="font-semibold text-slate-900 text-sm">
+                <h4 className="font-semibold text-stone-900 text-sm">
                   บทสรุปอินไซต์ผู้บริหาร (Executive Sales AI Analysis)
                 </h4>
-                <p className="text-xs text-slate-400 font-normal">
+                <p className="text-xs text-stone-400 font-normal">
                   ประมวลผลสรุปเทรนด์รายรับ พฤติกรรมการสั่งซื้อ และโอกาสขยายยอดขาย
                 </p>
               </div>
@@ -250,22 +240,22 @@ export default function SalesReportPage() {
 
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               isLoading={aiAnalyzing}
               onClick={handleGenerateSummary}
-              icon={<Sparkles className="w-3.5 h-3.5" />}
-              className="text-xs"
+              icon={<Sparkles className="w-4 h-4 text-[#78350f]" />}
+              className="shrink-0 w-full sm:w-auto shadow-2xs rounded-xl border-stone-200 text-stone-800 hover:bg-stone-50"
             >
               {executiveSummary ? 'วิเคราะห์สรุปใหม่' : 'สร้างบทวิเคราะห์ AI'}
             </Button>
           </div>
 
           {executiveSummary ? (
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 text-xs md:text-sm text-slate-700 leading-relaxed font-normal">
+            <div className="p-4 rounded-2xl bg-[#faf9f5] border border-stone-200 text-xs md:text-sm text-stone-800 leading-relaxed font-normal">
               {executiveSummary}
             </div>
           ) : (
-            <div className="p-4 rounded-2xl bg-slate-50/60 border border-slate-100 text-xs text-slate-500 font-normal flex items-center justify-between">
+            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 text-xs text-stone-500 font-normal flex items-center justify-between">
               <span>กดปุ่ม &ldquo;สร้างบทวิเคราะห์ AI&rdquo; เพื่อให้ระบบประมวลผลไฮไลต์ยอดขายช่วงนี้อัตโนมัติ</span>
             </div>
           )}
@@ -274,23 +264,23 @@ export default function SalesReportPage() {
         {/* Charts Row: Sales Trend & Category Distribution */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Main Sales & Cost Chart (8 Cols) */}
-          <div className="lg:col-span-8 bg-white p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
+          <div className="lg:col-span-8 bg-white p-6 rounded-2xl border border-stone-200/90 shadow-2xs space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-slate-900 text-base flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-slate-700" />
+                <h3 className="font-semibold text-stone-900 text-base flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-stone-700" />
                   แนวโน้มยอดขาย &amp; กำไรสุทธิ ({period === '7days' ? '7 วันล่าสุด' : period === '30days' ? 'รายสัปดาห์' : 'รายเดือน'})
                 </h3>
-                <p className="text-xs text-slate-400 font-normal mt-0.5">
+                <p className="text-xs text-stone-400 font-normal mt-0.5">
                   เปรียบเทียบสัดส่วนยอดขายรวมกับต้นทุนวัตถุดิบจริง
                 </p>
               </div>
               <div className="flex items-center gap-4 text-xs">
-                <span className="flex items-center gap-1.5 text-slate-600">
-                  <span className="w-3 h-3 rounded-full bg-slate-900 inline-block"></span> ยอดขาย
+                <span className="flex items-center gap-1.5 text-stone-600">
+                  <span className="w-3 h-3 rounded-full bg-stone-900 inline-block"></span> ยอดขาย
                 </span>
-                <span className="flex items-center gap-1.5 text-slate-600">
-                  <span className="w-3 h-3 rounded-full bg-slate-400 inline-block"></span> กำไรสุทธิ
+                <span className="flex items-center gap-1.5 text-stone-600">
+                  <span className="w-3 h-3 rounded-full bg-[#78350f] inline-block"></span> กำไรสุทธิ
                 </span>
               </div>
             </div>
@@ -298,10 +288,10 @@ export default function SalesReportPage() {
             <div className="h-72 w-full pt-2">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={salesDataset}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="day" stroke="#94a3b8" fontSize={12} tickLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e7e5e4" />
+                  <XAxis dataKey="day" stroke="#78716c" fontSize={12} tickLine={false} />
                   <YAxis
-                    stroke="#94a3b8"
+                    stroke="#78716c"
                     fontSize={12}
                     tickLine={false}
                     tickFormatter={(v) => `฿${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
@@ -311,59 +301,40 @@ export default function SalesReportPage() {
                       `฿${Number(val).toLocaleString()}`,
                       name === 'sales' ? 'ยอดขาย' : name === 'profit' ? 'กำไร' : 'ต้นทุน',
                     ]}
-                    contentStyle={{ backgroundColor: '#0f172a', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
+                    contentStyle={{ backgroundColor: '#1c1917', borderRadius: '12px', color: '#fff' }}
+                    wrapperClassName="text-xs"
                   />
-                  <Bar dataKey="sales" fill="#0f172a" radius={[6, 6, 0, 0]} maxBarSize={36} />
-                  <Bar dataKey="profit" fill="#94a3b8" radius={[6, 6, 0, 0]} maxBarSize={36} />
+                  <Bar dataKey="sales" fill="#1c1917" radius={[6, 6, 0, 0]} maxBarSize={36} />
+                  <Bar dataKey="profit" fill="#78350f" radius={[6, 6, 0, 0]} maxBarSize={36} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          {/* Category Share (4 Cols) */}
-          <div className="lg:col-span-4 bg-white p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
-            <h3 className="font-semibold text-slate-900 text-base flex items-center gap-2">
-              <PieChart className="w-5 h-5 text-slate-700" />
-              สัดส่วนยอดขายตามหมวดหมู่
-            </h3>
-            <p className="text-xs text-slate-400 font-normal">
-              แยกตามหมวดหมู่เมนูในร้าน
-            </p>
-
-            <div className="space-y-3 pt-2">
-              {categoryData.map((cat, idx) => (
-                <div key={idx} className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-700 font-medium">{cat.name}</span>
-                    <span className="font-mono text-slate-800">
-                      ฿{cat.value.toLocaleString()} ({cat.percent}%)
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                    <div
-                      className="bg-slate-900 h-full rounded-full transition-all duration-300"
-                      style={{ width: `${cat.percent}%`, opacity: 1 - idx * 0.15 }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
-            </div>
+          {/* Revenue & Cost Breakdown Donut Card (4 Cols) */}
+          <div className="lg:col-span-4">
+            <SalesDonutCard
+              sales7days={dashboard.sales_7days}
+              totalSales={totalSales}
+              totalCost={totalCost}
+              totalProfit={totalProfit}
+            />
           </div>
         </div>
 
         {/* Peak Hours Hourly Heatmap / Distribution */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
+        <div className="bg-white p-6 rounded-2xl border border-stone-200/90 shadow-2xs space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-semibold text-slate-900 text-base flex items-center gap-2">
-                <Clock className="w-5 h-5 text-slate-700" />
+              <h3 className="font-semibold text-stone-900 text-base flex items-center gap-2">
+                <Clock className="w-5 h-5 text-stone-700" />
                 สถิติคำสั่งซื้อรายชั่วโมง (Hourly Order Distribution)
               </h3>
-              <p className="text-xs text-slate-400 font-normal mt-0.5">
+              <p className="text-xs text-stone-400 font-normal mt-0.5">
                 ช่วยในการจัดตารางเข้ากะพนักงานและการเตรียมวัตถุดิบสดล่วงหน้า
               </p>
             </div>
-            <Badge variant="neutral" size="sm">
+            <Badge variant="neutral" size="sm" className="border-stone-200 bg-stone-100 text-stone-700 font-medium">
               พีกสุด: 12:00 น. (64 แก้ว)
             </Badge>
           </div>
@@ -373,24 +344,25 @@ export default function SalesReportPage() {
               <AreaChart data={PEAK_HOURS_DATA}>
                 <defs>
                   <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0f172a" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#0f172a" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#1c1917" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="#1c1917" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="hour" stroke="#94a3b8" fontSize={11} tickLine={false} />
-                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e7e5e4" />
+                <XAxis dataKey="hour" stroke="#78716c" fontSize={12} tickLine={false} />
+                <YAxis stroke="#78716c" fontSize={12} tickLine={false} />
                 <Tooltip
                   formatter={(val: any, name: any) => [
                     name === 'orders' ? `${val} ออเดอร์` : `฿${val}`,
                     name === 'orders' ? 'จำนวนออเดอร์' : 'ยอดขาย',
                   ]}
-                  contentStyle={{ backgroundColor: '#0f172a', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
+                  contentStyle={{ backgroundColor: '#1c1917', borderRadius: '12px', color: '#fff' }}
+                  wrapperClassName="text-xs"
                 />
                 <Area
                   type="monotone"
                   dataKey="orders"
-                  stroke="#0f172a"
+                  stroke="#1c1917"
                   strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#colorOrders)"

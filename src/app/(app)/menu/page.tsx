@@ -140,7 +140,7 @@ export default function RecipeMenuPage() {
   });
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-slate-50/70">
+    <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
       <Topbar
         title="เมนู & สูตรชง (Recipe BOM)"
         subtitle="ผูกเมนูกับวัตถุดิบและสูตรชง/เสิร์ฟ พร้อมคำนวณต้นทุนและกำไรต่อแก้วอัตโนมัติ"
@@ -148,24 +148,23 @@ export default function RecipeMenuPage() {
 
       <main className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
         {/* Toolbar: Search, Category Filter, Card/List Switcher & Create button */}
-        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200/90 shadow-2xs">
           {/* Left Controls: Search & Category Filter */}
-          <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 flex-1 min-w-0">
             {/* Search */}
             <div className="relative flex-1 min-w-[160px]">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 placeholder="ค้นหาชื่อเมนู หรือรายละเอียด..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 text-xs rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4fb0a5]/30 focus:border-[#4fb0a5] transition-all"
+                className="h-10 w-full pl-9 pr-4 text-xs sm:text-sm rounded-xl bg-white border border-stone-200/90 text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-stone-400 transition-colors font-normal shadow-2xs"
               />
             </div>
 
             {/* Category Filter */}
             <div className="flex items-center gap-1.5 shrink-0">
-              <Filter className="w-4 h-4 text-slate-400 shrink-0" />
               <Dropdown
                 value={selectedCategory}
                 onChange={setSelectedCategory}
@@ -173,40 +172,42 @@ export default function RecipeMenuPage() {
                   { value: 'all', label: `ทุกหมวดหมู่ (${menuItems.length})` },
                   ...categories.map((cat) => ({ value: cat, label: cat })),
                 ]}
-                className="w-44"
+                size="md"
+                className="w-full sm:w-48"
+                buttonClassName="border-stone-200/90 bg-white hover:bg-stone-50 text-stone-700 shadow-2xs"
               />
             </div>
           </div>
 
           {/* Right Controls: View Switcher & Add Button */}
-          <div className="flex items-center justify-between lg:justify-end gap-3 shrink-0">
+          <div className="flex items-center justify-between sm:justify-end gap-2.5 shrink-0">
             {/* View Switcher: Card / List */}
-            <div className="bg-slate-100 p-1 rounded-2xl flex items-center gap-1 shrink-0">
+            <div className="bg-stone-100 p-1 rounded-xl flex items-center gap-1 shrink-0 border border-stone-200/60">
               <button
                 type="button"
                 onClick={() => setViewMode('card')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                   viewMode === 'card'
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-900'
+                    ? 'bg-stone-900 text-white shadow-2xs font-semibold'
+                    : 'text-stone-500 hover:text-stone-900'
                 }`}
                 title="มุมมองการ์ด (Card View)"
               >
-                <LayoutGrid className="w-4 h-4" />
+                <LayoutGrid className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">การ์ด</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setViewMode('list')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                   viewMode === 'list'
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-900'
+                    ? 'bg-stone-900 text-white shadow-2xs font-semibold'
+                    : 'text-stone-500 hover:text-stone-900'
                 }`}
                 title="มุมมองรายการ (List View)"
               >
-                <ListIcon className="w-4 h-4" />
+                <ListIcon className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">รายการ</span>
               </button>
             </div>
@@ -214,9 +215,10 @@ export default function RecipeMenuPage() {
             {/* Add Button */}
             <Button
               variant="primary"
+              size="md"
               onClick={handleOpenCreate}
               icon={<Plus className="w-4 h-4" />}
-              className="shrink-0 whitespace-nowrap"
+              className="shrink-0 whitespace-nowrap shadow-xs bg-stone-900 text-white hover:bg-stone-800 rounded-xl"
             >
               เพิ่มเมนูใหม่
             </Button>
@@ -227,15 +229,15 @@ export default function RecipeMenuPage() {
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-3xl border border-slate-200/80 p-5 space-y-4">
+              <div key={i} className="bg-white rounded-2xl border border-stone-200/90 p-5 space-y-4 shadow-xs">
                 <div className="flex items-center gap-3">
-                  <Skeleton className="w-16 h-16 rounded-2xl shrink-0" />
+                  <Skeleton className="w-16 h-16 rounded-xl shrink-0" />
                   <div className="flex-1 space-y-2">
                     <Skeleton className="h-4 w-3/4" />
                     <Skeleton className="h-3 w-1/2" />
                   </div>
                 </div>
-                <div className="pt-3 border-t border-slate-100 flex justify-between items-center">
+                <div className="pt-3 border-t border-stone-100 flex justify-between items-center">
                   <Skeleton className="h-5 w-16" />
                   <Skeleton className="h-4 w-20" />
                 </div>
@@ -243,8 +245,8 @@ export default function RecipeMenuPage() {
             ))}
           </div>
         ) : filteredMenuItems.length === 0 ? (
-          <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 text-slate-400 text-sm">
-            <Coffee className="w-8 h-8 mx-auto mb-2 opacity-40 text-slate-400" />
+          <div className="p-12 text-center bg-white rounded-2xl border border-stone-200/90 text-stone-400 text-sm shadow-xs">
+            <Coffee className="w-8 h-8 mx-auto mb-2 opacity-40 text-stone-400" />
             ไม่พบรายการเมนูที่ค้นหา
           </div>
         ) : viewMode === 'card' ? (

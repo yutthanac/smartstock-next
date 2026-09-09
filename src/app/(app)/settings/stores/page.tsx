@@ -267,27 +267,27 @@ export default function StoresSettingsPage() {
 
       {/* Store List */}
       {loading ? (
-        <div className="text-center py-12 text-slate-400 text-sm">กำลังโหลดข้อมูลร้านค้า...</div>
+        <div className="text-center py-12 text-stone-400 text-sm">กำลังโหลดข้อมูลร้านค้า...</div>
       ) : (
         <div className="space-y-4">
           {stores.map((store) => {
             const Icon = TYPE_ICONS[store.type] ?? Building2;
             const isActive = activeStore?.id === store.id;
             const isExpanded = expandedStore === store.id;
-            const sColor = store.theme_color || '#059669';
+            const sColor = store.theme_color || '#78350f';
 
             return (
               <div
                 key={store.id}
                 className={`rounded-3xl border-2 bg-white shadow-xs transition-all ${
-                  isActive ? 'border-emerald-400 ring-2 ring-emerald-400/20' : 'border-slate-200/90'
+                  isActive ? 'border-stone-900 ring-2 ring-stone-900/10' : 'border-stone-200/90'
                 }`}
               >
                 {/* Store Main Row */}
                 <div className="p-4 flex items-center gap-4">
                   {/* Store Logo or Icon */}
                   <div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden shadow-2xs border border-slate-200/90"
+                    className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden shadow-2xs border border-stone-200/90"
                     style={{ backgroundColor: `${sColor}15` }}
                   >
                     {store.logo_url ? (
@@ -303,16 +303,16 @@ export default function StoresSettingsPage() {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-slate-900 text-base truncate">
+                      <span className="font-semibold text-stone-900 text-base truncate">
                         {store.name}
                       </span>
                       {isActive && (
-                        <span className="text-[10px] font-normal bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200">
+                        <span className="text-xs font-normal bg-stone-100 text-stone-700 px-2.5 py-0.5 rounded-full border border-stone-200">
                           กำลังใช้งาน
                         </span>
                       )}
                       <span
-                        className="text-[10px] font-medium px-2 py-0.5 rounded-full border"
+                        className="text-xs font-medium px-2 py-0.5 rounded-full border"
                         style={{
                           backgroundColor: `${sColor}15`,
                           color: sColor,
@@ -322,17 +322,17 @@ export default function StoresSettingsPage() {
                         {TYPE_LABELS[store.type] || store.type}
                       </span>
                       <span
-                        className={`text-[10px] font-normal px-2 py-0.5 rounded-full border ${
+                        className={`text-xs font-normal px-2 py-0.5 rounded-full border ${
                           store.is_active
-                            ? 'bg-slate-50 text-slate-700 border-slate-200'
-                            : 'bg-slate-100 text-slate-400 border-slate-200'
+                            ? 'bg-stone-50 text-stone-700 border-stone-200'
+                            : 'bg-stone-100 text-stone-400 border-stone-200'
                         }`}
                       >
                         {store.is_active ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
                       </span>
                     </div>
 
-                    <p className="text-xs text-slate-400 mt-1 truncate">
+                    <p className="text-xs text-stone-400 mt-1 truncate">
                       {store.description || 'ไม่มีคำอธิบาย'} • /{store.slug}
                     </p>
                   </div>
@@ -347,7 +347,7 @@ export default function StoresSettingsPage() {
                           setActiveStore(store as any);
                           refreshStores();
                         }}
-                        className="h-7 px-2.5 text-xs font-normal"
+                        className="h-7 px-2.5 text-xs font-normal cursor-pointer"
                       >
                         เลือกใช้ร้านนี้
                       </Button>
@@ -357,8 +357,8 @@ export default function StoresSettingsPage() {
                       onClick={() => handleToggleExpand(store)}
                       className={`p-2 rounded-xl text-xs font-normal flex items-center gap-1.5 transition-colors cursor-pointer ${
                         isExpanded
-                          ? 'bg-slate-900 text-white'
-                          : 'text-slate-600 hover:bg-slate-100'
+                          ? 'bg-stone-900 text-white'
+                          : 'text-stone-600 hover:bg-stone-100'
                       }`}
                       title="ตั้งค่าสิทธิ์เมนูและสมาชิก"
                     >
@@ -371,7 +371,7 @@ export default function StoresSettingsPage() {
                         setEditStore(store);
                         setShowForm(true);
                       }}
-                      className="p-2 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                      className="p-2 rounded-xl text-stone-400 hover:text-stone-900 hover:bg-stone-100 transition-colors cursor-pointer"
                       title="แก้ไขร้านค้า"
                     >
                       <Edit2 className="w-4 h-4" />
@@ -379,7 +379,7 @@ export default function StoresSettingsPage() {
 
                     <button
                       onClick={() => handleDelete(store.id)}
-                      className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                      className="p-2 rounded-xl text-stone-400 hover:text-rose-600 hover:bg-stone-100 transition-colors cursor-pointer"
                       title="ลบร้านค้า"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -520,21 +520,21 @@ export default function StoresSettingsPage() {
                             {store.members.map((m) => (
                               <div
                                 key={m.id}
-                                className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white border border-slate-200/70 shadow-2xs"
+                                className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white border border-stone-200/80 shadow-2xs"
                               >
-                                <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-[11px] font-normal">
+                                <div className="w-7 h-7 rounded-lg bg-stone-100 text-stone-700 flex items-center justify-center text-xs font-normal">
                                   {m.name.charAt(0).toUpperCase()}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-bold text-slate-800 truncate">{m.name}</p>
-                                  <p className="text-[10px] text-slate-400 truncate">{m.email}</p>
+                                  <p className="text-xs font-medium text-stone-800 truncate">{m.name}</p>
+                                  <p className="text-xs text-stone-400 truncate">{m.email}</p>
                                 </div>
-                                <span className="text-[10px] bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full text-slate-700 font-semibold">
+                                <span className="text-xs bg-stone-100 border border-stone-200 px-2 py-0.5 rounded-full text-stone-700 font-medium">
                                   {ROLE_LABELS[m.role] ?? m.role}
                                 </span>
                                 <button
                                   onClick={() => handleRemoveMember(store.id, m.id)}
-                                  className="p-1 text-slate-300 hover:text-rose-500 transition-colors cursor-pointer"
+                                  className="p-1 text-stone-400 hover:text-rose-600 transition-colors cursor-pointer"
                                   title="ลบออกจากร้าน"
                                 >
                                   <X className="w-3.5 h-3.5" />
@@ -543,7 +543,7 @@ export default function StoresSettingsPage() {
                             ))}
                           </div>
                         ) : (
-                          <p className="text-xs text-slate-400 text-center py-3 bg-white rounded-xl border border-slate-200/60">
+                          <p className="text-xs text-stone-400 text-center py-3 bg-white rounded-xl border border-stone-200/60">
                             ยังไม่มีสมาชิกกำหนดเฉพาะร้านนี้ (ผู้ดูแลระบบสามารถเข้าดูได้โดยตรง)
                           </p>
                         )}
@@ -681,12 +681,12 @@ function StoreFormModal({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shadow-2xs"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-stone-200 text-xs font-medium text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer shadow-2xs"
                 >
-                  <Upload className="w-3.5 h-3.5 text-emerald-600" />
+                  <Upload className="w-3.5 h-3.5 text-stone-700" />
                   เลือกรูปโลโก้
                 </button>
-                <p className="text-[11px] text-slate-400 mt-1">
+                <p className="text-xs text-stone-400 mt-1">
                   รองรับ JPG, PNG, WEBP, SVG ขนาดไม่เกิน 4MB
                 </p>
               </div>
@@ -695,20 +695,20 @@ function StoreFormModal({
 
           {/* Store Name */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5">ชื่อร้านค้า *</label>
+            <label className="block text-xs font-medium text-stone-700 mb-1.5">ชื่อร้านค้า *</label>
             <input
               required
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="เช่น Roast & Toast Cafe, Coffee Lab หรือ ร้านป้าสมใจ"
-              className="w-full text-sm border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-slate-50"
+              className="w-full text-xs border border-stone-200/80 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 bg-stone-50 text-stone-900"
             />
           </div>
 
           {/* Store Type */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5">ประเภทร้าน *</label>
+            <label className="block text-xs font-medium text-stone-700 mb-1.5">ประเภทร้าน *</label>
             <div className="grid grid-cols-2 gap-2">
               {Object.entries(TYPE_LABELS).map(([val, label]) => {
                 const Icon = TYPE_ICONS[val];
@@ -729,8 +729,8 @@ function StoreFormModal({
                     }}
                     className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-xs font-normal transition-all cursor-pointer ${
                       isSelected
-                        ? 'border-slate-900 bg-slate-100 text-slate-900 shadow-xs'
-                        : 'border-slate-200 text-slate-600 hover:border-slate-300 bg-white'
+                        ? 'border-stone-900 bg-stone-900 text-white shadow-xs'
+                        : 'border-stone-200 text-stone-700 hover:border-stone-300 bg-white'
                     }`}
                   >
                     <Icon className="w-4 h-4 shrink-0" />
@@ -743,8 +743,8 @@ function StoreFormModal({
 
           {/* Theme Color Selection */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
-              <Palette className="w-3.5 h-3.5 text-slate-500" />
+            <label className="block text-xs font-medium text-stone-700 mb-1.5 flex items-center gap-1.5">
+              <Palette className="w-3.5 h-3.5 text-stone-500" />
               สีประจำร้าน / หน้ากาก (Theme Color)
             </label>
             <div className="flex items-center gap-2 flex-wrap">
@@ -753,10 +753,10 @@ function StoreFormModal({
                   key={col.value}
                   type="button"
                   onClick={() => setThemeColor(col.value)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium cursor-pointer transition-all ${
                     themeColor === col.value
-                      ? 'border-slate-900 bg-slate-100 font-bold text-slate-900 shadow-2xs'
-                      : 'border-slate-200 bg-white text-slate-600'
+                      ? 'border-stone-900 bg-stone-100 font-medium text-stone-900 shadow-2xs'
+                      : 'border-stone-200 bg-white text-stone-600'
                   }`}
                 >
                   <span
@@ -771,36 +771,36 @@ function StoreFormModal({
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5">คำอธิบายร้าน</label>
+            <label className="block text-xs font-medium text-stone-700 mb-1.5">คำอธิบายร้าน</label>
             <textarea
               value={description}
               onChange={(e) => setDesc(e.target.value)}
               placeholder="รายละเอียดสั้นๆ เช่น คาเฟ่เครื่องดื่มสด เบเกอรี่โฮมเมด..."
               rows={2}
-              className="w-full text-sm border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 bg-slate-50 resize-none"
+              className="w-full text-xs border border-stone-200/80 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 bg-stone-50 text-stone-900 resize-none"
             />
           </div>
 
           {/* Phone & Address */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">เบอร์โทรศัพท์</label>
+              <label className="block text-xs font-medium text-stone-700 mb-1.5">เบอร์โทรศัพท์</label>
               <input
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="08x-xxx-xxxx"
-                className="w-full text-sm border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 bg-slate-50"
+                className="w-full text-xs border border-stone-200/80 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 bg-stone-50 text-stone-900 font-mono"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">ที่อยู่ร้าน</label>
+              <label className="block text-xs font-medium text-stone-700 mb-1.5">ที่อยู่ร้าน</label>
               <input
                 type="text"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="ที่ตั้งสาขา"
-                className="w-full text-sm border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 bg-slate-50"
+                className="w-full text-xs border border-stone-200/80 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 bg-stone-50 text-stone-900"
               />
             </div>
           </div>
@@ -811,7 +811,7 @@ function StoreFormModal({
               type="button"
               variant="outline"
               onClick={onClose}
-              className="flex-1"
+              className="flex-1 cursor-pointer"
             >
               ยกเลิก
             </Button>
@@ -819,7 +819,7 @@ function StoreFormModal({
               type="submit"
               isLoading={saving}
               icon={<Save className="w-4 h-4" />}
-              className="flex-1"
+              className="flex-1 cursor-pointer"
             >
               {store ? 'บันทึกการแก้ไข' : 'สร้างร้านค้า'}
             </Button>

@@ -17,6 +17,7 @@ export interface PurchaseOrder {
   id: string;
   title?: string; // เช่น ลิสต์ซื้อของประจำสัปดาห์
   store_name?: string; // แหล่งซื้อ เช่น ตลาดสดมหาชัย, แม็คโคร, ซีพี, โลตัส (ไม่บังคับ)
+  actual_store_name?: string; // ชื่อร้านค้าจริงจากใบเสร็จ
   buyer_name?: string; // ผู้ไปจ่ายตลาด
   date: string;
   status: 'pending' | 'receipt_uploaded' | 'completed' | 'draft';

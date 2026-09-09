@@ -9,7 +9,6 @@ import {
   Check,
 } from 'lucide-react';
 import { useStock } from '@/lib/StockContext';
-import { Ingredient } from '@/types';
 import { PurchaseOrder } from '../purchase-orders/types';
 import { Dropdown } from '@/components/Dropdown';
 import { Button } from '@/components/Button';
@@ -281,14 +280,14 @@ export const ReceiptInboundTab: React.FC = () => {
     <div className="space-y-5">
       {/* Header Notification / Success Alert */}
       {successMessage && (
-        <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between gap-3 text-slate-800">
+        <div className="p-3.5 bg-stone-50 border border-stone-200 rounded-2xl flex items-center justify-between gap-3 text-stone-800">
           <div className="flex items-center gap-2">
             <Check className="w-4 h-4 text-emerald-600 shrink-0" />
             <span className="text-xs font-normal">{successMessage}</span>
           </div>
           <button
             onClick={() => setSuccessMessage(null)}
-            className="text-xs text-slate-500 hover:text-slate-800 cursor-pointer"
+            className="text-xs text-stone-500 hover:text-stone-800 cursor-pointer"
           >
             ปิด
           </button>
@@ -296,14 +295,21 @@ export const ReceiptInboundTab: React.FC = () => {
       )}
 
       {/* Bill Selector Bar */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white rounded-2xl border border-stone-200 shadow-2xs p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="font-medium text-slate-900 text-sm">เลือกใบเสร็จ / รายการสั่งซื้อ</h3>
+            <h3 className="font-semibold text-stone-900 text-sm">เลือกใบเสร็จ / รายการสั่งซื้อ</h3>
             {selectedPO && (
               <Badge
                 variant={selectedPO.status === 'completed' ? 'neutral' : 'outline'}
                 size="sm"
+                className={
+                  selectedPO.status === 'completed'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                    : selectedPO.status === 'receipt_uploaded'
+                    ? 'border-[#e8ded0] bg-[#f5efe6] text-[#78350f]'
+                    : 'border-stone-200 text-stone-700'
+                }
               >
                 {selectedPO.status === 'completed'
                   ? 'รับเข้าสต็อกแล้ว'
@@ -313,7 +319,7 @@ export const ReceiptInboundTab: React.FC = () => {
               </Badge>
             )}
           </div>
-          <p className="text-xs text-slate-500 font-normal mt-0.5">
+          <p className="text-xs text-stone-500 font-normal mt-0.5">
             ตรวจสอบรายการสินค้าที่ซื้อจริงและปรับปรุงข้อมูลก่อนนำเข้าสต็อก
           </p>
         </div>
@@ -321,7 +327,7 @@ export const ReceiptInboundTab: React.FC = () => {
         {/* PO Selector Dropdown */}
         <div className="flex items-center gap-2">
           {orders.length === 0 ? (
-            <span className="text-xs text-slate-400">ยังไม่มีประวัติการซื้อของ</span>
+            <span className="text-xs text-stone-400">ยังไม่มีประวัติการซื้อของ</span>
           ) : (
             <div className="w-72">
               <Dropdown
@@ -333,7 +339,7 @@ export const ReceiptInboundTab: React.FC = () => {
                 onChange={(val) => setSelectedPOId(String(val))}
                 size="sm"
                 className="w-full"
-                buttonClassName="bg-white border-slate-200 text-xs font-normal text-slate-800 py-1.5 px-3 rounded-xl"
+                buttonClassName="bg-white border-stone-200 text-xs font-normal text-stone-800 py-1.5 px-3 rounded-xl"
               />
             </div>
           )}
@@ -344,6 +350,7 @@ export const ReceiptInboundTab: React.FC = () => {
               size="sm"
               icon={<Eye className="w-3.5 h-3.5" />}
               onClick={() => setIsShowingPhoto((prev) => !prev)}
+              className="rounded-xl border-stone-200 text-stone-700 hover:bg-stone-50"
             >
               {isShowingPhoto ? 'ซ่อนรูปบิล' : 'ดูรูปบิล'}
             </Button>
@@ -352,9 +359,9 @@ export const ReceiptInboundTab: React.FC = () => {
       </div>
 
       {!selectedPO ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center text-slate-500 space-y-2">
-          <p className="text-sm font-medium text-slate-700">ยังไม่มีรายการบิลการซื้อของในระบบ</p>
-          <p className="text-xs text-slate-400 max-w-md mx-auto">
+        <div className="bg-white rounded-2xl border border-stone-200 p-10 text-center text-stone-500 space-y-2">
+          <p className="text-sm font-medium text-stone-700">ยังไม่มีรายการบิลการซื้อของในระบบ</p>
+          <p className="text-xs text-stone-400 max-w-md mx-auto">
             สามารถสร้างรายการซื้อของและแนบใบเสร็จได้ที่เมนู &ldquo;รายการซื้อของ &amp; ใบเสร็จ&rdquo;
           </p>
         </div>
@@ -362,20 +369,20 @@ export const ReceiptInboundTab: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           {/* Left: Receipt Photo Viewer (if toggled open) */}
           {isShowingPhoto && selectedPO.receipt_image && (
-            <div className="lg:col-span-4 bg-white rounded-2xl p-4 border border-slate-200 space-y-3 sticky top-4 shadow-2xs">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 text-xs text-slate-700">
-                <span className="font-medium text-slate-800">รูปภาพใบเสร็จ</span>
+            <div className="lg:col-span-4 bg-white rounded-2xl p-4 border border-stone-200 space-y-3 sticky top-4 shadow-2xs">
+              <div className="flex items-center justify-between pb-2 border-b border-stone-100 text-xs text-stone-700">
+                <span className="font-semibold text-stone-900">รูปภาพใบเสร็จ</span>
                 <button
                   type="button"
                   onClick={() => setPhotoRotation((prev) => (prev + 90) % 360)}
-                  className="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 transition-colors cursor-pointer flex items-center gap-1 text-[11px]"
+                  className="px-2.5 py-1 rounded-lg border border-stone-200 hover:bg-stone-50 text-stone-600 transition-colors cursor-pointer flex items-center gap-1 text-xs"
                   title="หมุนภาพ"
                 >
                   <RotateCw className="w-3 h-3" /> หมุนภาพ
                 </button>
               </div>
 
-              <div className="flex items-center justify-center overflow-hidden rounded-xl bg-slate-50 border border-slate-100 min-h-[280px] max-h-[460px] p-2">
+              <div className="flex items-center justify-center overflow-hidden rounded-xl bg-stone-50 border border-stone-200 min-h-[280px] max-h-[460px] p-2">
                 <img
                   src={selectedPO.receipt_image}
                   alt="Receipt"
@@ -384,18 +391,18 @@ export const ReceiptInboundTab: React.FC = () => {
                 />
               </div>
 
-              <div className="text-[11px] text-slate-500 space-y-1 pt-1 border-t border-slate-100">
+              <div className="text-xs text-stone-500 space-y-1 pt-1 border-t border-stone-100">
                 <div className="flex justify-between">
                   <span>ร้านค้า:</span>
-                  <span className="text-slate-800 font-medium">{selectedPO.store_name || 'ไม่ระบุ'}</span>
+                  <span className="text-stone-800 font-medium">{selectedPO.store_name || 'ไม่ระบุ'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>วันที่:</span>
-                  <span className="text-slate-800 font-mono">{selectedPO.date}</span>
+                  <span className="text-stone-800 font-mono tabular-nums">{selectedPO.date}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>ยอดรวมในบิล:</span>
-                  <span className="text-slate-800 font-mono font-medium">
+                  <span className="text-stone-900 font-mono tabular-nums font-bold">
                     ฿{selectedPO.totalAmount?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '0.00'}
                   </span>
                 </div>
@@ -407,15 +414,15 @@ export const ReceiptInboundTab: React.FC = () => {
           <div
             className={`${
               isShowingPhoto && selectedPO.receipt_image ? 'lg:col-span-8' : 'lg:col-span-12'
-            } bg-white rounded-2xl border border-slate-200 shadow-2xs p-5 space-y-4`}
+            } bg-white rounded-2xl border border-stone-200 shadow-2xs p-5 space-y-4`}
           >
             {/* Table Header Controls */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-100">
               <div>
-                <h4 className="font-medium text-slate-900 text-sm">
-                  รายการสินค้าจากใบเสร็จ ({inboundItems.length} รายการ)
+                <h4 className="font-semibold text-stone-900 text-sm">
+                  รายการสินค้าจากใบเสร็จ (<span className="font-mono tabular-nums font-bold">{inboundItems.length}</span> รายการ)
                 </h4>
-                <p className="text-xs text-slate-400 font-normal mt-0.5">
+                <p className="text-xs text-stone-400 font-normal mt-0.5">
                   ตรวจสอบรายการสินค้า แมปกับวัตถุดิบเดิมหรือสร้างเป็นวัตถุดิบใหม่เข้าคลัง
                 </p>
               </div>
@@ -423,40 +430,41 @@ export const ReceiptInboundTab: React.FC = () => {
               <Button
                 variant="outline"
                 size="sm"
-                icon={<Plus className="w-3.5 h-3.5 text-slate-500" />}
+                icon={<Plus className="w-3.5 h-3.5 text-stone-600" />}
                 onClick={handleAddManualItem}
+                className="rounded-xl border-stone-200 text-stone-700 hover:bg-stone-50"
               >
                 เพิ่มรายการ
               </Button>
             </div>
 
             {/* Inbound Items Table */}
-            <div className="border border-slate-200 rounded-xl overflow-hidden">
+            <div className="border border-stone-200 rounded-xl overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs font-medium">
+                  <thead className="bg-stone-50 border-b border-stone-200 text-stone-700 text-xs font-semibold">
                     <tr>
                       <th className="py-2.5 px-3 w-10 text-center">
                         <input
                           type="checkbox"
                           checked={allSelected}
                           onChange={handleToggleSelectAll}
-                          className="rounded border-slate-300 text-slate-800 focus:ring-slate-500 cursor-pointer"
+                          className="rounded border-stone-300 text-stone-800 focus:ring-stone-500 cursor-pointer"
                         />
                       </th>
-                      <th className="py-2.5 px-3 min-w-40 font-medium">รายการจากบิล</th>
-                      <th className="py-2.5 px-3 min-w-64 font-medium">การจัดการสต็อก</th>
-                      <th className="py-2.5 px-2 text-center w-24 font-medium">จำนวน</th>
-                      <th className="py-2.5 px-2 text-center w-16 font-medium">หน่วย</th>
-                      <th className="py-2.5 px-2 text-right w-24 font-medium">ราคา/หน่วย</th>
-                      <th className="py-2.5 px-3 text-right w-24 font-medium">ยอดรวม</th>
+                      <th className="py-2.5 px-3 min-w-40 font-semibold">รายการจากบิล</th>
+                      <th className="py-2.5 px-3 min-w-64 font-semibold">การจัดการสต็อก</th>
+                      <th className="py-2.5 px-2 text-center w-24 font-semibold">จำนวน</th>
+                      <th className="py-2.5 px-2 text-center w-16 font-semibold">หน่วย</th>
+                      <th className="py-2.5 px-2 text-right w-24 font-semibold">ราคา/หน่วย</th>
+                      <th className="py-2.5 px-3 text-right w-24 font-semibold">ยอดรวม</th>
                       <th className="py-2.5 px-2 text-center w-10"></th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-stone-100">
                     {inboundItems.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="py-8 text-center text-slate-400 font-normal">
+                        <td colSpan={8} className="py-8 text-center text-stone-400 font-normal">
                           ไม่มีรายการสินค้าในบิลนี้ สามารถกดปุ่ม &ldquo;เพิ่มรายการ&rdquo; เพื่อเพิ่มเองได้
                         </td>
                       </tr>
@@ -467,8 +475,8 @@ export const ReceiptInboundTab: React.FC = () => {
                         return (
                           <tr
                             key={item.id}
-                            className={`transition-colors border-b border-slate-100 ${
-                              item.selected ? 'hover:bg-slate-50/70' : 'opacity-40 bg-slate-50/40'
+                            className={`transition-colors border-b border-stone-100 ${
+                              item.selected ? 'hover:bg-stone-50/70' : 'opacity-40 bg-stone-50/40'
                             }`}
                           >
                             {/* Checkbox */}
@@ -477,14 +485,14 @@ export const ReceiptInboundTab: React.FC = () => {
                                 type="checkbox"
                                 checked={item.selected}
                                 onChange={(e) => handleUpdateItem(idx, 'selected', e.target.checked)}
-                                className="rounded border-slate-300 text-slate-800 focus:ring-slate-500 cursor-pointer mt-1"
+                                className="rounded border-stone-300 text-stone-800 focus:ring-stone-500 cursor-pointer mt-1"
                               />
                             </td>
 
                             {/* Item name from bill */}
                             <td className="py-3 px-3 align-top">
-                              <div className="font-medium text-slate-900 text-xs">{item.name}</div>
-                              <div className="text-[11px] text-slate-400 font-normal mt-0.5">
+                              <div className="font-semibold text-stone-900 text-xs">{item.name}</div>
+                              <div className="text-xs text-stone-400 font-normal mt-0.5">
                                 {item.mode === 'existing' ? 'แมปสต็อกเดิม' : 'สร้างรายการใหม่'}
                               </div>
                             </td>
@@ -492,14 +500,14 @@ export const ReceiptInboundTab: React.FC = () => {
                             {/* Mapping & Customization Column */}
                             <td className="py-3 px-3 align-top">
                               {/* Segmented Mode Switcher */}
-                              <div className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-100 mb-2">
+                              <div className="inline-flex rounded-lg border border-stone-200 p-0.5 bg-stone-100 mb-2">
                                 <button
                                   type="button"
                                   onClick={() => handleUpdateItem(idx, 'mode', 'existing')}
-                                  className={`px-2.5 py-1 text-[11px] rounded-md transition-colors cursor-pointer ${
+                                  className={`px-2.5 py-1 text-xs rounded-md transition-colors cursor-pointer ${
                                     item.mode === 'existing'
-                                      ? 'bg-white text-slate-800 font-medium shadow-2xs'
-                                      : 'text-slate-500 hover:text-slate-800'
+                                      ? 'bg-white text-stone-900 font-semibold shadow-2xs'
+                                      : 'text-stone-500 hover:text-stone-800'
                                   }`}
                                 >
                                   แมปสต็อกเดิม
@@ -507,10 +515,10 @@ export const ReceiptInboundTab: React.FC = () => {
                                 <button
                                   type="button"
                                   onClick={() => handleUpdateItem(idx, 'mode', 'new')}
-                                  className={`px-2.5 py-1 text-[11px] rounded-md transition-colors cursor-pointer ${
+                                  className={`px-2.5 py-1 text-xs rounded-md transition-colors cursor-pointer ${
                                     item.mode === 'new'
-                                      ? 'bg-white text-slate-800 font-medium shadow-2xs'
-                                      : 'text-slate-500 hover:text-slate-800'
+                                      ? 'bg-white text-stone-900 font-semibold shadow-2xs'
+                                      : 'text-stone-500 hover:text-stone-800'
                                   }`}
                                 >
                                   สร้างรายการใหม่
@@ -529,40 +537,40 @@ export const ReceiptInboundTab: React.FC = () => {
                                     onChange={(val) => handleSelectExistingIngredient(idx, String(val))}
                                     size="sm"
                                     className="w-full"
-                                    buttonClassName="bg-white border-slate-200 text-xs text-slate-800 py-1.5 px-2.5 rounded-lg"
+                                    buttonClassName="bg-white border-stone-200 text-xs text-stone-800 py-1.5 px-2.5 rounded-lg"
                                   />
                                   {matchedIngredient && (
-                                    <div className="text-[11px] text-slate-500">
-                                      คงเหลือในคลัง: <span className="font-mono text-slate-700">{matchedIngredient.quantity} {matchedIngredient.unit}</span>
+                                    <div className="text-xs text-stone-500">
+                                      คงเหลือในคลัง: <span className="font-mono tabular-nums text-stone-700">{matchedIngredient.quantity} {matchedIngredient.unit}</span>
                                     </div>
                                   )}
                                 </div>
                               ) : (
                                 /* New item customization form inline */
-                                <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 space-y-2">
+                                <div className="bg-stone-50 rounded-xl p-3 border border-stone-200 space-y-2">
                                   <div className="grid grid-cols-2 gap-2 text-xs">
                                     <div>
-                                      <label className="text-[10px] text-slate-500 block mb-0.5">ชื่อในคลัง:</label>
+                                      <label className="text-xs text-stone-500 block mb-0.5">ชื่อในคลัง:</label>
                                       <input
                                         type="text"
                                         value={item.name}
                                         onChange={(e) => handleUpdateItem(idx, 'name', e.target.value)}
-                                        className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-slate-400"
+                                        className="w-full px-2 py-1 bg-white border border-stone-200 rounded-lg text-xs text-stone-900 focus:outline-none focus:border-stone-400"
                                       />
                                     </div>
                                     <div>
-                                      <label className="text-[10px] text-slate-500 block mb-0.5">หมวดหมู่:</label>
+                                      <label className="text-xs text-stone-500 block mb-0.5">หมวดหมู่:</label>
                                       <Dropdown
                                         options={CATEGORY_OPTIONS}
                                         value={item.new_category}
                                         onChange={(val) => handleUpdateItem(idx, 'new_category', String(val))}
                                         size="sm"
                                         className="w-full"
-                                        buttonClassName="bg-white border-slate-200 text-xs py-1 px-2 rounded-lg text-slate-800"
+                                        buttonClassName="bg-white border-stone-200 text-xs py-1 px-2 rounded-lg text-stone-800"
                                       />
                                     </div>
                                     <div>
-                                      <label className="text-[10px] text-slate-500 block mb-0.5">จุดเตือนซื้อ (Reorder):</label>
+                                      <label className="text-xs text-stone-500 block mb-0.5">จุดเตือนซื้อ (Reorder):</label>
                                       <input
                                         type="number"
                                         min="0"
@@ -570,11 +578,11 @@ export const ReceiptInboundTab: React.FC = () => {
                                         onChange={(e) =>
                                           handleUpdateItem(idx, 'new_reorder_point', parseFloat(e.target.value) || 0)
                                         }
-                                        className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 text-right focus:outline-none focus:border-slate-400"
+                                        className="w-full px-2 py-1 bg-white border border-stone-200 rounded-lg text-xs font-mono tabular-nums text-stone-900 text-right focus:outline-none focus:border-stone-400"
                                       />
                                     </div>
                                     <div>
-                                      <label className="text-[10px] text-slate-500 block mb-0.5">สต็อกสูงสุด (Max):</label>
+                                      <label className="text-xs text-stone-500 block mb-0.5">สต็อกสูงสุด (Max):</label>
                                       <input
                                         type="number"
                                         min="0"
@@ -582,7 +590,7 @@ export const ReceiptInboundTab: React.FC = () => {
                                         onChange={(e) =>
                                           handleUpdateItem(idx, 'new_max_stock', parseFloat(e.target.value) || 0)
                                         }
-                                        className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 text-right focus:outline-none focus:border-slate-400"
+                                        className="w-full px-2 py-1 bg-white border border-stone-200 rounded-lg text-xs font-mono tabular-nums text-stone-900 text-right focus:outline-none focus:border-stone-400"
                                       />
                                     </div>
                                   </div>
@@ -600,12 +608,12 @@ export const ReceiptInboundTab: React.FC = () => {
                                 onChange={(e) =>
                                   handleUpdateItem(idx, 'quantity', parseFloat(e.target.value) || 0)
                                 }
-                                className="w-20 px-2 py-1.5 text-center font-normal text-slate-800 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-slate-400"
+                                className="w-20 px-2 py-1.5 text-center font-mono tabular-nums font-normal text-stone-900 bg-white border border-stone-200 rounded-lg text-xs focus:outline-none focus:border-stone-400"
                               />
                             </td>
 
                             {/* Unit */}
-                            <td className="py-3 px-2 text-center align-top text-xs text-slate-700">
+                            <td className="py-3 px-2 text-center align-top text-xs text-stone-700">
                               {item.mode === 'new' ? (
                                 <Dropdown
                                   options={units.map((u) => ({ value: u.name, label: u.name }))}
@@ -613,7 +621,7 @@ export const ReceiptInboundTab: React.FC = () => {
                                   onChange={(val) => handleUpdateItem(idx, 'unit', String(val))}
                                   size="sm"
                                   className="w-16"
-                                  buttonClassName="bg-white border-slate-200 text-xs py-1 px-1 rounded-lg text-slate-800"
+                                  buttonClassName="bg-white border-stone-200 text-xs py-1 px-1 rounded-lg text-stone-800"
                                 />
                               ) : (
                                 <span className="inline-block pt-1.5">{item.unit}</span>
@@ -630,12 +638,12 @@ export const ReceiptInboundTab: React.FC = () => {
                                 onChange={(e) =>
                                   handleUpdateItem(idx, 'cost_per_unit', parseFloat(e.target.value) || 0)
                                 }
-                                className="w-20 px-2 py-1.5 text-right font-normal text-slate-800 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-slate-400"
+                                className="w-20 px-2 py-1.5 text-right font-mono tabular-nums font-normal text-stone-900 bg-white border border-stone-200 rounded-lg text-xs focus:outline-none focus:border-stone-400"
                               />
                             </td>
 
                             {/* Total price */}
-                            <td className="py-3 px-3 text-right align-top font-mono text-xs text-slate-800">
+                            <td className="py-3 px-3 text-right align-top font-mono tabular-nums text-xs text-stone-900 font-bold">
                               <span className="inline-block pt-1.5">
                                 ฿{item.total_price.toLocaleString(undefined, {
                                   minimumFractionDigits: 2,
@@ -649,7 +657,7 @@ export const ReceiptInboundTab: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => handleRemoveItem(idx)}
-                                className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer mt-0.5"
+                                className="p-1.5 text-stone-400 hover:text-rose-600 rounded-lg hover:bg-stone-100 transition-colors cursor-pointer mt-0.5"
                                 title="ลบรายการนี้"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -665,21 +673,21 @@ export const ReceiptInboundTab: React.FC = () => {
             </div>
 
             {/* Bottom Inbound Action Bar with Discount & VAT */}
-            <div className="pt-4 border-t border-slate-200/80 flex flex-col gap-4">
+            <div className="pt-4 border-t border-stone-200/80 flex flex-col gap-4">
               {/* Discount & VAT Calculator Row */}
-              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="text-xs text-slate-500">
-                  <span className="font-medium text-slate-700">คำนวณส่วนลด &amp; ภาษีท้ายบิล:</span>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
+              <div className="p-3.5 rounded-xl bg-stone-50 border border-stone-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="text-xs text-stone-500">
+                  <span className="font-semibold text-stone-800">คำนวณส่วนลด &amp; ภาษีท้ายบิล:</span>
+                  <p className="text-xs text-stone-400 mt-0.5">
                     ระบบจะเกลี่ยส่วนลดและภาษีเข้าต้นทุนต่อหน่วยของแต่ละรายการอย่างแม่นยำอัตโนมัติ
                   </p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4 text-xs">
                   <div className="flex items-center gap-2">
-                    <span className="text-slate-600">ส่วนลดท้ายบิล:</span>
+                    <span className="text-stone-600">ส่วนลดท้ายบิล:</span>
                     <div className="relative">
-                      <span className="absolute left-2.5 top-1.5 text-slate-400 font-mono text-xs">฿</span>
+                      <span className="absolute left-2.5 top-1.5 text-stone-400 font-mono text-xs">฿</span>
                       <input
                         type="number"
                         min="0"
@@ -687,15 +695,15 @@ export const ReceiptInboundTab: React.FC = () => {
                         value={billDiscount || ''}
                         placeholder="0"
                         onChange={(e) => setBillDiscount(parseFloat(e.target.value) || 0)}
-                        className="w-24 pl-6 pr-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-mono text-slate-800 text-right focus:outline-none focus:border-slate-400"
+                        className="w-24 pl-6 pr-2 py-1 bg-white border border-stone-200 rounded-lg text-xs font-mono tabular-nums text-stone-900 text-right focus:outline-none focus:border-stone-400"
                       />
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-slate-600">ภาษีมูลค่าเพิ่ม (VAT):</span>
+                    <span className="text-stone-600">ภาษีมูลค่าเพิ่ม (VAT):</span>
                     <div className="relative">
-                      <span className="absolute left-2.5 top-1.5 text-slate-400 font-mono text-xs">฿</span>
+                      <span className="absolute left-2.5 top-1.5 text-stone-400 font-mono text-xs">฿</span>
                       <input
                         type="number"
                         min="0"
@@ -703,7 +711,7 @@ export const ReceiptInboundTab: React.FC = () => {
                         value={billVat || ''}
                         placeholder="0"
                         onChange={(e) => setBillVat(parseFloat(e.target.value) || 0)}
-                        className="w-24 pl-6 pr-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-mono text-slate-800 text-right focus:outline-none focus:border-slate-400"
+                        className="w-24 pl-6 pr-2 py-1 bg-white border border-stone-200 rounded-lg text-xs font-mono tabular-nums text-stone-900 text-right focus:outline-none focus:border-stone-400"
                       />
                     </div>
                   </div>
@@ -711,29 +719,29 @@ export const ReceiptInboundTab: React.FC = () => {
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="text-xs text-slate-600 space-y-1">
+                <div className="text-xs text-stone-600 space-y-1">
                   <div>
-                    เลือกรับเข้า: <strong className="text-slate-800 font-semibold">{selectedItems.length}</strong> จาก{' '}
-                    {inboundItems.length} รายการ
+                    เลือกรับเข้า: <strong className="text-stone-900 font-semibold font-mono tabular-nums">{selectedItems.length}</strong> จาก{' '}
+                    <span className="font-mono tabular-nums">{inboundItems.length}</span> รายการ
                     {existingItemsCount > 0 && (
-                      <span className="text-slate-500 ml-1.5">
-                        (สต็อกเดิม {existingItemsCount})
+                      <span className="text-stone-500 ml-1.5">
+                        (สต็อกเดิม <span className="font-mono tabular-nums">{existingItemsCount}</span>)
                       </span>
                     )}
                     {newItemsCount > 0 && (
-                      <span className="text-slate-500 ml-1.5">
-                        (สร้างใหม่ {newItemsCount})
+                      <span className="text-stone-500 ml-1.5">
+                        (สร้างใหม่ <span className="font-mono tabular-nums">{newItemsCount}</span>)
                       </span>
                     )}
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-slate-500">
+                    <span className="text-stone-500 font-mono tabular-nums">
                       ยอดก่อนลด: ฿{subtotalSelectedMoney.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                     <span>•</span>
-                    <span className="text-sm font-medium text-slate-800">
+                    <span className="text-sm font-medium text-stone-800">
                       ยอดจ่ายจริงสุทธิ:{' '}
-                      <span className="font-mono font-semibold text-slate-900 text-base">
+                      <span className="font-mono tabular-nums font-bold text-stone-900 text-base">
                         ฿{finalNetTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </span>
@@ -746,6 +754,7 @@ export const ReceiptInboundTab: React.FC = () => {
                   onClick={handleConfirmBatchInbound}
                   disabled={isSubmitting || selectedItems.length === 0}
                   isLoading={isSubmitting}
+                  className="bg-stone-900 text-white hover:bg-stone-800 rounded-xl"
                 >
                   บันทึกรับเข้าสต็อก ({selectedItems.length} รายการ)
                 </Button>

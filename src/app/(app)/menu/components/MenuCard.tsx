@@ -11,10 +11,10 @@ interface MenuCardProps {
 
 export const MenuCard: React.FC<MenuCardProps> = ({ item, onEdit, onDelete }) => {
   return (
-    <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition-all">
+    <div className="bg-white rounded-2xl border border-stone-200/90 shadow-xs overflow-hidden flex flex-col justify-between hover:shadow-sm transition-all">
       <div>
         {/* Image Banner with logo_ss.png as fallback */}
-        <div className="relative h-44 bg-slate-100 overflow-hidden group">
+        <div className="relative h-44 bg-stone-100 overflow-hidden group">
           <img
             src={item.image || '/images/logo_ss.png'}
             alt={item.name}
@@ -24,20 +24,20 @@ export const MenuCard: React.FC<MenuCardProps> = ({ item, onEdit, onDelete }) =>
                 : 'object-contain p-6 bg-white opacity-80'
             }`}
           />
-          <span className="absolute top-3 left-3 text-[11px] font-medium px-2.5 py-1 rounded-full bg-slate-900/80 backdrop-blur-xs text-white">
+          <span className="absolute top-3 left-3 text-xs font-medium px-2.5 py-1 rounded-full bg-stone-900/80 backdrop-blur-xs text-white">
             {item.category}
           </span>
           <div className="absolute top-3 right-3 flex items-center gap-1.5">
             <button
               onClick={() => onEdit(item)}
-              className="p-2 rounded-xl bg-white/90 text-slate-700 hover:text-slate-900 hover:bg-white shadow-sm transition-colors"
+              className="p-2 rounded-xl bg-white/90 text-stone-700 hover:text-stone-900 hover:bg-white shadow-xs transition-colors cursor-pointer"
               title="แก้ไขสูตร"
             >
               <Edit2 className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => onDelete(item.id)}
-              className="p-2 rounded-xl bg-white/90 text-slate-700 hover:text-rose-600 hover:bg-white shadow-sm transition-colors"
+              className="p-2 rounded-xl bg-white/90 text-stone-700 hover:text-rose-600 hover:bg-white shadow-xs transition-colors cursor-pointer"
               title="ลบเมนู"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -48,35 +48,35 @@ export const MenuCard: React.FC<MenuCardProps> = ({ item, onEdit, onDelete }) =>
         <div className="p-5 space-y-3">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <h3 className="font-semibold text-slate-900 text-base">{item.name}</h3>
+              <h3 className="font-bold text-stone-900 text-base">{item.name}</h3>
               {item.description && (
-                <p className="text-xs text-slate-500 line-clamp-2 mt-0.5 leading-relaxed">{item.description}</p>
+                <p className="text-xs text-stone-500 line-clamp-2 mt-0.5 leading-relaxed">{item.description}</p>
               )}
             </div>
-            <span className="text-base font-semibold text-slate-900 shrink-0 font-mono">฿{item.price.toFixed(2)}</span>
+            <span className="text-base font-bold text-stone-900 shrink-0 font-mono tabular-nums">฿{item.price.toFixed(2)}</span>
           </div>
 
           {/* BOM Recipe Ingredients List */}
-          <div className="pt-2 border-t border-slate-100">
-            <div className="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-slate-500" />
-              สูตร:
+          <div className="pt-2 border-t border-stone-100">
+            <div className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-stone-500" />
+              สูตรวัตถุดิบ:
             </div>
             <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
               {item.recipes && item.recipes.length > 0 ? (
                 item.recipes.map((r, idx) => (
                   <div
                     key={idx}
-                    className="flex justify-between items-center text-xs py-1.5 px-2.5 rounded-xl bg-slate-50 border border-slate-100"
+                    className="flex justify-between items-center text-xs py-1.5 px-2.5 rounded-xl bg-stone-50 border border-stone-100"
                   >
-                    <span className="font-normal text-slate-700 truncate">{r.ingredient_name || `วัตถุดิบ #${r.ingredient_id}`}</span>
-                    <span className="font-normal text-slate-800 bg-white px-2 py-0.5 rounded-lg border border-slate-200 text-[11px] shrink-0 ml-2 shadow-2xs font-mono">
+                    <span className="font-normal text-stone-700 truncate">{r.ingredient_name || `วัตถุดิบ #${r.ingredient_id}`}</span>
+                    <span className="font-medium text-stone-800 bg-white px-2 py-0.5 rounded-lg border border-stone-200 text-xs shrink-0 ml-2 shadow-2xs font-mono tabular-nums">
                       {r.quantity_used} {r.ingredient_unit}
                     </span>
                   </div>
                 ))
               ) : (
-                <div className="text-[11px] text-slate-400 italic py-1">ยังไม่ได้ผูกสูตรวัตถุดิบ</div>
+                <div className="text-xs text-stone-400 italic py-1">ยังไม่ได้ผูกสูตรวัตถุดิบ</div>
               )}
             </div>
           </div>
@@ -84,20 +84,20 @@ export const MenuCard: React.FC<MenuCardProps> = ({ item, onEdit, onDelete }) =>
       </div>
 
       {/* Card Footer: Cost & Margin summary */}
-      <div className="p-4 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between text-xs rounded-b-3xl">
+      <div className="p-4 bg-stone-50/80 border-t border-stone-100 flex items-center justify-between text-xs rounded-b-2xl">
         <div>
-          <div className="text-slate-400 text-[11px]">ต้นทุนวัตถุดิบ</div>
-          <div className="font-medium text-slate-600 font-mono">฿{item.recipe_cost}</div>
+          <div className="text-stone-400 text-xs">ต้นทุนวัตถุดิบ</div>
+          <div className="font-semibold text-stone-700 font-mono tabular-nums">฿{item.recipe_cost}</div>
         </div>
         <div>
-          <div className="text-slate-400 text-[11px]">กำไรต่อจาน</div>
-          <div className="font-medium text-slate-800 font-mono">฿{(item.price - item.recipe_cost).toFixed(2)}</div>
+          <div className="text-stone-400 text-xs">กำไรต่อจาน</div>
+          <div className="font-bold text-stone-900 font-mono tabular-nums">฿{(item.price - item.recipe_cost).toFixed(2)}</div>
         </div>
         <div className="text-right">
-          <div className="text-slate-400 text-[11px] mb-0.5">อัตรากำไร</div>
-          <Badge variant="neutral">
+          <div className="text-stone-400 text-xs mb-0.5">อัตรากำไร</div>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#f5efe6] text-[#78350f] border border-[#e8ded0]">
             {item.margin_percent}%
-          </Badge>
+          </span>
         </div>
       </div>
     </div>

@@ -31,15 +31,15 @@ type TimeRange = '7days' | 'weekly' | 'monthly' | 'yearly';
 const chartConfig = {
   sales: {
     label: 'ยอดขาย',
-    color: '#059669', // Emerald 600
+    color: '#1c1917', // Deep Espresso Charcoal
   },
   cost: {
     label: 'ต้นทุนวัตถุดิบ',
-    color: '#94a3b8', // Slate 400
+    color: '#d6d3d1', // Warm Latte Stone
   },
   profit: {
     label: 'กำไร (Profit)',
-    color: '#10b981', // Emerald 500
+    color: '#78350f', // Rich Timber / Warm Wood Amber
   },
 } satisfies ChartConfig;
 
@@ -132,29 +132,29 @@ export const SalesAnalyticsChart: React.FC<SalesAnalyticsChartProps> = ({
   };
 
   return (
-    <section className="skeuo-card rounded-3xl p-6">
+    <section className="bg-white rounded-3xl p-6 w-full border border-stone-200/90 shadow-2xs">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl skeuo-inset flex items-center justify-center text-slate-700">
+          <h2 className="text-lg font-semibold text-stone-900 flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-stone-100 border border-stone-200/80 flex items-center justify-center text-stone-800 shadow-2xs">
               <ShoppingBag className="w-5 h-5" />
             </div>
             {titles[timeRange].title}
           </h2>
-          <p className="text-sm text-slate-500 mt-1 font-normal ml-11.5">
+          <p className="text-sm text-stone-500 mt-1 font-normal ml-12.5">
             {titles[timeRange].subtitle}
           </p>
         </div>
 
-        {/* Time Range Filter Buttons */}
-        <div className="inline-flex rounded-xl p-0.5 bg-slate-100 border border-slate-200 text-xs shrink-0 self-start sm:self-auto">
+        {/* Time Range Filter Buttons - Cafe Monochrome */}
+        <div className="inline-flex rounded-xl p-1 bg-stone-100 border border-stone-200/80 text-xs shrink-0 self-start sm:self-auto">
           <button
             type="button"
             onClick={() => setTimeRange('7days')}
-            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               timeRange === '7days'
-                ? 'bg-white text-slate-900 font-medium shadow-2xs'
-                : 'text-slate-500 hover:text-slate-900'
+                ? 'bg-stone-900 text-white shadow-xs'
+                : 'text-stone-600 hover:text-stone-900'
             }`}
           >
             7 วันล่าสุด
@@ -162,10 +162,10 @@ export const SalesAnalyticsChart: React.FC<SalesAnalyticsChartProps> = ({
           <button
             type="button"
             onClick={() => setTimeRange('weekly')}
-            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               timeRange === 'weekly'
-                ? 'bg-white text-slate-900 font-medium shadow-2xs'
-                : 'text-slate-500 hover:text-slate-900'
+                ? 'bg-stone-900 text-white shadow-xs'
+                : 'text-stone-600 hover:text-stone-900'
             }`}
           >
             รายสัปดาห์
@@ -173,10 +173,10 @@ export const SalesAnalyticsChart: React.FC<SalesAnalyticsChartProps> = ({
           <button
             type="button"
             onClick={() => setTimeRange('monthly')}
-            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               timeRange === 'monthly'
-                ? 'bg-white text-slate-900 font-medium shadow-2xs'
-                : 'text-slate-500 hover:text-slate-900'
+                ? 'bg-stone-900 text-white shadow-xs'
+                : 'text-stone-600 hover:text-stone-900'
             }`}
           >
             รายเดือน
@@ -184,10 +184,10 @@ export const SalesAnalyticsChart: React.FC<SalesAnalyticsChartProps> = ({
           <button
             type="button"
             onClick={() => setTimeRange('yearly')}
-            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               timeRange === 'yearly'
-                ? 'bg-white text-slate-900 font-medium shadow-2xs'
-                : 'text-slate-500 hover:text-slate-900'
+                ? 'bg-stone-900 text-white shadow-xs'
+                : 'text-stone-600 hover:text-stone-900'
             }`}
           >
             รายปี

@@ -2,20 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  FileSpreadsheet,
   Plus,
   Store,
   CheckCircle2,
   Clock,
   Package,
   Printer,
-  Download,
   Trash2,
   ShoppingBag,
   Camera,
   Sparkles,
-  Eye,
-  Check,
 } from 'lucide-react';
 import { useStock } from '@/lib/StockContext';
 import { useAuth } from '@/lib/AuthContext';
@@ -40,7 +36,7 @@ import {
 const SAMPLE_RECEIPT_IMAGE =
   'data:image/svg+xml;charset=utf-8,' +
   encodeURIComponent(`
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 660" width="420" height="660" style="background:#ffffff;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 660" width="420" height="660" style="background:#ffffff;font-family:monospace;">
   <rect width="420" height="660" fill="#fffdfa" stroke="#e2e8f0" stroke-width="2" rx="8"/>
   <text x="210" y="45" font-size="19" font-weight="900" text-anchor="middle" fill="#0f172a">AROMA SPECIALTY COFFEE</text>
   <text x="210" y="68" font-size="11" text-anchor="middle" fill="#64748b">สาขาตลาดไท คลองหนึ่ง โทร 02-999-8888</text>
@@ -99,7 +95,7 @@ const INITIAL_MOCK_SHOPPING_LISTS: PurchaseOrder[] = [
         checked: true,
       },
       {
-        name: 'เมล็ดกาแฟ Single Origin Ethiopia (คั่วอ่อน)',
+        name: 'เมล็ดกาแฟ Single Origin Ethiopia',
         quantity: 3,
         unit: 'กก.',
         cost_per_unit: 650,
@@ -109,7 +105,7 @@ const INITIAL_MOCK_SHOPPING_LISTS: PurchaseOrder[] = [
         checked: true,
       },
       {
-        name: 'ผงมัทฉะเกรดพิธีการ Uji Matcha 100g',
+        name: 'ผงมัทฉะเกรดพิธีการ Uji',
         quantity: 5,
         unit: 'ถุง',
         cost_per_unit: 280,
@@ -119,19 +115,18 @@ const INITIAL_MOCK_SHOPPING_LISTS: PurchaseOrder[] = [
         checked: true,
       },
     ],
-    subtotal: 7150,
     totalAmount: 7150,
-    note: 'เลือกรอบคั่วไม่เกิน 7 วัน และขอใบกำกับภาษี',
+    note: 'บิลเงินสด มีรูปใบเสร็จชัดเจน รอกรรมการผู้จัดการกดอนุมัติเข้าสต็อก',
   },
   {
     id: 'PO-20260904-02',
-    store_name: 'แม็คโคร Makro',
-    buyer_name: 'ผู้จัดการร้าน',
+    store_name: 'แม็คโคร สาขารังสิต',
+    buyer_name: 'สมศรี (พนักงานจัดซื้อ)',
     date: '2026-09-04',
     status: 'completed',
     items: [
       {
-        name: 'นมสด Meiji พาสเจอร์ไรส์ 2L',
+        name: 'นมสด Meiji 2L',
         quantity: 12,
         unit: 'แกลลอน',
         cost_per_unit: 95,
@@ -139,144 +134,125 @@ const INITIAL_MOCK_SHOPPING_LISTS: PurchaseOrder[] = [
         checked: true,
       },
       {
-        name: 'ไซรัปวานิลลา Monin 700ml',
-        quantity: 4,
-        unit: 'ขวด',
-        cost_per_unit: 290,
-        total_price: 1160,
+        name: 'นมข้นหวาน ตรามะลิ',
+        quantity: 6,
+        unit: 'กระป๋อง',
+        cost_per_unit: 26,
+        total_price: 156,
         checked: true,
       },
       {
-        name: 'แก้วกาแฟเย็น PET 16oz พร้อมฝายกดื่ม',
-        quantity: 2,
-        unit: 'ลัง',
-        cost_per_unit: 550,
-        total_price: 1100,
-        checked: true,
-      },
-      {
-        name: 'เนยสดแท้ Pure Butter สำหรับขนม',
-        quantity: 5,
-        unit: 'กก.',
-        cost_per_unit: 280,
-        total_price: 1400,
+        name: 'แก้วกาแฟเย็น 16oz พร้อมฝา',
+        quantity: 500,
+        unit: 'ใบ',
+        cost_per_unit: 1.8,
+        total_price: 900,
         checked: true,
       },
     ],
-    subtotal: 4800,
-    totalAmount: 4800,
-    verified_by: 'ผู้จัดการร้าน',
-    verified_at: '2026-09-04T15:20:00Z',
-    ai_confidence: 99,
-    note: 'ตรวจเช็ควันหมดอายุนมสด และรับเข้าคลังเรียบร้อย',
+    totalAmount: 2196,
+    verified_at: '2026-09-04T16:20:00Z',
   },
 ];
 
 export default function PurchaseOrdersPage() {
-  const { ingredients, adjustStock, updateIngredient, fetchData } = useStock();
-  const { user, activeStore } = useAuth();
+  const { ingredients, adjustStock, updateIngredient, addIngredient } = useStock();
+  const { user } = useAuth();
+  const isManagerOrAdmin = Boolean(
+    user?.roles?.some((r: string) => r === 'admin' || r === 'manager')
+  );
 
-  const [poList, setPoList] = useState<PurchaseOrder[]>(INITIAL_MOCK_SHOPPING_LISTS);
-  const [isMounted, setIsMounted] = useState(false);
-
+  const [poList, setPoList] = useState<PurchaseOrder[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [prefillItems, setPrefillItems] = useState<PurchaseOrderItem[]>([]);
+  const [prefillStore, setPrefillStore] = useState('');
+
+  // Modals state
   const [viewingPO, setViewingPO] = useState<PurchaseOrder | null>(null);
   const [uploadingReceiptPO, setUploadingReceiptPO] = useState<PurchaseOrder | null>(null);
   const [verifyingReceiptPO, setVerifyingReceiptPO] = useState<PurchaseOrder | null>(null);
 
-  const [prefillItems, setPrefillItems] = useState<PurchaseOrderItem[]>([]);
-  const [prefillStore, setPrefillStore] = useState<string>('');
-
-  // Role permissions check
-  const isManagerOrAdmin = !user
-    ? true
-    : ['owner', 'admin', 'manager'].includes(activeStore?.my_role || '') ||
-      (user as any)?.role === 'admin' ||
-      (user as any)?.role === 'owner' ||
-      (user as any)?.role === 'manager' ||
-      Boolean(user?.roles?.some((r: any) => ['owner', 'admin', 'manager'].includes(r.name)));
-
-  // Hydrate from localStorage after mount to prevent SSR mismatch
+  // Load POs from localStorage or initialize with mock
   useEffect(() => {
-    setIsMounted(true);
-    const saved = localStorage.getItem('smartstock_shopping_orders');
-    if (saved) {
-      try {
+    try {
+      const saved = localStorage.getItem('smartstock_shopping_orders');
+      if (saved) {
         setPoList(JSON.parse(saved));
-      } catch {
-        // fallback
+      } else {
+        setPoList(INITIAL_MOCK_SHOPPING_LISTS);
+        localStorage.setItem('smartstock_shopping_orders', JSON.stringify(INITIAL_MOCK_SHOPPING_LISTS));
       }
+    } catch {
+      setPoList(INITIAL_MOCK_SHOPPING_LISTS);
     }
   }, []);
 
-  // Save to localStorage whenever poList changes (only after mounted)
-  useEffect(() => {
-    if (isMounted) {
-      localStorage.setItem('smartstock_shopping_orders', JSON.stringify(poList));
+  // Save changes to localStorage
+  const saveOrders = (updated: PurchaseOrder[]) => {
+    setPoList(updated);
+    try {
+      localStorage.setItem('smartstock_shopping_orders', JSON.stringify(updated));
+    } catch (e) {
+      console.error('Failed to save orders to localStorage', e);
     }
-  }, [poList, isMounted]);
+  };
 
-  // Low stock items
-  const lowStock = ingredients.filter((i) => i.quantity <= i.reorder_point);
+  // Find low-stock items to recommend shopping
+  const lowStock = ingredients.filter(
+    (item) => item.status === 'low' || item.status === 'out' || item.quantity <= item.reorder_point
+  );
 
-  // Quick shopping list from low stock
+  // Handle open create modal from low-stock recommendation
   const handleCreateFromLowStock = () => {
-    const items: PurchaseOrderItem[] = lowStock.map((ing) => {
-      const suggestedQty = Math.max(1, Math.ceil(ing.reorder_point * 2 - ing.quantity));
-      return {
-        ingredient_id: ing.id,
-        name: ing.name,
-        quantity: suggestedQty > 0 ? suggestedQty : 3,
-        unit: ing.unit,
-        cost_per_unit: ing.cost_per_unit || undefined,
-        total_price: ing.cost_per_unit ? (suggestedQty > 0 ? suggestedQty : 3) * ing.cost_per_unit : undefined,
-        current_stock: ing.quantity,
-        reorder_point: ing.reorder_point,
-        checked: false,
-      };
-    });
+    const recommended: PurchaseOrderItem[] = lowStock.map((ing) => ({
+      ingredient_id: ing.id,
+      name: ing.name,
+      quantity: Math.max(1, (ing.max_stock || ing.reorder_point * 3) - ing.quantity),
+      unit: ing.unit,
+      current_stock: ing.quantity,
+      reorder_point: ing.reorder_point,
+      checked: false,
+    }));
 
-    setPrefillItems(items);
-    setPrefillStore('');
+    setPrefillItems(recommended);
+    setPrefillStore(lowStock[0]?.supplier || 'แม็คโคร / ตลาดสด');
     setIsCreateModalOpen(true);
   };
 
+  // Handle open blank create modal
   const handleOpenBlankCreate = () => {
     setPrefillItems([]);
     setPrefillStore('');
     setIsCreateModalOpen(true);
   };
 
+  // Save new PO
   const handleSavePO = (newPO: PurchaseOrder) => {
-    setPoList((prev) => [newPO, ...prev]);
-    setViewingPO(newPO);
+    const updated = [newPO, ...poList];
+    saveOrders(updated);
+    setIsCreateModalOpen(false);
   };
 
-  const handleUploadSuccess = (poId: string, receiptBase64: string, actualStore?: string) => {
-    let updatedPO: PurchaseOrder | null = null;
-    setPoList((prev) =>
-      prev.map((po) => {
-        if (po.id === poId) {
-          updatedPO = {
-            ...po,
-            receipt_image: receiptBase64,
-            receipt_uploaded_at: new Date().toISOString(),
-            status: 'receipt_uploaded',
-            store_name: actualStore || po.store_name,
-          };
-          return updatedPO;
-        }
-        return po;
-      })
-    );
+  // Staff uploads receipt
+  const handleUploadSuccess = (poId: string, receiptImage: string, actualStore?: string) => {
+    const updated = poList.map((po) => {
+      if (po.id === poId) {
+        return {
+          ...po,
+          status: 'receipt_uploaded' as const,
+          receipt_image: receiptImage,
+          receipt_uploaded_at: new Date().toISOString(),
+          actual_store_name: actualStore || po.store_name,
+        };
+      }
+      return po;
+    });
+
+    saveOrders(updated);
     setUploadingReceiptPO(null);
-
-    // Open verification modal immediately for seamless manager review
-    if (updatedPO) {
-      setVerifyingReceiptPO(updatedPO);
-    }
   };
 
+  // Manager approves receipt and executes actual stock IN
   const handleApproveAndStockIn = async (
     poId: string,
     verifiedItems: VerifiedReceiptItem[],
@@ -284,101 +260,100 @@ export default function PurchaseOrdersPage() {
     totalReceiptAmount?: number,
     newReceiptImage?: string
   ) => {
-    // 1. Update real backend inventory & costs
+    const targetPO = poList.find((p) => p.id === poId);
+    if (!targetPO) return;
+
+    const actualStoreName = actualStore || targetPO.actual_store_name || targetPO.store_name;
+    const finalTotal = totalReceiptAmount !== undefined ? totalReceiptAmount : targetPO.totalAmount;
+
+    // Execute actual Stock IN for each verified item
     for (const item of verifiedItems) {
       if (item.ingredient_id) {
-        const note = `รับเข้าจากใบเสร็จจัดซื้อ #${poId}${actualStore ? ` (${actualStore})` : ''}`;
-        try {
-          await adjustStock(item.ingredient_id, 'in', item.quantity, note);
-          if (item.cost_per_unit > 0) {
-            await updateIngredient(item.ingredient_id, { cost_per_unit: item.cost_per_unit });
-          }
-        } catch (err) {
-          console.error('Failed to update stock for item:', item.name, err);
+        // Stock IN existing item
+        await adjustStock(
+          item.ingredient_id,
+          'in',
+          item.quantity,
+          `รับเข้าจากบิล #${poId} (${actualStoreName})`
+        );
+
+        // Update cost per unit if provided
+        if (item.cost_per_unit > 0) {
+          await updateIngredient(item.ingredient_id, {
+            cost_per_unit: item.cost_per_unit,
+          });
         }
+      } else {
+        // New item: create in stock
+        await addIngredient({
+          name: item.name,
+          category: 'other',
+          unit: item.unit || 'ชิ้น',
+          quantity: item.quantity,
+          cost_per_unit: item.cost_per_unit,
+          reorder_point: 5,
+          max_stock: item.quantity * 3,
+          tracking_type: 'strict',
+          supplier: actualStoreName,
+        });
       }
     }
 
-    // 2. Update PO record
-    const calculatedTotal = verifiedItems.reduce((sum, it) => sum + (it.total_price || 0), 0);
-    const finalTotal = totalReceiptAmount && totalReceiptAmount > 0 ? totalReceiptAmount : calculatedTotal;
+    // Update PO status to completed
+    const updated = poList.map((po) => {
+      if (po.id === poId) {
+        return {
+          ...po,
+          status: 'completed' as const,
+          verified_at: new Date().toISOString(),
+          totalAmount: finalTotal,
+          actual_store_name: actualStoreName,
+          receipt_image: newReceiptImage || po.receipt_image,
+          items: verifiedItems.map((vi) => ({
+            ingredient_id: vi.ingredient_id,
+            name: vi.name,
+            quantity: vi.quantity,
+            unit: vi.unit,
+            cost_per_unit: vi.cost_per_unit,
+            total_price: vi.total_price,
+            checked: true,
+          })),
+        };
+      }
+      return po;
+    });
 
-    setPoList((prev) =>
-      prev.map((po) => {
-        if (po.id === poId) {
-          return {
-            ...po,
-            status: 'completed',
-            store_name: actualStore || po.store_name,
-            receipt_image: newReceiptImage || po.receipt_image,
-            items: verifiedItems.map((v) => ({
-              ingredient_id: v.ingredient_id,
-              name: v.name,
-              quantity: v.quantity,
-              unit: v.unit,
-              cost_per_unit: v.cost_per_unit,
-              total_price: v.total_price,
-              checked: true,
-            })),
-            subtotal: finalTotal,
-            totalAmount: finalTotal,
-            verified_by: user?.name || activeStore?.name || 'ผู้จัดการร้าน',
-            verified_at: new Date().toISOString(),
-            ai_confidence: 98,
-          };
-        }
-        return po;
-      })
-    );
-
+    saveOrders(updated);
     setVerifyingReceiptPO(null);
-    if (viewingPO?.id === poId) {
-      setViewingPO(null);
-    }
-
-    // Refresh stock list from backend
-    try {
-      await fetchData();
-    } catch {
-      // ignore
-    }
+    alert(`รับเข้าสต็อกเรียบร้อยแล้วทั้งหมด ${verifiedItems.length} รายการ!`);
   };
 
-  const handleMarkCompleted = (id: string) => {
-    setPoList((prev) =>
-      prev.map((po) =>
-        po.id === id
-          ? {
-              ...po,
-              status: 'completed' as const,
-              items: po.items.map((it) => ({ ...it, checked: true })),
-            }
-          : po
-      )
-    );
-    if (viewingPO && viewingPO.id === id) {
-      setViewingPO((prev) =>
-        prev
-          ? {
-              ...prev,
-              status: 'completed',
-              items: prev.items.map((it) => ({ ...it, checked: true })),
-            }
-          : null
-      );
-    }
+  // Mark completed directly (optional manual bypass)
+  const handleMarkCompleted = (poId: string) => {
+    const updated = poList.map((po) => {
+      if (po.id === poId) {
+        return {
+          ...po,
+          status: 'completed' as const,
+          verified_at: new Date().toISOString(),
+        };
+      }
+      return po;
+    });
+    saveOrders(updated);
+    setViewingPO(null);
   };
 
-  const handleDeletePO = (id: string, e: React.MouseEvent) => {
+  // Delete PO
+  const handleDeletePO = (poId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm(`คุณต้องการลบรายการสั่งซื้อเลขที่ ${id} หรือไม่?`)) {
-      setPoList((prev) => prev.filter((po) => po.id !== id));
-      if (viewingPO?.id === id) setViewingPO(null);
-    }
+    if (!confirm(`คุณต้องการลบรายการสั่งซื้อ #${poId} หรือไม่?`)) return;
+    const updated = poList.filter((p) => p.id !== poId);
+    saveOrders(updated);
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-[#f8fafc]">
+    <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
       <Topbar
         title="รายการไปซื้อของ & สแกนใบเสร็จ"
         subtitle="จดลิสต์รายการไปจ่ายตลาด พนักงานอัปโหลดรูปบิล/ใบเสร็จ AI ตรวจสอบและรับเข้าสต็อกจริง"
@@ -387,23 +362,25 @@ export default function PurchaseOrdersPage() {
       <main className="p-4 sm:p-6 md:p-8 space-y-5 max-w-7xl mx-auto w-full">
         {/* Recommended Low-Stock Alert Card */}
         {lowStock.length > 0 && (
-          <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="p-4 rounded-2xl bg-white border border-stone-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <Package className="w-4 h-4 text-amber-600" />
-                <h3 className="font-medium text-sm text-slate-900">
-                  มีวัตถุดิบใกล้หมด {lowStock.length} รายการที่ต้องไปซื้อเพิ่ม
+                <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200/80 flex items-center justify-center text-[#92400e] shrink-0">
+                  <Package className="w-4 h-4" />
+                </div>
+                <h3 className="font-semibold text-sm text-stone-900">
+                  มีวัตถุดิบใกล้หมด <span className="font-mono tabular-nums font-bold">{lowStock.length}</span> รายการที่ต้องไปซื้อเพิ่ม
                 </h3>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5 font-normal">
+              <p className="text-xs text-stone-500 mt-1 font-normal">
                 สร้างลิสต์รายการไปจ่ายตลาดจากของใกล้หมดได้ทันที ไม่ต้องกรอกราคาล่วงหน้า
               </p>
             </div>
             <Button
               onClick={handleCreateFromLowStock}
-              icon={<Plus className="w-3.5 h-3.5" />}
-              size="sm"
-              className="shrink-0 whitespace-nowrap cursor-pointer"
+              icon={<Plus className="w-4 h-4" />}
+              size="md"
+              className="shrink-0 whitespace-nowrap shadow-xs w-full sm:w-auto cursor-pointer rounded-xl bg-stone-900 text-white hover:bg-stone-800"
             >
               ดึงของใกล้หมดทำลิสต์ไปซื้อ
             </Button>
@@ -411,23 +388,25 @@ export default function PurchaseOrdersPage() {
         )}
 
         {/* Shopping Lists Table */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-5 space-y-4">
+        <div className="bg-white rounded-2xl border border-stone-200 shadow-2xs p-5 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 className="font-semibold text-slate-900 text-sm flex items-center gap-2">
-                <ShoppingBag className="w-4 h-4 text-slate-600" />
-                ประวัติรายการไปซื้อของ ({poList.length})
+              <h3 className="font-semibold text-stone-900 text-sm flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-stone-100 border border-stone-200/80 flex items-center justify-center text-stone-700 shrink-0">
+                  <ShoppingBag className="w-4 h-4" />
+                </div>
+                <span>ประวัติรายการไปซื้อของ (<span className="font-mono tabular-nums font-bold">{poList.length}</span>)</span>
               </h3>
-              <p className="text-xs text-slate-400 font-normal">
+              <p className="text-xs text-stone-400 font-normal mt-0.5">
                 คลิกรายการเพื่อดูเช็คลิสต์ ส่งรูปใบเสร็จ หรือตรวจบิลรับเข้าสต็อก
               </p>
             </div>
 
             <Button
               onClick={handleOpenBlankCreate}
-              icon={<Plus className="w-3.5 h-3.5" />}
-              size="sm"
-              className="shrink-0 whitespace-nowrap cursor-pointer"
+              icon={<Plus className="w-4 h-4" />}
+              size="md"
+              className="shrink-0 whitespace-nowrap shadow-xs w-full sm:w-auto cursor-pointer rounded-xl bg-stone-900 text-white hover:bg-stone-800"
             >
               สร้างลิสต์ไปซื้อของใหม่
             </Button>
@@ -436,21 +415,21 @@ export default function PurchaseOrdersPage() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead>เลขที่</TableHead>
-                  <TableHead className="min-w-40">ร้าน / ตลาดเป้าหมาย</TableHead>
-                  <TableHead className="min-w-28">ผู้ไปซื้อ</TableHead>
-                  <TableHead className="min-w-24">วันที่</TableHead>
-                  <TableHead className="text-center min-w-20">จำนวน</TableHead>
-                  <TableHead className="text-right min-w-28">ยอดเงิน</TableHead>
-                  <TableHead className="text-center min-w-36">สถานะ</TableHead>
-                  <TableHead className="text-center min-w-36">การดำเนินการ</TableHead>
+                <TableRow className="hover:bg-transparent border-b border-stone-200">
+                  <TableHead className="text-stone-900 font-semibold">เลขที่</TableHead>
+                  <TableHead className="min-w-40 text-stone-900 font-semibold">ร้าน / ตลาดเป้าหมาย</TableHead>
+                  <TableHead className="min-w-28 text-stone-900 font-semibold">ผู้ไปซื้อ</TableHead>
+                  <TableHead className="min-w-24 text-stone-900 font-semibold">วันที่</TableHead>
+                  <TableHead className="text-center min-w-20 text-stone-900 font-semibold">จำนวน</TableHead>
+                  <TableHead className="text-right min-w-28 text-stone-900 font-semibold">ยอดเงิน</TableHead>
+                  <TableHead className="text-center min-w-36 text-stone-900 font-semibold">สถานะ</TableHead>
+                  <TableHead className="text-center min-w-36 text-stone-900 font-semibold">การดำเนินการ</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {poList.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-12 text-slate-400 font-normal">
+                    <TableCell colSpan={8} className="text-center py-12 text-stone-400 font-normal">
                       ยังไม่มีรายการไปซื้อของ กดปุ่ม "+ สร้างลิสต์ไปซื้อของใหม่" เพื่อเริ่มต้น
                     </TableCell>
                   </TableRow>
@@ -471,51 +450,46 @@ export default function PurchaseOrdersPage() {
                           }
                         }}
                         className={`cursor-pointer transition-colors ${
-                          isReceiptUploaded ? 'bg-indigo-50/30 hover:bg-indigo-50/60' : ''
+                          isReceiptUploaded ? 'bg-[#faf6f0]/60 hover:bg-[#f5efe6]/70' : 'hover:bg-stone-50/80'
                         }`}
                       >
-                        <TableCell className="font-mono font-medium text-slate-700">
+                        <TableCell className="font-mono tabular-nums font-semibold text-stone-900">
                           {po.id}
                         </TableCell>
-                        <TableCell className="text-slate-800 font-medium">
+                        <TableCell className="text-stone-800 font-medium">
                           <div className="flex items-center gap-1.5">
-                            <Store className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <Store className="w-3.5 h-3.5 text-stone-400 shrink-0" />
                             <span>{po.store_name}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-slate-500 font-normal">{po.buyer_name || '-'}</TableCell>
-                        <TableCell className="text-slate-400 font-normal">{po.date}</TableCell>
-                        <TableCell className="text-center text-slate-600 font-normal">
-                          {po.items?.length || 0} รายการ
+                        <TableCell className="text-stone-600 font-normal">{po.buyer_name || '-'}</TableCell>
+                        <TableCell className="text-stone-500 font-mono tabular-nums text-xs font-normal">{po.date}</TableCell>
+                        <TableCell className="text-center text-stone-700 font-normal">
+                          <span className="font-mono tabular-nums">{po.items?.length || 0}</span> รายการ
                         </TableCell>
-                        <TableCell className="text-right font-mono font-medium text-slate-800">
+                        <TableCell className="text-right font-mono tabular-nums font-semibold text-stone-900">
                           {(po.totalAmount ?? 0) > 0
                             ? `฿${(po.totalAmount ?? 0).toLocaleString(undefined, {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
                               })}`
-                            : <span className="text-slate-400 text-xs font-normal">รอราคาจากบิล</span>}
+                            : <span className="text-stone-400 text-xs font-normal">รอราคาจากบิล</span>}
                         </TableCell>
                         <TableCell className="text-center">
                           {isCompleted && (
-                            <Badge variant="success" size="sm" icon={<CheckCircle2 className="w-3 h-3 text-emerald-600" />}>
-                              รับเข้าสต็อกแล้ว
-                            </Badge>
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" /> รับเข้าสต็อกแล้ว
+                            </span>
                           )}
                           {isReceiptUploaded && (
-                            <Badge
-                              variant="outline"
-                              size="sm"
-                              className="border-indigo-200 text-indigo-700 bg-indigo-50/60 font-medium"
-                              icon={<Sparkles className="w-3 h-3 text-indigo-600 animate-pulse" />}
-                            >
-                              มีใบเสร็จ - รอตรวจ
-                            </Badge>
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#f5efe6] text-[#78350f] border border-[#e8ded0]">
+                              <Sparkles className="w-3 h-3 text-[#78350f]" /> มีใบเสร็จ - รอตรวจ
+                            </span>
                           )}
                           {isPending && (
-                            <Badge variant="warning" size="sm" icon={<Clock className="w-3 h-3 text-amber-600" />}>
-                              รอนำไปซื้อ
-                            </Badge>
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-stone-100 text-stone-700 border border-stone-200">
+                              <Clock className="w-3 h-3 text-stone-500" /> รอนำไปซื้อ
+                            </span>
                           )}
                         </TableCell>
                         <TableCell className="text-center whitespace-nowrap">
@@ -528,7 +502,7 @@ export default function PurchaseOrdersPage() {
                               <button
                                 type="button"
                                 onClick={() => setUploadingReceiptPO(po)}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-500 hover:bg-amber-600 text-white shadow-2xs transition-all cursor-pointer active:scale-95"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg bg-[#78350f] hover:bg-[#92400e] text-white shadow-2xs transition-all cursor-pointer active:scale-95"
                                 title="พนักงานถ่ายรูปบิล/ใบเสร็จส่งเข้าระบบ"
                               >
                                 <Camera className="w-3.5 h-3.5" />
@@ -541,11 +515,11 @@ export default function PurchaseOrdersPage() {
                               <button
                                 type="button"
                                 onClick={() => setVerifyingReceiptPO(po)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white shadow-sm shadow-indigo-200 transition-all cursor-pointer active:scale-95 animate-pulse hover:animate-none"
+                                className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg bg-stone-900 hover:bg-stone-800 text-white shadow-xs transition-all cursor-pointer active:scale-95"
                                 title="ตรวจใบเสร็จด้วย AI และกดยืนยันรับเข้าสต็อกจริง"
                               >
-                                <Sparkles className="w-3.5 h-3.5" />
-                                <span>ตรวจบิล & นำเข้าสต็อก</span>
+                                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                                <span>ตรวจบิล &amp; นำเข้าสต็อก</span>
                               </button>
                             )}
 
@@ -554,8 +528,8 @@ export default function PurchaseOrdersPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => setViewingPO(po)}
-                              icon={<Printer className="w-3.5 h-3.5 text-slate-600" />}
-                              className="h-7 px-2.5 text-[11px] font-normal shrink-0 whitespace-nowrap cursor-pointer"
+                              icon={<Printer className="w-3.5 h-3.5 text-stone-600" />}
+                              className="h-7 px-2.5 text-xs font-normal shrink-0 whitespace-nowrap cursor-pointer rounded-lg border-stone-200 text-stone-700 hover:bg-stone-50"
                             >
                               {isCompleted && po.receipt_image ? 'ดูบิล & พิมพ์' : 'ดู & พิมพ์'}
                             </Button>
@@ -564,7 +538,7 @@ export default function PurchaseOrdersPage() {
                             <button
                               type="button"
                               onClick={(e) => handleDeletePO(po.id, e)}
-                              className="p-1.5 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-stone-100 transition-colors cursor-pointer"
                               title="ลบรายการ"
                             >
                               <Trash2 className="w-3.5 h-3.5" />

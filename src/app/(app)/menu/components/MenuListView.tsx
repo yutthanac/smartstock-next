@@ -57,13 +57,13 @@ function SortableMenuRow({ item, onEdit, onDelete }: SortableMenuRowProps) {
     <TableRow
       ref={setNodeRef}
       style={style}
-      className={isDragging ? 'bg-slate-100 shadow-md ring-1 ring-slate-300' : ''}
+      className={isDragging ? 'bg-stone-100 shadow-md ring-1 ring-stone-300' : ''}
     >
       {/* Drag Handle */}
       <TableCell className="w-10 px-2 text-center whitespace-nowrap">
         <button
           type="button"
-          className="cursor-grab touch-none p-1.5 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100 active:cursor-grabbing transition-colors inline-flex items-center justify-center"
+          className="cursor-grab touch-none p-1.5 rounded-lg text-stone-400 hover:text-stone-800 hover:bg-stone-100 active:cursor-grabbing transition-colors inline-flex items-center justify-center"
           title="คลิกค้างเพื่อลากสลับตำแหน่งเมนู"
           {...attributes}
           {...listeners}
@@ -74,44 +74,44 @@ function SortableMenuRow({ item, onEdit, onDelete }: SortableMenuRowProps) {
 
       <TableCell>
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200/80 overflow-hidden shrink-0 flex items-center justify-center p-1 shadow-2xs">
+          <div className="w-12 h-12 rounded-xl bg-white border border-stone-200/90 overflow-hidden shrink-0 flex items-center justify-center p-1 shadow-2xs">
             <img
               src={item.image || '/images/logo_ss.png'}
               alt={item.name}
-              className={`w-full h-full ${item.image ? 'object-cover rounded-xl' : 'object-contain'}`}
+              className={`w-full h-full ${item.image ? 'object-cover rounded-lg' : 'object-contain'}`}
             />
           </div>
           <div>
-            <div className="font-normal text-slate-900 text-sm">{item.name}</div>
+            <div className="font-semibold text-stone-900 text-sm">{item.name}</div>
             {item.description && (
-              <div className="text-[11px] text-slate-400 line-clamp-1 max-w-xs">{item.description}</div>
+              <div className="text-xs text-stone-400 line-clamp-1 max-w-xs">{item.description}</div>
             )}
           </div>
         </div>
       </TableCell>
 
       <TableCell className="whitespace-nowrap">
-        <Badge variant="neutral">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-700 border border-stone-200">
           {item.category}
-        </Badge>
+        </span>
       </TableCell>
 
-      <TableCell className="text-right font-normal text-slate-800 text-sm font-mono whitespace-nowrap">
+      <TableCell className="text-right font-semibold text-stone-900 text-sm font-mono tabular-nums whitespace-nowrap">
         ฿{item.price.toFixed(2)}
       </TableCell>
 
-      <TableCell className="text-right font-normal text-slate-500 font-mono whitespace-nowrap">
+      <TableCell className="text-right font-medium text-stone-500 font-mono tabular-nums whitespace-nowrap">
         ฿{item.recipe_cost.toFixed(2)}
       </TableCell>
 
-      <TableCell className="text-right font-normal text-slate-700 font-mono whitespace-nowrap">
+      <TableCell className="text-right font-semibold text-stone-800 font-mono tabular-nums whitespace-nowrap">
         ฿{(item.price - item.recipe_cost).toFixed(2)}
       </TableCell>
 
       <TableCell className="text-center whitespace-nowrap">
-        <Badge variant="neutral">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#f5efe6] text-[#78350f] border border-[#e8ded0]">
           {item.margin_percent}%
-        </Badge>
+        </span>
       </TableCell>
 
       <TableCell className="max-w-xs">
@@ -120,14 +120,14 @@ function SortableMenuRow({ item, onEdit, onDelete }: SortableMenuRowProps) {
             item.recipes.map((r, idx) => (
               <span
                 key={idx}
-                className="inline-flex items-center gap-1 text-[10px] bg-slate-50 text-slate-600 px-2 py-0.5 rounded-lg border border-slate-200 whitespace-nowrap"
+                className="inline-flex items-center gap-1 text-xs bg-stone-50 text-stone-700 px-2 py-0.5 rounded-lg border border-stone-200 whitespace-nowrap"
               >
                 <span className="font-normal">{r.ingredient_name || `#${r.ingredient_id}`}</span>
-                <span className="font-normal text-slate-800 font-mono">{r.quantity_used} {r.ingredient_unit}</span>
+                <span className="font-medium text-stone-900 font-mono tabular-nums">{r.quantity_used} {r.ingredient_unit}</span>
               </span>
             ))
           ) : (
-            <span className="text-slate-400 text-[11px] italic">ไม่มีสูตร</span>
+            <span className="text-stone-400 text-xs italic">ไม่มีสูตร</span>
           )}
         </div>
       </TableCell>
@@ -139,7 +139,7 @@ function SortableMenuRow({ item, onEdit, onDelete }: SortableMenuRowProps) {
             variant="secondary"
             onClick={() => onEdit(item)}
             title="แก้ไขสูตร"
-            className="w-8 h-8 p-0 rounded-xl inline-flex items-center justify-center"
+            className="w-8 h-8 p-0 rounded-xl inline-flex items-center justify-center bg-stone-100 border border-stone-200 text-stone-700 hover:bg-stone-200"
           >
             <Edit2 className="w-3.5 h-3.5" />
           </Button>
@@ -147,7 +147,7 @@ function SortableMenuRow({ item, onEdit, onDelete }: SortableMenuRowProps) {
             size="sm"
             variant="secondary"
             onClick={() => onDelete(item.id)}
-            className="w-8 h-8 p-0 rounded-xl inline-flex items-center justify-center hover:text-rose-600 hover:bg-rose-50"
+            className="w-8 h-8 p-0 rounded-xl inline-flex items-center justify-center bg-stone-100 border border-stone-200 text-stone-700 hover:text-rose-600 hover:bg-stone-200"
             title="ลบเมนู"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -183,7 +183,7 @@ export const MenuListView: React.FC<MenuListViewProps> = ({ items, onEdit, onDel
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-2xl border border-stone-200/90 shadow-xs overflow-hidden">
       <div className="overflow-x-auto">
         <DndContext
           sensors={sensors}
@@ -194,7 +194,7 @@ export const MenuListView: React.FC<MenuListViewProps> = ({ items, onEdit, onDel
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-10 px-2 text-center whitespace-nowrap text-slate-400 font-normal text-xs" title="ลากเพื่อสลับลำดับ">
+                <TableHead className="w-10 px-2 text-center whitespace-nowrap text-stone-400 font-medium text-xs" title="ลากเพื่อสลับลำดับ">
                   ย้าย
                 </TableHead>
                 <TableHead className="whitespace-nowrap">รูปภาพ & เมนู</TableHead>
@@ -203,7 +203,7 @@ export const MenuListView: React.FC<MenuListViewProps> = ({ items, onEdit, onDel
                 <TableHead className="text-right whitespace-nowrap">ต้นทุน</TableHead>
                 <TableHead className="text-right whitespace-nowrap">กำไร/จาน</TableHead>
                 <TableHead className="text-center whitespace-nowrap">มาร์จิ้น</TableHead>
-                <TableHead className="whitespace-nowrap">สูตรวัตถุดิบ </TableHead>
+                <TableHead className="whitespace-nowrap">สูตรวัตถุดิบ</TableHead>
                 <TableHead className="text-center whitespace-nowrap w-24">จัดการ</TableHead>
               </TableRow>
             </TableHeader>

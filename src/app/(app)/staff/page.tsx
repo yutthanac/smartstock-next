@@ -242,7 +242,7 @@ export default function StaffPage() {
   ];
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-[#faf9f5]">
       <Topbar
         title="รายชื่อพนักงาน & กำหนดสิทธิ์"
         subtitle="จัดการบัญชีพนักงาน, มอบหมายร้านค้าที่สังกัด, และควบคุมสิทธิ์การใช้งาน"
@@ -256,35 +256,35 @@ export default function StaffPage() {
               <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
               <span>{error}</span>
             </div>
-            <button onClick={() => setError(null)} className="text-rose-400 hover:text-rose-600">
+            <button onClick={() => setError(null)} className="text-rose-400 hover:text-rose-600 cursor-pointer">
               <X className="w-4 h-4" />
             </button>
           </div>
         )}
 
         {successMsg && (
-          <div className="p-3.5 rounded-2xl bg-slate-900 text-white text-xs font-normal flex items-center justify-between shadow-xs animate-fade-in">
+          <div className="p-3.5 rounded-2xl bg-stone-900 text-white text-xs font-normal flex items-center justify-between shadow-xs animate-fade-in">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 shrink-0 text-slate-300" />
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-stone-300" />
               <span>{successMsg}</span>
             </div>
-            <button onClick={() => setSuccessMsg(null)} className="text-slate-400 hover:text-white cursor-pointer">
+            <button onClick={() => setSuccessMsg(null)} className="text-stone-400 hover:text-white cursor-pointer">
               <X className="w-4 h-4" />
             </button>
           </div>
         )}
 
         {/* Toolbar Section */}
-        <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-4 bg-white p-4 rounded-3xl border border-slate-200/80 shadow-xs">
+        <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-4 bg-white p-4 rounded-3xl border border-stone-200/90 shadow-xs">
           {/* Search Input */}
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
             <input
               type="text"
               placeholder="ค้นหาชื่อ, อีเมล หรือ ID พนักงาน..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 text-xs bg-slate-50 rounded-2xl border border-slate-200/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition-all font-normal"
+              className="w-full pl-10 pr-4 py-2.5 text-xs bg-stone-50 rounded-2xl border border-stone-200/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 transition-all font-normal"
             />
           </div>
 
@@ -311,13 +311,13 @@ export default function StaffPage() {
             </div>
 
             {/* View Mode Toggle */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/80 shrink-0">
+            <div className="flex items-center bg-stone-100 p-1 rounded-2xl border border-stone-200/80 shrink-0">
               <button
                 onClick={() => setViewMode('table')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-normal transition-all cursor-pointer ${
                   viewMode === 'table'
-                    ? 'bg-white text-slate-900 shadow-xs font-medium'
-                    : 'text-slate-500 hover:text-slate-900'
+                    ? 'bg-white text-stone-900 shadow-xs font-medium'
+                    : 'text-stone-500 hover:text-stone-900'
                 }`}
                 title="มุมมองตาราง (Table View)"
               >
@@ -328,8 +328,8 @@ export default function StaffPage() {
                 onClick={() => setViewMode('card')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-normal transition-all cursor-pointer ${
                   viewMode === 'card'
-                    ? 'bg-white text-slate-900 shadow-xs font-medium'
-                    : 'text-slate-500 hover:text-slate-900'
+                    ? 'bg-white text-stone-900 shadow-xs font-medium'
+                    : 'text-stone-500 hover:text-stone-900'
                 }`}
                 title="มุมมองการ์ด (Card View)"
               >
@@ -342,7 +342,7 @@ export default function StaffPage() {
               onClick={handleOpenCreate}
               icon={<UserPlus className="w-4 h-4" />}
               size="md"
-              className="shrink-0 whitespace-nowrap"
+              className="shrink-0 whitespace-nowrap cursor-pointer"
             >
               เพิ่มพนักงาน
             </Button>
@@ -351,9 +351,9 @@ export default function StaffPage() {
 
         {/* Content Section: Table View or Card View */}
         {loading ? (
-          <div className="p-12 text-center text-slate-400 text-sm">กำลังโหลดข้อมูลพนักงาน...</div>
+          <div className="p-12 text-center text-stone-400 text-sm">กำลังโหลดข้อมูลพนักงาน...</div>
         ) : filteredStaff.length === 0 ? (
-          <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 text-slate-400 text-sm">
+          <div className="p-12 text-center bg-white rounded-3xl border border-stone-200/90 text-stone-400 text-sm">
             ไม่พบข้อมูลพนักงานที่ตรงกับเงื่อนไขการค้นหา
           </div>
         ) : viewMode === 'table' ? (

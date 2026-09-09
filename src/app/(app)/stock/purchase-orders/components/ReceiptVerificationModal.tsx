@@ -375,7 +375,7 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6">
       {/* Hidden File Input for Image Replacement */}
       <input
         ref={fileInputRef}
@@ -385,43 +385,51 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
         onChange={handleFileInputChange}
       />
 
-      <div className="bg-white rounded-3xl max-w-5xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] animate-scale-in">
+      <div className="bg-white rounded-2xl max-w-7xl w-full shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[92vh] animate-scale-in">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-b border-slate-200">
+        <div className="flex items-center justify-between px-6 py-4 bg-stone-50 border-b border-stone-200">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-emerald-600" />
+            <div className="w-10 h-10 rounded-xl bg-stone-100 border border-stone-200/80 text-stone-700 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-[#78350f]" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-slate-900 text-base">
-                  ตรวจสอบใบเสร็จ & อนุมัติรับเข้าสต็อก
+                <h3 className="font-semibold text-stone-900 text-base">
+                  ตรวจสอบใบเสร็จ &amp; อนุมัติรับเข้าสต็อก
                 </h3>
-                <Badge variant={po.status === 'completed' ? 'success' : 'warning'} size="sm">
+                <Badge
+                  variant={po.status === 'completed' ? 'success' : 'warning'}
+                  size="sm"
+                  className={
+                    po.status === 'completed'
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                      : 'border-[#e8ded0] bg-[#f5efe6] text-[#78350f]'
+                  }
+                >
                   {po.status === 'completed' ? 'รับเข้าสต็อกแล้ว' : 'รอผู้จัดการอนุมัติ'}
                 </Badge>
               </div>
-              <p className="text-xs text-slate-500">
-                รหัสลิสต์: <span className="font-mono font-semibold">{po.id}</span> • ผู้ไปซื้อ:{' '}
-                <span className="font-medium text-slate-800">{po.buyer_name || 'พนักงาน'}</span>
+              <p className="text-xs text-stone-500">
+                รหัสลิสต์: <span className="font-mono tabular-nums font-semibold">{po.id}</span> • ผู้ไปซื้อ:{' '}
+                <span className="font-medium text-stone-800">{po.buyer_name || 'พนักงาน'}</span>
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Body (Split Screen) */}
-        <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-0 text-xs text-slate-700">
+        <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-0 text-xs text-stone-700">
           {/* Left Column: Receipt Photo (5 cols) */}
-          <div className="lg:col-span-5 bg-slate-900 p-4 flex flex-col justify-between overflow-y-auto border-b lg:border-b-0 lg:border-r border-slate-800 relative">
-            <div className="flex items-center justify-between text-white/80 pb-2 mb-2 border-b border-slate-800">
+          <div className="lg:col-span-5 bg-stone-950 p-4 flex flex-col justify-between overflow-y-auto border-b lg:border-b-0 lg:border-r border-stone-800 relative">
+            <div className="flex items-center justify-between text-white/80 pb-2 mb-2 border-b border-stone-800">
               <span className="font-semibold text-xs flex items-center gap-1.5">
-                <Eye className="w-4 h-4 text-emerald-400" />
+                <Eye className="w-4 h-4 text-amber-400" />
                 รูปภาพใบเสร็จจริง
               </span>
               <div className="flex items-center gap-1.5">
@@ -429,10 +437,10 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-all cursor-pointer flex items-center gap-1 text-[11px] shadow-sm active:scale-95"
+                  className="px-2.5 py-1 rounded-lg bg-stone-800 hover:bg-stone-700 text-white font-semibold transition-all cursor-pointer flex items-center gap-1 text-xs shadow-sm active:scale-95"
                   title="เปลี่ยนรูปภาพใบเสร็จใหม่"
                 >
-                  <Camera className="w-3.5 h-3.5" />
+                  <Camera className="w-3.5 h-3.5 text-amber-300" />
                   <span>เปลี่ยนรูป</span>
                 </button>
 
@@ -441,7 +449,7 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
                   type="button"
                   onClick={() => runAiScan()}
                   disabled={isScanning}
-                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white/80 transition-colors cursor-pointer flex items-center gap-1 text-[11px]"
+                  className="p-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-white/80 transition-colors cursor-pointer flex items-center gap-1 text-xs"
                   title="สแกนซ้ำ"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isScanning ? 'animate-spin' : ''}`} />
@@ -451,7 +459,7 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
                 <button
                   type="button"
                   onClick={() => setRotation((prev) => (prev + 90) % 360)}
-                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white/80 transition-colors cursor-pointer flex items-center gap-1 text-[11px]"
+                  className="p-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-white/80 transition-colors cursor-pointer flex items-center gap-1 text-xs"
                   title="หมุนภาพ"
                 >
                   <RotateCw className="w-3.5 h-3.5" />
@@ -468,7 +476,7 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
               onDragLeave={() => setIsDragging(false)}
               onDrop={handleDrop}
               className={`flex-1 flex items-center justify-center overflow-hidden rounded-2xl bg-black/40 relative min-h-[280px] p-2 transition-all ${
-                isDragging ? 'ring-2 ring-emerald-400 bg-emerald-950/40' : ''
+                isDragging ? 'ring-2 ring-amber-400 bg-amber-950/40' : ''
               }`}
             >
               {currentImage ? (
@@ -485,39 +493,39 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="px-3.5 py-2 rounded-xl bg-white/90 hover:bg-white text-slate-900 font-bold text-xs shadow-lg flex items-center gap-1.5 pointer-events-auto cursor-pointer active:scale-95"
+                      className="px-3.5 py-2 rounded-xl bg-white/90 hover:bg-white text-stone-900 font-bold text-xs shadow-lg flex items-center gap-1.5 pointer-events-auto cursor-pointer active:scale-95"
                     >
-                      <Camera className="w-4 h-4 text-emerald-600" />
+                      <Camera className="w-4 h-4 text-stone-700" />
                       เปลี่ยนรูปภาพใบเสร็จ
                     </button>
                   </div>
 
                   {/* Drag-over indicator */}
                   {isDragging && (
-                    <div className="absolute inset-0 bg-emerald-950/80 border-2 border-dashed border-emerald-400 rounded-lg flex flex-col items-center justify-center text-emerald-400 p-4">
-                      <Upload className="w-8 h-8 mb-2 animate-bounce" />
+                    <div className="absolute inset-0 bg-stone-900/80 border-2 border-dashed border-amber-400 rounded-lg flex flex-col items-center justify-center text-amber-400 p-4">
+                      <Upload className="w-8 h-8 mb-2" />
                       <p className="font-bold text-xs">วางรูปภาพที่นี่เพื่อเปลี่ยนใบเสร็จทันที</p>
                     </div>
                   )}
 
                   {/* AI Scanning Beam */}
                   {isScanning && !isDragging && (
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-500/30 to-transparent animate-pulse border-y-2 border-emerald-400 pointer-events-none flex items-center justify-center">
-                      <div className="px-3.5 py-2 rounded-full bg-slate-900/90 text-emerald-400 text-xs font-semibold shadow-lg backdrop-blur-xs flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 animate-spin text-emerald-400" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-500/20 to-transparent animate-pulse border-y-2 border-amber-400 pointer-events-none flex items-center justify-center">
+                      <div className="px-3.5 py-2 rounded-full bg-stone-900/90 text-amber-300 text-xs font-semibold shadow-lg backdrop-blur-xs flex items-center gap-2 border border-stone-700">
+                        <Sparkles className="w-4 h-4 animate-spin text-amber-300" />
                         AI กำลังอ่านข้อความและตรวจใบเสร็จ...
                       </div>
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="text-center text-slate-400 p-6 space-y-3">
-                  <AlertCircle className="w-8 h-8 mx-auto opacity-50 text-slate-400" />
+                <div className="text-center text-stone-400 p-6 space-y-3">
+                  <AlertCircle className="w-8 h-8 mx-auto opacity-50 text-stone-400" />
                   <p className="text-xs">ยังไม่มีภาพถ่ายใบเสร็จ</p>
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-sm"
+                    className="px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-sm"
                   >
                     <Upload className="w-3.5 h-3.5" /> อัปโหลดรูปใบเสร็จ
                   </button>
@@ -525,9 +533,9 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
               )}
             </div>
 
-            <div className="pt-3 text-[11px] text-white/60 flex items-center justify-between">
+            <div className="pt-3 text-xs text-white/60 flex items-center justify-between">
               <span>แหล่งซื้อ: {actualStore || 'ตลาด / ร้านทั่วไป'}</span>
-              <span>วันที่: {receiptDate || po.date}</span>
+              <span>วันที่: <span className="font-mono tabular-nums">{receiptDate || po.date}</span></span>
             </div>
           </div>
 
@@ -536,13 +544,13 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
             <div className="space-y-4">
               {/* API Key Missing Setup Card */}
               {apiKeyMissing && (
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-2.5 text-xs text-amber-950">
-                  <div className="flex items-center gap-2 font-bold text-amber-900 text-sm">
-                    <Key className="w-4 h-4 text-amber-700" />
+                <div className="p-4 bg-[#fef3c7]/60 border border-[#fde68a] rounded-2xl space-y-2.5 text-xs text-[#92400e]">
+                  <div className="flex items-center gap-2 font-bold text-[#78350f] text-sm">
+                    <Key className="w-4 h-4 text-[#78350f]" />
                     เชื่อมต่อ Google Gemini API เพื่อตรวจใบเสร็จจริง
                   </div>
-                  <p className="text-amber-800 text-xs leading-relaxed">
-                    ยังไม่พบ <code className="bg-amber-100 px-1 py-0.5 rounded font-mono font-bold">GEMINI_API_KEY</code> ในระบบ สามารถนำ API Key (ฟรี) มาวางที่นี่เพื่อเริ่มสแกนได้ทันที:
+                  <p className="text-[#92400e] text-xs leading-relaxed">
+                    ยังไม่พบ <code className="bg-[#fde68a]/60 px-1 py-0.5 rounded font-mono font-bold">GEMINI_API_KEY</code> ในระบบ สามารถนำ API Key (ฟรี) มาวางที่นี่เพื่อเริ่มสแกนได้ทันที:
                   </p>
                   <div className="flex gap-2">
                     <input
@@ -550,19 +558,19 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
                       placeholder="วาง Gemini API Key ที่นี่ (AIza...)"
                       value={inputApiKey}
                       onChange={(e) => setInputApiKey(e.target.value)}
-                      className="flex-1 px-3 py-1.5 bg-white border border-amber-300 rounded-xl text-xs text-slate-900 font-mono"
+                      className="flex-1 px-3 py-1.5 bg-white border border-stone-300 rounded-xl text-xs text-stone-900 font-mono"
                     />
                     <button
                       type="button"
                       onClick={handleSaveApiKeyAndRetry}
                       disabled={!inputApiKey.trim()}
-                      className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs cursor-pointer active:scale-95 disabled:opacity-50"
+                      className="px-3.5 py-1.5 bg-[#78350f] hover:bg-[#92400e] text-white font-bold rounded-xl text-xs cursor-pointer active:scale-95 disabled:opacity-50"
                     >
-                      บันทึก & สแกน
+                      บันทึก &amp; สแกน
                     </button>
                   </div>
-                  <div className="text-[11px] text-amber-700">
-                    * รับ API Key ฟรีได้ที่ <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer" className="underline font-bold text-amber-900">Google AI Studio</a> (ฟรี 1,500 ครั้ง/วัน)
+                  <div className="text-xs text-[#92400e]">
+                    * รับ API Key ฟรีได้ที่ <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer" className="underline font-bold text-[#78350f]">Google AI Studio</a> (ฟรี 1,500 ครั้ง/วัน)
                   </div>
                 </div>
               )}
@@ -603,30 +611,30 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
 
               {/* GENERAL SCAN ERROR BANNER */}
               {!isScanning && scanError && !isNotReceipt && !apiKeyMissing && (
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-2 text-xs text-amber-950">
+                <div className="p-4 bg-[#fef3c7]/60 border border-[#fde68a] rounded-2xl space-y-2 text-xs text-[#92400e]">
                   <div className="flex items-start gap-2.5">
-                    <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                    <AlertTriangle className="w-5 h-5 text-[#92400e] shrink-0 mt-0.5" />
                     <div className="space-y-1">
-                      <div className="font-bold text-amber-900 text-sm">
+                      <div className="font-bold text-[#78350f] text-sm">
                         AI แจ้งข้อผิดพลาดในการสแกน
                       </div>
-                      <p className="text-amber-700 leading-relaxed font-mono text-[11px]">
+                      <p className="text-[#92400e] leading-relaxed font-mono text-xs">
                         {scanError}
                       </p>
                     </div>
                   </div>
-                  <div className="pt-2 border-t border-amber-200 flex items-center justify-between">
+                  <div className="pt-2 border-t border-[#fde68a] flex items-center justify-between">
                     <button
                       type="button"
                       onClick={() => runAiScan()}
-                      className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                      className="px-3 py-1 bg-[#78350f] hover:bg-[#92400e] text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
                     >
                       <RefreshCw className="w-3.5 h-3.5" /> ลองสแกนใหม่อีกครั้ง
                     </button>
                     <button
                       type="button"
                       onClick={handleAddNewItem}
-                      className="px-2.5 py-1 bg-white border border-amber-300 text-amber-800 rounded-lg text-xs font-semibold hover:bg-amber-50 cursor-pointer"
+                      className="px-2.5 py-1 bg-white border border-[#fde68a] text-[#78350f] rounded-lg text-xs font-semibold hover:bg-stone-50 cursor-pointer"
                     >
                       + เพิ่มรายการเอง
                     </button>
@@ -636,21 +644,21 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
 
               {/* SUCCESS BANNER */}
               {!isScanning && !isNotReceipt && !apiKeyMissing && verifiedItems.length > 0 && (
-                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between">
+                <div className="p-3 bg-[#f5efe6] border border-[#e8ded0] rounded-2xl flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-xl bg-emerald-600 text-white flex items-center justify-center">
+                    <div className="w-7 h-7 rounded-xl bg-[#78350f] text-white flex items-center justify-center">
                       <Sparkles className="w-4 h-4" />
                     </div>
                     <div>
-                      <div className="font-semibold text-emerald-900 text-xs">
-                        AI ตรวจสอบและดึงรายการสำเร็จ ({verifiedItems.length} รายการ)
+                      <div className="font-semibold text-stone-900 text-xs">
+                        AI ตรวจสอบและดึงรายการสำเร็จ (<span className="font-mono tabular-nums">{verifiedItems.length}</span> รายการ)
                       </div>
-                      <div className="text-[11px] text-emerald-700">
+                      <div className="text-xs text-stone-600">
                         รีเช็คจำนวนและราคาจริง สามารถแก้ไขตัวเลขได้ก่อนกดรับเข้าสต็อก
                       </div>
                     </div>
                   </div>
-                  <span className="text-[11px] font-semibold text-emerald-700 bg-white px-2.5 py-1 rounded-lg border border-emerald-200 shadow-2xs">
+                  <span className="text-xs font-semibold text-[#78350f] bg-white px-2.5 py-1 rounded-lg border border-[#e8ded0] shadow-2xs font-mono tabular-nums">
                     ความมั่นใจ ~{confidence}%
                   </span>
                 </div>
@@ -659,26 +667,26 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
               {/* Header Details */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-semibold text-slate-700 block mb-1">
+                  <label className="font-semibold text-stone-700 block mb-1">
                     สถานที่ซื้อจริง (จากใบเสร็จ):
                   </label>
                   <input
                     type="text"
                     value={actualStore}
                     onChange={(e) => setActualStore(e.target.value)}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-emerald-600"
+                    className="w-full p-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium text-stone-900 focus:outline-none focus:border-stone-400"
                     placeholder="เช่น แม็คโคร สาขาบางชัน..."
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-700 block mb-1">
+                  <label className="font-semibold text-stone-700 block mb-1">
                     วันที่บนใบเสร็จ:
                   </label>
                   <input
                     type="date"
                     value={receiptDate}
                     onChange={(e) => setReceiptDate(e.target.value)}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-emerald-600"
+                    className="w-full p-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium text-stone-900 font-mono tabular-nums focus:outline-none focus:border-stone-400"
                   />
                 </div>
               </div>
@@ -686,22 +694,22 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
               {/* Items Verification Table */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-slate-900 text-xs">
-                    รายการที่ตรวจสอบพบ ({verifiedItems.length} รายการ)
+                  <h4 className="font-bold text-stone-900 text-xs">
+                    รายการที่ตรวจสอบพบ (<span className="font-mono tabular-nums font-bold">{verifiedItems.length}</span> รายการ)
                   </h4>
                   <button
                     type="button"
                     onClick={handleAddNewItem}
-                    className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold flex items-center gap-1 cursor-pointer"
+                    className="text-xs text-[#78350f] hover:text-[#92400e] font-semibold flex items-center gap-1 cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" /> เพิ่มรายการในบิล
                   </button>
                 </div>
 
-                <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+                <div className="border border-stone-200 rounded-2xl overflow-hidden shadow-2xs">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200 uppercase text-[11px]">
+                      <tr className="bg-stone-100 text-stone-800 font-semibold border-b border-stone-200 uppercase text-xs">
                         <th className="py-2.5 px-3">จับคู่เข้าวัตถุดิบคลัง</th>
                         <th className="py-2.5 px-2 text-center w-20">จำนวน</th>
                         <th className="py-2.5 px-1 text-center w-14">หน่วย</th>
@@ -710,10 +718,10 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
                         <th className="py-2.5 px-1 text-center w-8"></th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-stone-100">
                       {verifiedItems.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="text-center py-8 text-slate-400 font-medium">
+                          <td colSpan={6} className="text-center py-8 text-stone-400 font-medium">
                             {isScanning
                               ? 'กำลังสแกนและตรวจสอบข้อมูลจากรูปถ่าย...'
                               : isNotReceipt
@@ -723,7 +731,7 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
                         </tr>
                       ) : (
                         verifiedItems.map((item, idx) => (
-                          <tr key={idx} className="hover:bg-slate-50">
+                          <tr key={idx} className="hover:bg-stone-50">
                             {/* Stock Ingredient dropdown mapping */}
                             <td className="py-2 px-3">
                               <Dropdown
@@ -739,7 +747,7 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
                                 onChange={(val) => handleSelectIngredient(idx, String(val))}
                                 size="sm"
                                 className="w-full"
-                                buttonClassName="bg-white border-slate-200 text-xs font-semibold text-slate-900 py-1.5 px-2 rounded-lg"
+                                buttonClassName="bg-white border-stone-200 text-xs font-semibold text-stone-900 py-1.5 px-2 rounded-lg"
                               />
                             </td>
 
@@ -753,12 +761,12 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
                                 onChange={(e) =>
                                   handleUpdateItem(idx, 'quantity', parseFloat(e.target.value) || 0)
                                 }
-                                className="w-full p-1.5 text-center font-bold text-slate-900 bg-white border border-slate-200 rounded-lg text-xs focus:outline-emerald-600"
+                                className="w-full p-1.5 text-center font-bold text-stone-900 bg-white border border-stone-200 rounded-lg text-xs font-mono tabular-nums focus:outline-none focus:border-stone-400"
                               />
                             </td>
 
                             {/* Unit */}
-                            <td className="py-2 px-1 text-center text-slate-600 font-medium text-[11px]">
+                            <td className="py-2 px-1 text-center text-stone-600 font-medium text-xs">
                               {item.unit}
                             </td>
 
@@ -772,12 +780,12 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
                                 onChange={(e) =>
                                   handleUpdateItem(idx, 'cost_per_unit', parseFloat(e.target.value) || 0)
                                 }
-                                className="w-full p-1.5 text-right font-medium text-slate-900 bg-white border border-slate-200 rounded-lg text-xs focus:outline-emerald-600"
+                                className="w-full p-1.5 text-right font-medium text-stone-900 bg-white border border-stone-200 rounded-lg text-xs font-mono tabular-nums focus:outline-none focus:border-stone-400"
                               />
                             </td>
 
                             {/* Total */}
-                            <td className="py-2 px-3 text-right font-bold text-slate-900">
+                            <td className="py-2 px-3 text-right font-bold text-stone-900 font-mono tabular-nums">
                               ฿{item.total_price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </td>
 
@@ -786,7 +794,7 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
                               <button
                                 type="button"
                                 onClick={() => handleRemoveItem(idx)}
-                                className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors cursor-pointer"
+                                className="p-1 text-stone-400 hover:text-rose-600 rounded hover:bg-stone-100 transition-colors cursor-pointer"
                                 title="ลบแถว"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -802,23 +810,29 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
             </div>
 
             {/* Bottom Summary & Approve Action */}
-            <div className="pt-4 border-t border-slate-200 space-y-3">
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+            <div className="pt-4 border-t border-stone-200 space-y-3">
+              <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 flex items-center justify-between">
                 <div>
-                  <span className="text-[11px] text-slate-500 block">ยอดรวมตามใบเสร็จจริง</span>
-                  <span className={`text-lg font-black ${isNotReceipt ? 'text-slate-400' : 'text-emerald-700'}`}>
+                  <span className="text-xs text-stone-500 block">ยอดรวมตามใบเสร็จจริง</span>
+                  <span className={`text-lg font-black font-mono tabular-nums ${isNotReceipt ? 'text-stone-400' : 'text-[#78350f]'}`}>
                     ฿{grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
-                <div className="text-right text-[11px] text-slate-500">
+                <div className="text-right text-xs text-stone-500">
                   <span>พร้อมนำเข้าคลัง: </span>
-                  <strong className="text-slate-800">{verifiedItems.length} รายการ</strong>
+                  <strong className="text-stone-900 font-mono tabular-nums">{verifiedItems.length} รายการ</strong>
                 </div>
               </div>
 
               {/* Action buttons */}
               <div className="flex items-center justify-end gap-2">
-                <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  disabled={isSubmitting}
+                  className="rounded-xl border-stone-300 text-stone-700 hover:bg-stone-100"
+                >
                   ปิดหน้าต่าง
                 </Button>
 
@@ -827,13 +841,13 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
                     type="button"
                     onClick={handleConfirmStockIn}
                     disabled={isSubmitting || verifiedItems.length === 0}
-                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold rounded-xl text-xs transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="px-5 py-2.5 bg-stone-900 hover:bg-stone-800 active:scale-95 text-white font-semibold rounded-xl text-xs transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <Check className="w-4 h-4" />
                     <span>{isSubmitting ? 'กำลังนำเข้าสต็อก...' : 'ยืนยันและนำเข้าสต็อกจริง'}</span>
                   </button>
                 ) : (
-                  <div className="px-4 py-2 bg-slate-100 text-slate-500 rounded-xl text-xs font-semibold flex items-center gap-1.5">
+                  <div className="px-4 py-2 bg-stone-100 text-stone-600 rounded-xl text-xs font-semibold flex items-center gap-1.5 border border-stone-200">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                     <span>รายการนี้รับเข้าสต็อกเรียบร้อยแล้ว</span>
                   </div>

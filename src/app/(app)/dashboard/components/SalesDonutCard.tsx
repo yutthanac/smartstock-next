@@ -31,36 +31,36 @@ export const SalesDonutCard: React.FC<SalesDonutCardProps> = ({
         {
           label: 'กำไรสุทธิ',
           value: Math.max(0, totalProfit),
-          color: '#059669', // Emerald 600
+          color: '#1c1917', // Espresso Black
         },
         {
           label: 'ต้นทุนวัตถุดิบ',
           value: Math.max(0, totalCost),
-          color: '#f59e0b', // Amber 500
+          color: '#d6d3d1', // Warm Latte Stone
         },
       ]
     : [
         {
           label: 'ยังไม่มียอดขายวันนี้',
           value: 1,
-          color: '#cbd5e1', // Slate 300
+          color: '#e7e5e4', // Stone 200
         },
       ];
 
   const totalCalculated = hasSales ? segments.reduce((sum, s) => sum + s.value, 0) : 0;
 
   return (
-    <div className="skeuo-card rounded-3xl p-6 flex flex-col justify-between">
+    <div className="bg-white rounded-2xl border border-stone-200/90 shadow-xs p-6 flex flex-col justify-between">
       <div className="flex items-center justify-between gap-2 mb-4">
         <div>
-          <h3 className="font-semibold text-slate-900 text-base flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl skeuo-inset flex items-center justify-center text-slate-700">
+          <h3 className="font-bold text-stone-900 text-base flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-stone-100 border border-stone-200/80 flex items-center justify-center text-stone-700">
               <PieChartIcon className="w-5 h-5" />
             </div>
             สัดส่วนรายได้ & ต้นทุน
           </h3>
         </div>
-        <span className="px-3.5 py-1 rounded-full text-xs font-semibold skeuo-badge-green">
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#f5efe6] text-[#78350f] border border-[#e8ded0]">
           กำไร {marginPercent}%
         </span>
       </div>
@@ -75,13 +75,13 @@ export const SalesDonutCard: React.FC<SalesDonutCardProps> = ({
           onSegmentHover={setHovered}
           centerContent={
             <div className="text-center">
-              <span className="text-xs font-medium text-slate-400 uppercase tracking-wider block">
+              <span className="text-xs font-medium text-stone-400 uppercase tracking-wider block">
                 {hovered ? hovered.label.split(' ')[0] : 'ยอดขายรวม'}
               </span>
-              <span className="text-2xl font-bold text-slate-900 block mt-0.5 font-mono">
+              <span className="text-2xl font-bold text-stone-900 block mt-0.5 font-mono tabular-nums">
                 ฿{hovered && hasSales ? hovered.value.toLocaleString() : totalCalculated.toLocaleString()}
               </span>
-              <span className="text-xs text-slate-600 font-medium block mt-0.5">
+              <span className="text-xs text-stone-600 font-medium block mt-0.5">
                 {hasSales
                   ? hovered
                     ? `${Math.round((hovered.value / (totalCalculated || 1)) * 100)}% ของทั้งหมด`
@@ -101,8 +101,8 @@ export const SalesDonutCard: React.FC<SalesDonutCardProps> = ({
               return (
                 <div
                   key={idx}
-                  className={`p-3 rounded-2xl transition-all ${
-                    isHighlighted ? 'skeuo-inset scale-[1.02]' : 'hover:bg-slate-200/40'
+                  className={`p-3 rounded-xl transition-all ${
+                    isHighlighted ? 'bg-stone-100/90 ring-1 ring-stone-300' : 'hover:bg-stone-50'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-5 text-sm">
@@ -111,20 +111,20 @@ export const SalesDonutCard: React.FC<SalesDonutCardProps> = ({
                         className="w-3.5 h-3.5 rounded-full shrink-0 shadow-xs"
                         style={{ backgroundColor: seg.color }}
                       />
-                      <span className="font-medium text-slate-800">{seg.label}</span>
+                      <span className="font-medium text-stone-800">{seg.label}</span>
                     </div>
                     <div className="text-right">
-                      <span className="font-mono font-semibold text-slate-900 block text-sm">
+                      <span className="font-mono tabular-nums font-semibold text-stone-900 block text-sm">
                         ฿{seg.value.toLocaleString()}
                       </span>
-                      <span className="text-xs text-slate-400 font-normal">({pct}%)</span>
+                      <span className="text-xs text-stone-400 font-normal">({pct}%)</span>
                     </div>
                   </div>
                 </div>
               );
             })
           ) : (
-            <div className="text-xs text-slate-400 text-center p-4">
+            <div className="text-xs text-stone-400 text-center p-4">
               ยังไม่มีข้อมูลการขายในวันนี้
             </div>
           )}

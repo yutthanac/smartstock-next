@@ -177,7 +177,7 @@ export default function RolesPermissionPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-slate-50/70">
+    <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
       <Topbar
         title="กำหนดสิทธิ์บทบาท (Role & Permissions Matrix)"
         subtitle="ตั้งค่าว่าแต่ละบทบาท (Role) สามารถมองเห็นหรือจัดการส่วนใดของระบบได้บ้าง"
@@ -214,8 +214,8 @@ export default function RolesPermissionPage() {
           {/* Left Column: Role Selector */}
           <div className="lg:col-span-4 space-y-3">
             <div className="flex items-center justify-between px-1">
-              <h3 className="text-xs font-normal uppercase tracking-wider text-slate-500">เลือกบทบาท (Roles)</h3>
-              <span className="text-[11px] text-slate-600 font-normal">{roles.length} บทบาท</span>
+              <h3 className="text-xs font-normal uppercase tracking-wider text-stone-500">เลือกบทบาท (Roles)</h3>
+              <span className="text-xs text-stone-600 font-normal font-mono tabular-nums">{roles.length} บทบาท</span>
             </div>
 
             <div className="space-y-2.5">
@@ -225,10 +225,10 @@ export default function RolesPermissionPage() {
                   <button
                     key={role.id}
                     onClick={() => handleSelectRole(role)}
-                    className={`w-full text-left p-4 rounded-2xl border transition-all duration-200 relative overflow-hidden flex flex-col justify-between ${
+                    className={`w-full text-left p-4 rounded-2xl border transition-all duration-200 relative overflow-hidden flex flex-col justify-between cursor-pointer ${
                       isSelected
-                        ? 'bg-slate-900 text-white border-slate-900 shadow-md'
-                        : 'bg-white text-slate-800 border-slate-200/80 hover:border-slate-300 hover:shadow-xs'
+                        ? 'bg-stone-900 text-white border-stone-900 shadow-md'
+                        : 'bg-white text-stone-800 border-stone-200/90 hover:border-stone-300 hover:shadow-xs'
                     }`}
                   >
                     <div className="flex items-start justify-between">
@@ -236,24 +236,24 @@ export default function RolesPermissionPage() {
                         <div
                           className={`w-9 h-9 rounded-xl flex items-center justify-center font-normal text-sm ${
                             isSelected
-                              ? 'bg-slate-800 text-white'
-                              : 'bg-slate-100 text-slate-600'
+                              ? 'bg-stone-800 text-white'
+                              : 'bg-stone-100 text-stone-600 border border-stone-200/60'
                           }`}
                         >
                           <Shield className="w-4 h-4" />
                         </div>
                         <div>
                           <div className="font-medium text-sm">{role.display_name}</div>
-                          <div className={`text-[11px] ${isSelected ? 'text-slate-300' : 'text-slate-400'}`}>
+                          <div className={`text-xs ${isSelected ? 'text-stone-300' : 'text-stone-400'}`}>
                             key: <span className="font-mono">{role.name}</span>
                           </div>
                         </div>
                       </div>
                       <span
-                        className={`text-[10px] font-normal px-2 py-0.5 rounded-full ${
+                        className={`text-xs font-normal px-2.5 py-0.5 rounded-full font-mono tabular-nums ${
                           isSelected
-                            ? 'bg-slate-800 text-slate-200 border border-slate-700'
-                            : 'bg-slate-100 text-slate-600'
+                            ? 'bg-[#f5efe6] text-[#78350f] border border-[#e8ded0]'
+                            : 'bg-stone-100 text-stone-600'
                         }`}
                       >
                         {role.permissions.length} สิทธิ์
@@ -261,7 +261,7 @@ export default function RolesPermissionPage() {
                     </div>
 
                     {role.description && (
-                      <p className={`text-xs mt-3 line-clamp-2 ${isSelected ? 'text-slate-300' : 'text-slate-500'}`}>
+                      <p className={`text-xs mt-3 line-clamp-2 leading-relaxed ${isSelected ? 'text-stone-300' : 'text-stone-500'}`}>
                         {role.description}
                       </p>
                     )}
@@ -271,29 +271,29 @@ export default function RolesPermissionPage() {
             </div>
 
             {/* Info Box */}
-            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-900 text-xs space-y-1">
-              <div className="flex items-center gap-1.5 font-bold text-amber-800">
-                <Info className="w-4 h-4 text-amber-600 shrink-0" />
+            <div className="p-4 rounded-2xl bg-[#f5efe6] border border-[#e8ded0] text-[#78350f] text-xs space-y-1.5">
+              <div className="flex items-center gap-1.5 font-bold text-[#78350f]">
+                <Info className="w-4 h-4 text-[#92400e] shrink-0" />
                 <span>คำแนะนำการตั้งค่า</span>
               </div>
-              <p className="text-[11px] text-amber-700 leading-relaxed">
+              <p className="text-xs text-[#92400e]/90 leading-relaxed">
                 เมื่อบันทึกการแก้ไขสิทธิ์ พนักงานทุกคนที่มีบทบาทนี้จะถูกปรับสิทธิ์ตามการตั้งค่าใหม่โดยอัตโนมัติ
               </p>
             </div>
           </div>
 
           {/* Right Column: Permission Matrix Checklist */}
-          <div className="lg:col-span-8 bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-6">
+          <div className="lg:col-span-8 bg-white rounded-3xl p-6 border border-stone-200/90 shadow-xs space-y-6">
             {selectedRole && (
               <>
                 {/* Selected Role Header */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-slate-100 gap-3">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-stone-100 gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-normal text-slate-500 uppercase tracking-wider">กำลังปรับแต่งสิทธิ์:</span>
-                      <h2 className="text-lg font-semibold text-slate-900">{selectedRole.display_name}</h2>
+                      <span className="text-xs font-normal text-stone-500 uppercase tracking-wider">กำลังปรับแต่งสิทธิ์:</span>
+                      <h2 className="text-lg font-semibold text-stone-900">{selectedRole.display_name}</h2>
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5">{selectedRole.description}</p>
+                    <p className="text-xs text-stone-500 mt-0.5">{selectedRole.description}</p>
                   </div>
 
                   <Button
@@ -302,15 +302,15 @@ export default function RolesPermissionPage() {
                     isLoading={saving}
                     variant="primary"
                     icon={<Save className="w-4 h-4" />}
-                    className="shrink-0 whitespace-nowrap"
+                    className="shrink-0 whitespace-nowrap cursor-pointer"
                   >
                     บันทึกการตั้งค่าสิทธิ์
                   </Button>
                 </div>
 
                 {selectedRole.name === 'admin' && (
-                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-700 text-xs flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-slate-800 shrink-0" />
+                  <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 text-stone-700 text-xs flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-stone-800 shrink-0" />
                     <span>บทบาท <strong>Admin</strong> ได้รับสิทธิ์สูงสุดทุกส่วนโดยอัตโนมัติเพื่อความปลอดภัยของระบบ</span>
                   </div>
                 )}
@@ -320,21 +320,20 @@ export default function RolesPermissionPage() {
                   {Object.entries(permissionCategories).map(([catKey, items]) => {
                     const catInfo = categoryLabels[catKey] || { label: catKey, desc: '' };
                     const allCatChecked = items.every((i) => currentPermissions.includes(i.name));
-                    const someCatChecked = items.some((i) => currentPermissions.includes(i.name));
 
                     return (
-                      <div key={catKey} className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 space-y-3">
-                        <div className="flex items-center justify-between pb-2 border-b border-slate-200/60">
+                      <div key={catKey} className="rounded-2xl border border-stone-200/70 bg-stone-50/50 p-4 space-y-3">
+                        <div className="flex items-center justify-between pb-2 border-b border-stone-200/60">
                           <div>
-                            <h4 className="font-bold text-slate-900 text-sm">{catInfo.label}</h4>
-                            <p className="text-[11px] text-slate-400">{catInfo.desc}</p>
+                            <h4 className="font-bold text-stone-900 text-sm">{catInfo.label}</h4>
+                            <p className="text-xs text-stone-500">{catInfo.desc}</p>
                           </div>
 
                           {selectedRole.name !== 'admin' && (
                             <button
                               type="button"
                               onClick={() => handleToggleCategory(catKey)}
-                              className="text-[11px] font-normal text-slate-600 hover:text-slate-900 hover:underline"
+                              className="text-xs font-normal text-stone-600 hover:text-stone-900 hover:underline cursor-pointer"
                             >
                               {allCatChecked ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด'}
                             </button>
@@ -351,26 +350,26 @@ export default function RolesPermissionPage() {
                                 onClick={() => handleTogglePermission(perm.name)}
                                 className={`p-3 rounded-xl border text-left cursor-pointer transition-all flex items-start justify-between select-none ${
                                   isGranted
-                                    ? 'bg-white border-slate-900 shadow-xs ring-1 ring-slate-900/10'
-                                    : 'bg-white/60 border-slate-200/80 hover:bg-white hover:border-slate-300 opacity-70'
+                                    ? 'bg-white border-stone-900 shadow-xs ring-1 ring-stone-900/10'
+                                    : 'bg-white/60 border-stone-200/80 hover:bg-white hover:border-stone-300 opacity-70'
                                 } ${selectedRole.name === 'admin' ? 'cursor-default' : ''}`}
                               >
                                 <div className="space-y-0.5 pr-2">
                                   <div className="flex items-center gap-1.5">
-                                    <span className={`text-xs font-medium ${isGranted ? 'text-slate-900' : 'text-slate-600'}`}>
+                                    <span className={`text-xs font-medium ${isGranted ? 'text-stone-900' : 'text-stone-600'}`}>
                                       {perm.display_name}
                                     </span>
                                   </div>
                                   {perm.description && (
-                                    <p className="text-[10px] text-slate-400 leading-normal">{perm.description}</p>
+                                    <p className="text-xs text-stone-400 leading-normal">{perm.description}</p>
                                   )}
                                 </div>
 
                                 <div
                                   className={`w-5 h-5 rounded-lg flex items-center justify-center shrink-0 transition-colors mt-0.5 ${
                                     isGranted
-                                      ? 'bg-slate-900 text-white font-normal'
-                                      : 'bg-slate-200 text-transparent'
+                                      ? 'bg-stone-900 text-white font-normal'
+                                      : 'bg-stone-200 text-transparent'
                                   }`}
                                 >
                                   <Check className="w-3.5 h-3.5 stroke-[3]" />

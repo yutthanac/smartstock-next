@@ -200,7 +200,94 @@
 ---
 
 ## 📌 สรุปสถานะโครงการปัจจุบัน (Current System Status)
-- ✅ UI Theme: สะอาดตา มินิมอล โมโนโครม (Slate/Neutral) ระดับ Enterprise
+- ✅ UI Theme: สะอาดตา มินิมอล โมโนโครม (Slate/Neutral) ผสานโทนอบอุ่นคาเฟ่ 60-30-10 ระดับ Enterprise
 - ✅ Component Standards: `Button.tsx`, `Badge.tsx`, `Table.tsx`, `Dropdown.tsx`, `Skeleton.tsx` และ shadcn `components/ui/` ใช้งานเป็นมาตรฐานหลัก 100%
 - ✅ Frontend Next.js 16 (Turbopack) & TypeScript ผ่านการทดสอบ `npm run build` สำเร็จ 100% (22 routes generated, 0 errors)
 - ✅ Backend Laravel 11 API อัปเกรด Query Optimization พร้อม Eager Loading
+
+---
+
+## 🚀 แผนการพัฒนารอบถัดไป (Upcoming Roadmap & Execution Plan)
+
+### 🎯 ภาพรวมและเป้าหมายการพัฒนา (Development Objectives)
+รอบการพัฒนานี้มุ่งเน้นการปรับปรุงระบบคลังสต็อก (Stock Flow Refactor) ให้กระชับ ไม่ซ้ำซ้อน, เพิ่มพื้นที่การแสดงผลข้อมูล (Container Width Expansion) เพื่อแก้ปัญหาตารางบีบตัวอักษร, ยกระดับความคมชัดของข้อความในหน้าระบบวิเคราะห์ AI (Typography Contrast), และเคลียร์ข้อมูลจำลอง (Mock Data Cleanup) ในปฏิทินแดชบอร์ดให้คงไว้เฉพาะยอดขายจริง
+
+---
+
+### 📋 รายการงานและแผนปฏิบัติการแบบละเอียด (Detailed Action Plan)
+
+#### 1. ปรับปรุง Flow การรับเข้าสต็อก & ตัดแท็บ "ตรวจสอบ & รับเข้าจากบิล" ออกจากหน้าสต็อกหลัก
+- **ไฟล์เป้าหมาย**:
+  - [src/app/(app)/stock/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/page.tsx)
+  - [src/app/(app)/stock/purchase-orders/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/purchase-orders/page.tsx)
+  - [src/app/(app)/stock/components/ReceiptInboundTab.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/components/ReceiptInboundTab.tsx)
+- **สถานะและหลักการทำงานปัจจุบัน**:
+  - ในหน้า [purchase-orders/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/purchase-orders/page.tsx) มีระบบตรวจรับสินค้าและสแกนบิลที่สมบูรณ์แล้ว เมื่อกดปุ่ม **"อนุมัติและรับเข้าสต็อก"** ฟังก์ชัน `handleApproveAndStockIn` จะประมวลผลการรับเข้าสต็อกจริงทันที:
+    - วัตถุดิบเดิมที่มีในระบบ: ปรับยอดเข้าสต็อกด้วย `adjustStock(item.ingredient_id, 'in', item.quantity)` พร้อมอัปเดตต้นทุนล่าสุด `updateIngredient(..., { cost_per_unit })`
+    - วัตถุดิบใหม่: เพิ่มเข้าคลังด้วย `addIngredient(...)` ทันที
+    - บันทึกสถานะ PO เป็น `completed` พร้อมรูปถ่ายใบเสร็จ
+- **สิ่งที่จะดำเนินการในรอบถัดไป**:
+  - [ ] **ตัดแท็บ `inbound` ออกจากหน้าหลัก**: นำตัวเลือกแท็บ `"ตรวจสอบ & รับเข้าจากบิล"` (ปุ่ม `activeTab === 'inbound'`) ออกจาก Navigation Tab Bar ใน [stock/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/page.tsx)
+  - [ ] **ยุติการ Render `ReceiptInboundTab`**: นำการเรียกใช้ [ReceiptInboundTab.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/components/ReceiptInboundTab.tsx) ออกจาก [stock/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/page.tsx) เพื่อลดความซ้ำซ้อน เนื่องจากผู้ใช้จะบันทึกรับเข้าจากหน้าใบสั่งซื้อ/สแกนบิล หรือคีย์ข้อมูลเข้าโดยตรงจากเมนูนั้นเลย
+  - [ ] **Cleanup State ที่ไม่จำเป็น**: ลบ state `pendingReceiptsCount` และการดึงข้อมูลนับจำนวนบิลที่ค้างอยู่
+  - [ ] **คงเหลือ 2 แท็บหลักที่คมชัด**:
+    1. `inventory` (วัตถุดิบคงเหลือ - ตรวจสอบ, ลากเรียงลำดับ, แก้ไข, ลบ, ปรับยอดด่วน)
+    2. `movements` (ประวัติการปรับสต็อก - ตรวจสอบรายการเคลื่อนไหวเข้า/ออก/ของเสียย้อนหลัง)
+
+---
+
+#### 2. ขยายขนาด Container หน้าจัดการสต็อก ([stock/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/page.tsx))
+- **ปัญหาปัจจุบัน**:
+  - Container หลักถูกจำกัดด้วยคลาส `max-w-7xl` (1280px) ทำให้ตารางวัตถุดิบซึ่งมีจำนวนคอลัมน์เยอะมาก (Drag Handle, ชื่อวัตถุดิบ & ซัพพลายเออร์, หมวดหมู่, รูปแบบการตัดสต็อก, ต้นทุนต่อหน่วย, หลอด Ratio & ระดับสต็อก, คงเหลือ/จุดสั่งซื้อ, ปุ่มลัดเปิดใช้ 1 ชิ้น, ปุ่มแก้ไข/ลบ) เกิดการบีบอัดตัวอักษร (Text Squeeze) และตัดบรรทัดบ่อย
+- **แนวทางแก้ไข**:
+  - [ ] ขยาย Wrapper จาก `max-w-7xl` เป็น `max-w-[1536px]` (2xl) หรือ `max-w-[1600px]` หรือ `w-full max-w-none px-4 sm:px-6 lg:px-8` เพื่อให้ตารางใช้พื้นที่หน้าจอได้อย่างเต็มประสิทธิภาพ
+  - [ ] กำหนด `min-w-[...]` ที่เหมาะสมให้กับแต่ละคอลัมน์ใน [Table.tsx](file:///c:/meeting/smartStock/src/components/Table.tsx) / [stock/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/page.tsx) เพื่อรับประกันว่าตัวหนังสือจะไม่เบียดกันในทุกขนาดหน้าจอ
+  - [ ] จัดระเบียบส่วนหัวตารางและกล่องตัวกรอง (Filter & Search Bar) ให้มีความโปร่ง สบายตา เข้ากับสไตล์ Cafe Minimalist
+
+---
+
+#### 3. ปรับเฉดสีและความคมชัดตัวหนังสือในหน้า AI Menu Insights ([menu/ai-insights/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/menu/ai-insights/page.tsx))
+- **ปัญหาปัจจุบัน**:
+  - บางข้อความในหน้า AI Insights ใช้สีเทาจาง เช่น `text-stone-400` หรือ `text-stone-500` บนพื้นหลังที่คอนทราสต์ไม่พอ ทำให้อ่านยากเมื่อดูบนจอภาพทั่วไป
+- **แนวทางแก้ไข**:
+  - [ ] **Executive Banner (แบนเนอร์สีเข้มบนสุด)**:
+    - ปรับปรุงข้อความคำอธิบายจาก `text-stone-300` เป็น `text-stone-200` ที่สว่าง คมชัด และอ่านง่ายขึ้น
+    - ปรับปรุง Badge ระบุโมเดล AI ให้ตัวอักษร `text-stone-100` สว่างคมชัด
+  - [ ] **กล่องบทวิเคราะห์โอกาสเชิงกลยุทธ์ (Strategic Highlights)**:
+    - ปรับสีหัวข้อและข้อความในแต่ละการ์ดจาก `text-stone-700` เป็น `text-stone-800` / `text-stone-900`
+  - [ ] **การ์ดเมนูแนะนำ (Existing Menu Recommendations)**:
+    - ปรับสีหมวดหมู่และยอดขายให้ชัดเจนขึ้น
+    - กล่องบทวิเคราะห์ (`bg-stone-50`): ปรับข้อความ `item.insight` ให้อยู่ในเฉด `text-stone-700` ที่เข้มพอเหมาะ และเน้น `text-stone-900` สำหรับแผนปฏิบัติการ
+  - [ ] **ไอเดียเมนูใหม่ (New Recipe Ideas) & แนวทางลดของเสีย (Cost Saving Tips)**:
+    - ปรับสีตัวเลขต้นทุน กำไร และราคาแนะนำให้โดดเด่นด้วยฟอนต์โมโนโทนเข้ม
+    - ปรับสีรายการวัตถุดิบและเหตุผลที่ควรเปิดขายให้อ่านง่าย สบายตา
+
+---
+
+#### 4. นำ Mock ข้อมูลเงินแต่ละวันใน Calendar ออก ([DashboardCalendarDropdown.tsx](file:///c:/meeting/smartStock/src/app/(app)/dashboard/components/DashboardCalendarDropdown.tsx) & [Calendar.tsx](file:///c:/meeting/smartStock/src/app/(app)/dashboard/components/Calendar.tsx))
+- **ปัญหาปัจจุบัน**:
+  - ใน [DashboardCalendarDropdown.tsx](file:///c:/meeting/smartStock/src/app/(app)/dashboard/components/DashboardCalendarDropdown.tsx) มีการเขียน Mock ข้อมูลยอดขายย้อนหลังด้วย Array `baseAmounts` เพื่อเติมตัวเลขเงินลงในทุกวันของเดือนที่ผ่านมา ส่งผลให้แสดงตัวเลขเงินจำลอง (เช่น ฿5.2k, ฿3.8k) แม้ว่าจะไม่มีการขายจริงในวันนั้น
+- **แนวทางแก้ไข**:
+  - [ ] **ตัดชุดข้อมูลจำลอง (Remove Mock Generator)**: นำลูปจำลองข้อมูล `baseAmounts = [2400, 3100, ...]` ออกจาก `revenueMap`
+  - [ ] **คงไว้เฉพาะยอดขายจริง**: ให้ `revenueMap` ดึงและคำนวณจาก `orders` จริงในระบบ และยอดขายวันนี้ (`dashboard.today_sales` / `dashboard.sales_7days`) เท่านั้น
+  - [ ] **การแสดงผลวันที่ที่ไม่มีการขาย**: วันที่ไม่มีบิลขายจริง ให้แสดงเฉพาะตัวเลขวันที่สะอาดตา โดยไม่แสดงยอดเงินจำลองหลอกตา
+  - [ ] **ตรวจสอบคอมโพเนนต์ [Calendar.tsx](file:///c:/meeting/smartStock/src/app/(app)/dashboard/components/Calendar.tsx)**: ปรับแต่งให้สะอาด มินิมอล สอดคล้องกับธีมหลักของแดชบอร์ด
+
+---
+
+### 🧪 แผนการทดสอบและตรวจสอบความถูกต้อง (Verification Plan)
+1. **TypeScript & Build Verification**:
+   - รันคำสั่ง `npm run build` เพื่อตรวจจับ Type errors และ Route compilation ทั้ง 22 routes
+2. **UI & Responsive Check**:
+   - เข้าตรวจสอบหน้า `/stock`: ตรวจสอบว่าแท็บเหลือเฉพาะ "วัตถุดิบคงเหลือ" และ "ประวัติการปรับสต็อก", หน้าตารางขยายกว้างสบายตา ตัวหนังสือไม่ถูกบีบ
+   - เข้าตรวจสอบหน้า `/stock/purchase-orders`: ยืนยันว่าการกดรับเข้าสต็อกยังคงเพิ่มจำนวนสินค้าเข้าคลังจริงอย่างถูกต้อง
+   - เข้าตรวจสอบหน้า `/menu/ai-insights`: ตรวจสอบคอนทราสต์และความคมชัดของตัวหนังสือทุกการ์ดและทุกแท็บ
+   - เข้าตรวจสอบหน้า `/dashboard`: เปิดปฏิทินดรอปดาวน์มุมบนขวา ยืนยันว่าไม่มีตัวเลขเงิน mock จำลองแสดงในวันที่ไม่มีออเดอร์จริง
+
+---
+
+### 📌 รายการเช็คความพร้อมก่อนเริ่มรอบถัดไป (Readiness Checklist)
+- [ ] แผนงานบันทึกครบถ้วนใน [worklog.md](file:///c:/meeting/smartStock/worklog.md)
+- [ ] โค้ดปัจจุบันพร้อมทำงาน ไม่ติด lint หรือ build errors
+- [ ] ผู้ใช้สามารถสั่งให้เริ่มดำเนินงานตามแผนนี้ได้ทันทีในครั้งถัดไป
+

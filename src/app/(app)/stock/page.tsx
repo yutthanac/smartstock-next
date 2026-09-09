@@ -4,17 +4,11 @@ import React, { useState, useEffect } from 'react';
 import {
   Boxes,
   Plus,
-  ArrowDownUp,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
   Search,
-  Filter,
   History,
   TrendingDown,
   TrendingUp,
   Trash2,
-  Zap,
   Edit2,
   Calendar,
   GripVertical,
@@ -45,7 +39,6 @@ import { Pagination } from '@/components/Pagination';
 import { Button } from '@/components/Button';
 import { Badge } from '@/components/Badge';
 import {
-  TableContainer,
   Table,
   TableHeader,
   TableHead,
@@ -96,13 +89,13 @@ function SortableIngredientRow({
     <TableRow
       ref={setNodeRef}
       style={style}
-      className={isDragging ? 'bg-slate-100 shadow-md ring-1 ring-slate-300' : ''}
+      className={isDragging ? 'bg-stone-100 shadow-md ring-1 ring-stone-300' : 'hover:bg-stone-50/80 transition-colors'}
     >
       {/* Drag Handle */}
       <TableCell className="w-10 px-2 text-center whitespace-nowrap">
         <button
           type="button"
-          className="cursor-grab touch-none p-1.5 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100 active:cursor-grabbing transition-colors inline-flex items-center justify-center"
+          className="cursor-grab touch-none p-1.5 rounded-lg text-stone-400 hover:text-stone-800 hover:bg-stone-100 active:cursor-grabbing transition-colors inline-flex items-center justify-center"
           title="คลิกค้างเพื่อลากสลับลำดับ"
           {...attributes}
           {...listeners}
@@ -111,33 +104,33 @@ function SortableIngredientRow({
         </button>
       </TableCell>
 
-      <TableCell className="font-normal text-slate-800">
+      <TableCell className="font-normal text-stone-800">
         <div>
-          <div className="font-medium text-slate-900">{item.name}</div>
+          <div className="font-medium text-stone-900">{item.name}</div>
           {item.supplier && (
-            <div className="text-[11px] text-slate-400">{item.supplier}</div>
+            <div className="text-xs text-stone-400">{item.supplier}</div>
           )}
         </div>
       </TableCell>
 
       <TableCell>
-        <span className="text-slate-600 text-xs font-normal">{item.category}</span>
+        <span className="text-stone-600 text-xs font-normal">{item.category}</span>
       </TableCell>
 
       <TableCell className="text-center">
         {item.tracking_type === 'bulk_expense' ? (
-          <Badge variant="warning" size="sm">
-            ตัดรอบก้อน
-          </Badge>
+          <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-[#f5efe6] text-[#78350f] border border-[#e8ded0]">
+            เปิดใช้ทั้งแพ็ค
+          </span>
         ) : (
-          <Badge variant="neutral" size="sm">
-            วัตถุดิบหลัก
-          </Badge>
+          <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-700 border border-stone-200/80">
+            ตัดตามแก้ว
+          </span>
         )}
       </TableCell>
 
       <TableCell className="text-right">
-        <span className="px-2 py-0.5 rounded-full border border-slate-200 bg-slate-50/80 text-slate-500 text-xs font-mono inline-block font-normal">
+        <span className="px-2 py-0.5 rounded-full border border-stone-200 bg-stone-50 text-stone-600 text-xs font-mono tabular-nums inline-block font-normal">
           ฿{item.cost_per_unit}/{item.unit}
         </span>
       </TableCell>
@@ -145,19 +138,19 @@ function SortableIngredientRow({
       {/* Sleek Stock Level Tube */}
       <TableCell className="text-center w-36">
         <div className="flex flex-col gap-1 w-28 mx-auto">
-          <div className="flex items-center justify-between text-[10px] text-slate-400 font-normal">
+          <div className="flex items-center justify-between text-xs text-stone-400 font-mono tabular-nums font-normal">
             <span>{ratio}%</span>
             <span>{item.quantity}/{maxStock}</span>
           </div>
 
-          <div className="w-full bg-slate-100 border border-slate-200 h-1.5 rounded-full overflow-hidden relative">
+          <div className="w-full bg-stone-100 border border-stone-200 h-1.5 rounded-full overflow-hidden relative">
             <div
               className={`h-full rounded-full transition-all duration-300 ${
                 item.status === 'out'
                   ? 'bg-transparent'
                   : item.status === 'low'
-                  ? 'bg-amber-400'
-                  : 'bg-slate-700'
+                  ? 'bg-amber-500'
+                  : 'bg-stone-800'
               }`}
               style={{ width: `${Math.max(item.status === 'out' ? 0 : 4, ratio)}%` }}
             ></div>
@@ -165,34 +158,34 @@ function SortableIngredientRow({
         </div>
       </TableCell>
 
-      <TableCell className="text-right font-normal text-slate-700 text-xs font-mono">
+      <TableCell className="text-right font-normal text-stone-700 text-xs font-mono tabular-nums">
         {item.quantity} {item.unit}
       </TableCell>
-      <TableCell className="text-right text-slate-400 font-normal text-xs font-mono">
+      <TableCell className="text-right text-stone-400 font-normal text-xs font-mono tabular-nums">
         {item.reorder_point} {item.unit}
       </TableCell>
       <TableCell className="text-center">
         {item.status === 'normal' && (
-          <Badge variant="outline" size="sm">
+          <Badge variant="outline" size="sm" className="border-stone-200 text-stone-700">
             ปกติ
           </Badge>
         )}
         {item.status === 'low' && (
-          <Badge variant="warning" size="sm">
+          <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-[#fef3c7] text-[#92400e] border border-[#fde68a]">
             ใกล้หมด
-          </Badge>
+          </span>
         )}
         {item.status === 'out' && (
-          <Badge variant="danger" size="sm">
+          <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
             สต็อกหมด
-          </Badge>
+          </span>
         )}
       </TableCell>
       <TableCell className="text-center">
         <div className="flex items-center justify-center gap-1.5">
           <button
             onClick={() => onOpenEdit(item)}
-            className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            className="p-1.5 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-100 transition-colors cursor-pointer"
             title="แก้ไขข้อมูลวัตถุดิบ"
           >
             <Edit2 className="w-3.5 h-3.5" />
@@ -201,13 +194,13 @@ function SortableIngredientRow({
             variant="outline"
             size="sm"
             onClick={() => onAdjust(item)}
-            className="h-7 px-2.5 text-[11px] font-normal"
+            className="h-7 px-2.5 text-xs font-normal border-stone-200 text-stone-700 hover:bg-stone-50"
           >
             ปรับสต็อก
           </Button>
           <button
             onClick={() => onDelete(item.id, item.name)}
-            className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+            className="p-1.5 text-stone-400 hover:text-rose-600 rounded-lg hover:bg-stone-100 transition-colors cursor-pointer"
             title="ลบรายการ"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -219,7 +212,7 @@ function SortableIngredientRow({
 }
 
 export default function StockPage() {
-  const { ingredients, movements, addIngredient, updateIngredient, deleteIngredient, adjustStock, bulkUseIngredient, reorderIngredients, isLoading } = useStock();
+  const { ingredients, movements, addIngredient, updateIngredient, deleteIngredient, adjustStock, reorderIngredients, isLoading } = useStock();
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<'inventory' | 'inbound' | 'movements'>('inventory');
@@ -425,52 +418,52 @@ export default function StockPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-[#f8fafc]">
+    <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
       <Topbar
         title="จัดการสต็อกวัตถุดิบ (Stock Management)"
         subtitle="ควบคุมระดับสต็อก จุดสั่งซื้อซ้ำ (Reorder Point) และประวัติการเคลื่อนไหว"
       />
 
-      <main className="p-6 md:p-8 space-y-5 max-w-7xl mx-auto w-full">
+      <main className="p-4 sm:p-6 lg:p-8 space-y-5 max-w-7xl mx-auto w-full">
         {/* Navigation Sub-tabs & Action buttons */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-full border border-slate-200">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-1 p-1 bg-stone-100 rounded-xl border border-stone-200/80 overflow-x-auto no-scrollbar max-w-full">
             <button
               onClick={() => setActiveTab('inventory')}
-              className={`px-4 py-1.5 rounded-full text-xs transition-all flex items-center gap-2 cursor-pointer ${
+              className={`h-9 px-3.5 rounded-lg text-xs transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
                 activeTab === 'inventory'
-                  ? 'bg-white text-slate-900 border border-slate-300 font-medium shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-900 font-normal'
+                  ? 'bg-white text-stone-900 border border-stone-200 font-semibold shadow-2xs'
+                  : 'text-stone-600 hover:text-stone-900 font-medium'
               }`}
             >
               <Boxes className="w-3.5 h-3.5" />
               <span>วัตถุดิบคงเหลือ</span>
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 text-slate-600 font-normal">
+              <span className="px-1.5 py-0.2 rounded-full text-xs bg-stone-200 text-stone-700 font-mono tabular-nums font-medium">
                 {ingredients.length}
               </span>
             </button>
             <button
               onClick={() => setActiveTab('inbound')}
-              className={`px-4 py-1.5 rounded-full text-xs transition-all flex items-center gap-2 cursor-pointer ${
+              className={`h-9 px-3.5 rounded-lg text-xs transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
                 activeTab === 'inbound'
-                  ? 'bg-white text-emerald-800 border border-emerald-300 font-medium shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-900 font-normal'
+                  ? 'bg-white text-stone-900 border border-stone-200 font-semibold shadow-2xs'
+                  : 'text-stone-600 hover:text-stone-900 font-medium'
               }`}
             >
-              <FileCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <FileCheck className="w-3.5 h-3.5 text-stone-700" />
               <span>ตรวจสอบ & รับเข้าจากบิล</span>
               {pendingReceiptsCount > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-emerald-600 text-white font-medium shadow-2xs">
+                <span className="px-1.5 py-0.5 rounded-full text-xs bg-stone-900 text-white font-mono tabular-nums font-medium shadow-2xs">
                   {pendingReceiptsCount} บิลใหม่
                 </span>
               )}
             </button>
             <button
               onClick={() => setActiveTab('movements')}
-              className={`px-4 py-1.5 rounded-full text-xs transition-all flex items-center gap-2 cursor-pointer ${
+              className={`h-9 px-3.5 rounded-lg text-xs transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
                 activeTab === 'movements'
-                  ? 'bg-white text-slate-900 border border-slate-300 font-medium shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-900 font-normal'
+                  ? 'bg-white text-stone-900 border border-stone-200 font-semibold shadow-2xs'
+                  : 'text-stone-600 hover:text-stone-900 font-medium'
               }`}
             >
               <History className="w-3.5 h-3.5" />
@@ -481,9 +474,9 @@ export default function StockPage() {
           {activeTab === 'inventory' && (
             <Button
               onClick={handleOpenCreate}
-              icon={<Plus className="w-3.5 h-3.5" />}
-              size="sm"
-              className="shrink-0 whitespace-nowrap"
+              icon={<Plus className="w-4 h-4" />}
+              size="md"
+              className="shrink-0 whitespace-nowrap shadow-xs w-full sm:w-auto bg-stone-900 text-white hover:bg-stone-800 rounded-xl"
             >
               เพิ่มวัตถุดิบใหม่
             </Button>
@@ -492,19 +485,19 @@ export default function StockPage() {
 
         {activeTab === 'inventory' && (
           /* Inventory Table View */
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+          <div className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs overflow-hidden">
             {/* Filter Bar */}
-            <div className="p-3.5 border-b border-slate-100 bg-white flex flex-col sm:flex-row items-center justify-between gap-3">
-              {/* Date / Category Pill Indicator */}
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs text-slate-600 shadow-2xs w-full sm:w-auto">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span className="font-normal">วัตถุดิบทั้งหมด ({filteredIngredients.length} รายการ)</span>
+            <div className="p-3.5 border-b border-stone-100 bg-white flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              {/* Count Indicator */}
+              <div className="h-10 inline-flex items-center gap-2 px-3.5 rounded-xl border border-stone-200/80 bg-stone-50/50 text-xs text-stone-600 shadow-2xs w-full sm:w-auto shrink-0">
+                <Calendar className="w-3.5 h-3.5 text-stone-400" />
+                <span className="font-medium">วัตถุดิบทั้งหมด (<span className="font-mono tabular-nums font-bold">{filteredIngredients.length}</span> รายการ)</span>
               </div>
 
-              <div className="flex items-center gap-2.5 w-full sm:w-auto">
+              <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full sm:w-auto">
                 {/* Search Box */}
-                <div className="relative w-full sm:w-60">
-                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <div className="relative w-full sm:w-64">
+                  <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     type="text"
                     placeholder="ค้นหาชื่อวัตถุดิบ..."
@@ -513,7 +506,7 @@ export default function StockPage() {
                       setSearch(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl bg-white border border-slate-200 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-slate-400 transition-colors font-normal"
+                    className="h-10 w-full pl-9 pr-3 text-xs sm:text-sm rounded-xl bg-white border border-stone-200/90 text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-stone-400 transition-colors font-normal shadow-2xs"
                   />
                 </div>
 
@@ -530,9 +523,9 @@ export default function StockPage() {
                     { value: 'low', label: 'ใกล้หมด (Low Stock)' },
                     { value: 'out', label: 'หมดแล้ว (Out of Stock)' },
                   ]}
-                  size="sm"
+                  size="md"
                   className="w-full sm:w-44"
-                  buttonClassName="rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-normal"
+                  buttonClassName="border-stone-200/90 bg-white hover:bg-stone-50 text-stone-700 shadow-2xs rounded-xl"
                 />
               </div>
             </div>
@@ -547,19 +540,19 @@ export default function StockPage() {
               >
                 <Table>
                   <TableHeader>
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead className="w-10 px-2 text-center whitespace-nowrap text-slate-400 font-normal text-xs" title="ลากเพื่อสลับลำดับ">
+                    <TableRow className="hover:bg-transparent border-b border-stone-200">
+                      <TableHead className="w-10 px-2 text-center whitespace-nowrap text-stone-400 font-normal text-xs" title="ลากเพื่อสลับลำดับ">
                         ย้าย
                       </TableHead>
-                      <TableHead className="whitespace-nowrap">ชื่อวัตถุดิบ</TableHead>
-                      <TableHead className="whitespace-nowrap">หมวดหมู่</TableHead>
-                      <TableHead className="text-center whitespace-nowrap">การตัดสต็อก</TableHead>
-                      <TableHead className="text-right whitespace-nowrap">ต้นทุน/หน่วย</TableHead>
-                      <TableHead className="text-center w-36 whitespace-nowrap">ระดับสต็อก</TableHead>
-                      <TableHead className="text-right whitespace-nowrap">คงเหลือ</TableHead>
-                      <TableHead className="text-right whitespace-nowrap">จุดสั่งซื้อ</TableHead>
-                      <TableHead className="text-center whitespace-nowrap">สถานะ</TableHead>
-                      <TableHead className="text-center whitespace-nowrap w-28">จัดการ</TableHead>
+                      <TableHead className="whitespace-nowrap text-stone-900 font-semibold">ชื่อวัตถุดิบ</TableHead>
+                      <TableHead className="whitespace-nowrap text-stone-900 font-semibold">หมวดหมู่</TableHead>
+                      <TableHead className="text-center whitespace-nowrap text-stone-900 font-semibold">การตัดสต็อก</TableHead>
+                      <TableHead className="text-right whitespace-nowrap text-stone-900 font-semibold">ต้นทุน/หน่วย</TableHead>
+                      <TableHead className="text-center w-36 whitespace-nowrap text-stone-900 font-semibold">ระดับสต็อก</TableHead>
+                      <TableHead className="text-right whitespace-nowrap text-stone-900 font-semibold">คงเหลือ</TableHead>
+                      <TableHead className="text-right whitespace-nowrap text-stone-900 font-semibold">จุดสั่งซื้อ</TableHead>
+                      <TableHead className="text-center whitespace-nowrap text-stone-900 font-semibold">สถานะ</TableHead>
+                      <TableHead className="text-center whitespace-nowrap w-28 text-stone-900 font-semibold">จัดการ</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -601,7 +594,7 @@ export default function StockPage() {
             </div>
 
             {/* Pagination: only displays if items > 8 */}
-            <div className="p-3 border-t border-slate-100">
+            <div className="p-3 border-t border-stone-100">
               <Pagination
                 currentPage={currentPage}
                 totalItems={filteredIngredients.length}
@@ -619,63 +612,67 @@ export default function StockPage() {
 
         {/* Movement History Log View */}
         {activeTab === 'movements' && (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-5 space-y-3">
-            <h3 className="font-normal text-slate-800 text-sm flex items-center gap-2">
-              <History className="w-4 h-4 text-slate-500" />
-              บันทึกประวัติการปรับสต็อก
+          <div className="bg-white rounded-2xl border border-stone-200 shadow-2xs p-5 space-y-3">
+            <h3 className="font-semibold text-stone-900 text-sm flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-stone-100 border border-stone-200/80 flex items-center justify-center text-stone-700 shrink-0">
+                <History className="w-4 h-4" />
+              </div>
+              <span>บันทึกประวัติการปรับสต็อก</span>
             </h3>
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead>วัน-เวลา</TableHead>
-                    <TableHead>วัตถุดิบ</TableHead>
-                    <TableHead>ประเภท</TableHead>
-                    <TableHead className="text-right">จำนวนที่ปรับ</TableHead>
-                    <TableHead className="text-right">คงเหลือสุทธิ</TableHead>
-                    <TableHead>หมายเหตุ / เหตุผล</TableHead>
-                    <TableHead>ผู้บันทึก</TableHead>
+                  <TableRow className="hover:bg-transparent border-b border-stone-200">
+                    <TableHead className="text-stone-900 font-semibold">วัน-เวลา</TableHead>
+                    <TableHead className="text-stone-900 font-semibold">วัตถุดิบ</TableHead>
+                    <TableHead className="text-stone-900 font-semibold">ประเภท</TableHead>
+                    <TableHead className="text-right text-stone-900 font-semibold">จำนวนที่ปรับ</TableHead>
+                    <TableHead className="text-right text-stone-900 font-semibold">คงเหลือสุทธิ</TableHead>
+                    <TableHead className="text-stone-900 font-semibold">หมายเหตุ / เหตุผล</TableHead>
+                    <TableHead className="text-stone-900 font-semibold">ผู้บันทึก</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {movements.map((mov) => (
-                    <TableRow key={mov.id}>
-                      <TableCell className="text-slate-400 font-mono text-[11px]">{mov.created_at}</TableCell>
-                      <TableCell className="font-normal text-slate-800">{mov.ingredient_name}</TableCell>
+                    <TableRow key={mov.id} className="hover:bg-stone-50/80 transition-colors">
+                      <TableCell className="text-stone-500 font-mono tabular-nums text-xs">{mov.created_at}</TableCell>
+                      <TableCell className="font-medium text-stone-900">{mov.ingredient_name}</TableCell>
                       <TableCell>
                         {mov.type === 'in' && (
-                          <Badge variant="neutral" size="sm" icon={<TrendingUp className="w-3 h-3 text-slate-500" />}>
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-700 border border-stone-200">
+                            <TrendingUp className="w-3 h-3 text-stone-600" />
                             รับเข้า
-                          </Badge>
+                          </span>
                         )}
                         {mov.type === 'out' && (
-                          <Badge variant="outline" size="sm" icon={<TrendingDown className="w-3 h-3 text-slate-400" />}>
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-stone-50 text-stone-600 border border-stone-200">
+                            <TrendingDown className="w-3 h-3 text-stone-400" />
                             ตัดขาย (POS)
-                          </Badge>
+                          </span>
                         )}
                         {mov.type === 'waste' && (
-                          <Badge variant="warning" size="sm">
+                          <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200">
                             ของเสีย/ทิ้ง
-                          </Badge>
+                          </span>
                         )}
                         {mov.type === 'adjust' && (
-                          <Badge variant="neutral" size="sm">
+                          <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-[#f5efe6] text-[#78350f] border border-[#e8ded0]">
                             ปรับยอดนับสต็อก
-                          </Badge>
+                          </span>
                         )}
                       </TableCell>
                       <TableCell
-                        className={`text-right font-mono font-normal ${
-                          mov.quantity > 0 ? 'text-slate-700' : 'text-slate-500'
+                        className={`text-right font-mono tabular-nums text-xs font-medium ${
+                          mov.quantity > 0 ? 'text-stone-800' : 'text-stone-500'
                         }`}
                       >
                         {mov.quantity > 0 ? `+${mov.quantity}` : mov.quantity} {mov.unit}
                       </TableCell>
-                      <TableCell className="text-right font-mono font-normal text-slate-600">
+                      <TableCell className="text-right font-mono tabular-nums text-xs text-stone-600 font-medium">
                         {mov.remaining_quantity} {mov.unit}
                       </TableCell>
-                      <TableCell className="text-slate-500 font-normal">{mov.note || '-'}</TableCell>
-                      <TableCell className="text-slate-400 font-normal">{mov.staff_name || '-'}</TableCell>
+                      <TableCell className="text-stone-600 font-normal text-xs">{mov.note || '-'}</TableCell>
+                      <TableCell className="text-stone-500 font-normal text-xs">{mov.staff_name || '-'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

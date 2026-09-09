@@ -16,11 +16,11 @@ export const StaffTableView: React.FC<StaffTableViewProps> = ({
   onDelete,
 }) => {
   return (
-    <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-3xl border border-stone-200/90 shadow-xs overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-transparent border-b border-slate-200 text-sm font-semibold text-slate-900">
+            <tr className="bg-stone-50/50 border-b border-stone-200 text-xs font-semibold text-stone-900">
               <th className="py-4 px-6 font-semibold whitespace-nowrap">พนักงาน (Staff)</th>
               <th className="py-4 px-6 font-semibold whitespace-nowrap">อีเมล (Email)</th>
               <th className="py-4 px-6 font-semibold whitespace-nowrap">สังกัดร้านค้า (Store)</th>
@@ -30,28 +30,28 @@ export const StaffTableView: React.FC<StaffTableViewProps> = ({
               <th className="py-4 px-6 text-right font-semibold whitespace-nowrap w-24">จัดการ</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 text-xs">
+          <tbody className="divide-y divide-stone-100 text-xs">
             {staffList.map((staff) => {
               const isMe = currentUserId === staff.id;
 
               return (
-                <tr key={staff.id} className="hover:bg-slate-50/60 transition-colors">
+                <tr key={staff.id} className="hover:bg-stone-50/70 transition-colors">
                   {/* Name & Avatar */}
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white font-normal flex items-center justify-center text-xs shadow-sm">
+                      <div className="w-9 h-9 rounded-xl bg-stone-900 text-white font-normal flex items-center justify-center text-xs shadow-xs font-mono uppercase">
                         {staff.name.slice(0, 2)}
                       </div>
                       <div>
-                        <div className="font-normal text-slate-800 flex items-center gap-1.5">
+                        <div className="font-medium text-stone-900 flex items-center gap-1.5 text-xs">
                           {staff.name}
                           {isMe && (
-                            <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-normal">
+                            <span className="text-xs bg-stone-100 text-stone-600 px-1.5 py-0.5 rounded font-normal">
                               คุณ
                             </span>
                           )}
                         </div>
-                        <div className="text-[10px] text-slate-400 font-mono truncate max-w-[150px]">
+                        <div className="text-xs text-stone-400 font-mono truncate max-w-[150px]">
                           ID: {staff.id}
                         </div>
                       </div>
@@ -59,9 +59,9 @@ export const StaffTableView: React.FC<StaffTableViewProps> = ({
                   </td>
 
                   {/* Email */}
-                  <td className="py-4 px-6 text-slate-600 font-normal">
+                  <td className="py-4 px-6 text-stone-600 font-normal">
                     <div className="flex items-center gap-1.5">
-                      <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <Mail className="w-3.5 h-3.5 text-stone-400 shrink-0" />
                       <span>{staff.email}</span>
                     </div>
                   </td>
@@ -73,15 +73,15 @@ export const StaffTableView: React.FC<StaffTableViewProps> = ({
                         {staff.stores.map((st) => (
                           <span
                             key={st.id}
-                            className="text-[10px] font-normal px-2 py-0.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 flex items-center gap-1"
+                            className="text-xs font-normal px-2 py-0.5 rounded-lg bg-stone-100 text-stone-700 border border-stone-200/80 flex items-center gap-1"
                           >
-                            <Store className="w-3 h-3 text-slate-500" />
+                            <Store className="w-3 h-3 text-stone-500" />
                             {st.name}
                           </span>
                         ))}
                       </div>
                     ) : (
-                      <span className="text-[10px] text-slate-400 italic">ทุกร้าน (ส่วนกลาง)</span>
+                      <span className="text-xs text-stone-400 italic">ทุกร้าน (ส่วนกลาง)</span>
                     )}
                   </td>
 
@@ -91,14 +91,12 @@ export const StaffTableView: React.FC<StaffTableViewProps> = ({
                       {staff.roles.map((r) => (
                         <span
                           key={r.id || r.name}
-                          className={`text-[10px] font-normal px-2 py-0.5 rounded-lg flex items-center gap-1 ${
+                          className={`text-xs font-normal px-2 py-0.5 rounded-lg flex items-center gap-1 ${
                             r.name === 'admin'
-                              ? 'bg-slate-100 text-slate-800 border border-slate-200'
+                              ? 'bg-stone-100 text-stone-800 border border-stone-200'
                               : r.name === 'manager'
-                              ? 'bg-sky-50 text-sky-700 border border-sky-200'
-                              : r.name === 'chef'
-                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                              : 'bg-purple-50 text-purple-700 border border-purple-200'
+                              ? 'bg-[#f5efe6] text-[#78350f] border border-[#e8ded0]'
+                              : 'bg-stone-50 text-stone-700 border border-stone-200/70'
                           }`}
                         >
                           <Shield className="w-3 h-3" />
@@ -109,15 +107,15 @@ export const StaffTableView: React.FC<StaffTableViewProps> = ({
                   </td>
 
                   {/* Permissions count */}
-                  <td className="py-4 px-6 text-slate-500 font-normal">
-                    <span className="inline-flex items-center gap-1 text-[11px] font-normal bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full">
-                      <Key className="w-3 h-3 text-slate-500" />
+                  <td className="py-4 px-6 text-stone-500 font-normal">
+                    <span className="inline-flex items-center gap-1 text-xs font-mono tabular-nums bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full">
+                      <Key className="w-3 h-3 text-stone-500" />
                       {staff.permissions.length} สิทธิ์
                     </span>
                   </td>
 
                   {/* Created At */}
-                  <td className="py-4 px-6 text-slate-400 text-[11px]">
+                  <td className="py-4 px-6 text-stone-400 text-xs font-mono tabular-nums">
                     {new Date(staff.created_at).toLocaleDateString('th-TH', {
                       day: 'numeric',
                       month: 'short',
@@ -131,7 +129,7 @@ export const StaffTableView: React.FC<StaffTableViewProps> = ({
                       <button
                         onClick={() => onEdit(staff)}
                         title="แก้ไขสิทธิ์"
-                        className="p-2 rounded-xl text-slate-400 hover:text-[#4fb0a5] hover:bg-[#4fb0a5]/10 transition-colors cursor-pointer"
+                        className="p-2 rounded-xl text-stone-400 hover:text-stone-900 hover:bg-stone-100 transition-colors cursor-pointer"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
@@ -141,8 +139,8 @@ export const StaffTableView: React.FC<StaffTableViewProps> = ({
                         title={isMe ? 'ไม่สามารถลบตัวเองได้' : 'ลบพนักงาน'}
                         className={`p-2 rounded-xl transition-colors cursor-pointer ${
                           isMe
-                            ? 'text-slate-200 cursor-not-allowed'
-                            : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
+                            ? 'text-stone-200 cursor-not-allowed'
+                            : 'text-stone-400 hover:text-rose-600 hover:bg-stone-100'
                         }`}
                       >
                         <Trash2 className="w-4 h-4" />

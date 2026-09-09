@@ -114,11 +114,11 @@ export const Dropdown: React.FC<DropdownProps> = ({
     };
   }, [isOpen]);
 
-  // Size styling
+  // Size styling matching standardized Button and Input heights
   const sizeClasses = {
-    sm: 'py-1.5 px-3 text-xs rounded-xl',
-    md: 'py-2.5 px-3.5 text-xs rounded-2xl',
-    lg: 'py-3 px-4 text-sm rounded-2xl',
+    sm: 'h-9 px-3 text-xs rounded-xl',
+    md: 'h-10 px-3.5 text-xs sm:text-sm rounded-xl',
+    lg: 'h-11 px-4 text-sm rounded-xl',
   };
 
   return (
@@ -129,8 +129,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
         type="button"
         disabled={disabled}
         onClick={handleToggle}
-        className={`w-full flex items-center justify-between gap-2 skeuo-btn-secondary focus:outline-none focus:ring-2 focus:ring-slate-900/10 transition-all cursor-pointer font-normal disabled:opacity-50 disabled:cursor-not-allowed ${sizeClasses[size]} ${
-          isOpen ? 'border-slate-400 ring-2 ring-slate-900/10' : ''
+        className={`w-full flex items-center justify-between gap-2 bg-white border border-stone-200/90 text-stone-800 rounded-xl hover:bg-stone-50/80 focus:outline-none focus:ring-2 focus:ring-stone-900/10 transition-all cursor-pointer font-normal disabled:opacity-50 disabled:cursor-not-allowed ${sizeClasses[size]} ${
+          isOpen ? 'border-stone-400 ring-2 ring-stone-900/10' : ''
         } ${buttonClassName}`}
       >
         <div className="flex items-center gap-2 truncate">
@@ -138,8 +138,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
           <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
         </div>
         <ChevronDown
-          className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
-            isOpen ? 'rotate-180 text-slate-800' : ''
+          className={`w-4 h-4 text-stone-400 shrink-0 transition-transform duration-200 ${
+            isOpen ? 'rotate-180 text-stone-800' : ''
           }`}
         />
       </button>
@@ -158,7 +158,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
               width: `${menuPosition.width}px`,
               zIndex: 99999,
             }}
-            className="skeuo-card rounded-2xl py-1.5 animate-in fade-in zoom-in-95 duration-100 max-h-60 overflow-y-auto no-scrollbar shadow-[0_16px_36px_rgba(15,23,42,0.15)] border border-slate-200/90 bg-white"
+            className="rounded-2xl py-1.5 animate-in fade-in zoom-in-95 duration-100 max-h-60 overflow-y-auto no-scrollbar shadow-[0_16px_36px_rgba(28,25,23,0.12)] border border-stone-200/90 bg-white"
           >
             {normalizedOptions.map((opt) => {
               const isSelected = String(opt.value) === String(value);
@@ -173,8 +173,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
                   }}
                   className={`w-full flex items-center justify-between px-3.5 py-2 text-xs text-left transition-colors cursor-pointer ${
                     isSelected
-                      ? 'bg-slate-100 text-slate-900 font-medium'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-normal'
+                      ? 'bg-stone-100 text-stone-900 font-medium'
+                      : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900 font-normal'
                   }`}
                 >
                   <div className="flex items-center gap-2 truncate">
@@ -183,11 +183,11 @@ export const Dropdown: React.FC<DropdownProps> = ({
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0 ml-2">
                     {opt.badge && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500">
+                      <span className="text-xs px-1.5 py-0.5 rounded-md bg-stone-100 text-stone-500">
                         {opt.badge}
                       </span>
                     )}
-                    {isSelected && <Check className="w-3.5 h-3.5 text-slate-900 shrink-0" />}
+                    {isSelected && <Check className="w-3.5 h-3.5 text-stone-900 shrink-0" />}
                   </div>
                 </button>
               );
