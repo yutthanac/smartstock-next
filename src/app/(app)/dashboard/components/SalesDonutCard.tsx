@@ -34,7 +34,7 @@ export const SalesDonutCard: React.FC<SalesDonutCardProps> = ({
           color: '#1c1917', // Espresso Black
         },
         {
-          label: 'ต้นทุนวัตถุดิบ',
+          label: 'ต้นทุนวัตถุดิบ', 
           value: Math.max(0, totalCost),
           color: '#d6d3d1', // Warm Latte Stone
         },

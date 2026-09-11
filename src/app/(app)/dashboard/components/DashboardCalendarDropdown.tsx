@@ -36,9 +36,10 @@ export const DashboardCalendarDropdown: React.FC = () => {
   const revenueMap = useMemo(() => {
     const map: Record<string, { sales: number; orderCount: number }> = {};
 
-    // 1. Real orders from useStock
+    // 1. Real orders from useStock (exclude cancelled orders)
     if (orders && orders.length > 0) {
       orders.forEach((o) => {
+        if (o.status === 'cancelled') return;
         const d = o.created_at ? new Date(o.created_at) : null;
         if (d && !isNaN(d.getTime())) {
           const key = format(d, 'yyyy-MM-dd');

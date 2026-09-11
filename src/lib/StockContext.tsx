@@ -27,6 +27,8 @@ interface StockContextType {
   reorderIngredients: (orderedIds: number[]) => Promise<boolean>;
   reorderMenuItems: (orderedIds: number[]) => Promise<boolean>;
   createOrder: (tableNo: string, items: { menu_item_id: number; quantity: number; note?: string; options?: any }[], paymentMethod: 'cash' | 'qr_promptpay' | 'credit_card') => Promise<Order | null>;
+  cancelOrder: (orderId: number) => Promise<boolean>;
+  updateOrder: (orderId: number, data: { table_no?: string; payment_method?: 'cash' | 'qr_promptpay' | 'credit_card'; status?: 'completed' | 'cancelled' | 'pending'; items?: { id: number; note?: string }[] }) => Promise<boolean>;
 }
 
 const StockContext = createContext<StockContextType | undefined>(undefined);
@@ -484,6 +486,42 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const cancelOrder = async (orderId: number): Promise<boolean> => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/pos/orders/${orderId}/cancel`, {
+        method: 'POST',
+        headers: apiHeaders({ 'Content-Type': 'application/json' }),
+      });
+      if (res.ok) {
+        await fetchData();
+        return true;
+      }
+    } catch (e) {
+      console.error('Error cancelling order:', e);
+    }
+    return false;
+  };
+
+  const updateOrder = async (
+    orderId: number,
+    data: { table_no?: string; payment_method?: 'cash' | 'qr_promptpay' | 'credit_card'; status?: 'completed' | 'cancelled' | 'pending'; items?: { id: number; note?: string }[] }
+  ): Promise<boolean> => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/pos/orders/${orderId}`, {
+        method: 'PUT',
+        headers: apiHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        await fetchData();
+        return true;
+      }
+    } catch (e) {
+      console.error('Error updating order:', e);
+    }
+    return false;
+  };
+
   return (
     <StockContext.Provider
       value={{
@@ -509,6 +547,8 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
         reorderIngredients,
         reorderMenuItems,
         createOrder,
+        cancelOrder,
+        updateOrder,
       }}
     >
       {children}

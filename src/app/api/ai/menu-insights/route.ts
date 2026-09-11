@@ -74,7 +74,13 @@ ${ingredients.slice(0, 15).map((ing: any) => `  - ${ing.name}: เหลือ $
       },
     };
 
-    const modelsToTry = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+    const modelsToTry = [
+      'gemini-3.5-flash-lite',
+      'gemini-3.5-flash',
+      'gemini-flash-latest',
+      'gemini-flash-lite-latest',
+      'gemini-3.6-flash'
+    ];
     let lastError = '';
     let responseData: any = null;
 
@@ -117,22 +123,35 @@ ${ingredients.slice(0, 15).map((ing: any) => `  - ${ing.name}: เหลือ $
 }
 
 function generateFallbackInsights(menus: any[], ingredients: any[], dashboardKPI: any, note?: string) {
+  if (!menus || menus.length === 0) {
+    return NextResponse.json({
+      source: 'rule_engine',
+      note: 'ยังไม่มีข้อมูลเมนูและวัตถุดิบในระบบ กรุณาเพิ่มเมนูก่อนเริ่มวิเคราะห์',
+      summary: {
+        headline: 'ยังไม่มีข้อมูลเมนูและยอดขายสำหรับนำมาประมวลผล',
+        health_score: 0,
+        key_opportunities: ['เริ่มเพิ่มเมนูและสูตรวัตถุดิบ (BOM) เพื่อให้ AI ประมวลผลวิเคราะห์ต้นทุน'],
+      },
+      menu_recommendations: [],
+      new_recipe_ideas: [],
+      cost_saving_tips: [
+        'ตั้งเกณฑ์จุดสั่งซื้อวัตถุดิบ (Reorder Point) ตามสถิติยอดขายจริง ไม่สั่งตุนเกินความจำเป็น',
+        'ตรวจเช็กสต็อกวัตถุดิบสม่ำเสมอเพื่อป้องกันสินค้าหมดอายุ',
+      ],
+    });
+  }
+
   const sortedByMargin = [...menus].sort((a, b) => (b.margin_percent || 0) - (a.margin_percent || 0));
-  const topMargin = sortedByMargin[0] || { name: 'เอสเพรสโซ่เย็น', category: 'Coffee', margin_percent: 68, order_count: 85 };
-  const secondMargin = sortedByMargin[1] || { name: 'ชาเขียวมัทฉะลาเต้', category: 'Tea', margin_percent: 62, order_count: 64 };
-  const slowMover = [...menus].sort((a, b) => (a.order_count || 0) - (b.order_count || 0))[0] || {
-    name: 'อเมริกาโน่น้ำส้ม',
-    category: 'Coffee',
-    margin_percent: 55,
-    order_count: 12,
-  };
+  const topMargin = sortedByMargin[0];
+  const secondMargin = sortedByMargin[1] || topMargin;
+  const slowMover = [...menus].sort((a, b) => (a.order_count || 0) - (b.order_count || 0))[0] || topMargin;
 
   return NextResponse.json({
     source: 'rule_engine',
     note: note || 'วิเคราะห์ด้วยระบบประมวลผลสถิติภายในร้าน (Local Business Rule Engine)',
     summary: {
-      headline: `พอร์ตโฟลิโอเมนูมีอัตรากำไรเฉลี่ยอยู่ที่ ${dashboardKPI.profit_margin || 62}% โดยเมนูหมวดเครื่องดื่มเป็นตัวขับเคลื่อนมาร์จิ้นหลัก`,
-      health_score: 88,
+      headline: `พอร์ตโฟลิโอเมนูมีอัตรากำไรเฉลี่ยอยู่ที่ ${dashboardKPI.profit_margin || 0}%`,
+      health_score: 85,
       key_opportunities: [
         `ผลักดันการขายแบบ Bundle สำหรับเมนู "${topMargin.name}" เพื่อเพิ่มมูลค่าตะกร้าต่อบิล`,
         `ทบทวนสัดส่วนการใช้วัตถุดิบในเมนูที่ยอดสั่งน้อยลง เพื่อลดของเสียค้างสต็อก`,
@@ -142,36 +161,25 @@ function generateFallbackInsights(menus: any[], ingredients: any[], dashboardKPI
       {
         id: topMargin.id || 1,
         name: topMargin.name,
-        category: topMargin.category,
+        category: topMargin.category || 'ทั่วไป',
         strategy_type: 'high_margin',
-        order_count: topMargin.order_count || 85,
-        margin: Math.round(topMargin.margin_percent || 68),
+        order_count: topMargin.order_count || 0,
+        margin: Math.round(topMargin.margin_percent || 0),
         tag: 'มาร์จิ้นดีเยี่ยม',
-        insight: `มีอัตรากำไรสูงถึง ${Math.round(topMargin.margin_percent || 68)}% ควรกำหนดให้พนักงานหน้าร้านแนะนำเป็นเมนูเปิดบิล (Upselling)`,
-        action_step: 'จัดวางไว้ในจุดสายตาของเมนูบอร์ด หรือแนะนำคู่กับเบเกอรี่ประจำวัน',
+        insight: `มีอัตรากำไรสูงถึง ${Math.round(topMargin.margin_percent || 0)}% ควรกำหนดให้พนักงานหน้าร้านแนะนำเป็นเมนูเปิดบิล (Upselling)`,
+        action_step: 'จัดวางไว้ในจุดสายตาของเมนูบอร์ด หรือแนะนำคู่กับเมนูอื่น',
       },
-      {
+      ...(sortedByMargin.length > 1 ? [{
         id: secondMargin.id || 2,
         name: secondMargin.name,
-        category: secondMargin.category,
-        strategy_type: 'star',
-        order_count: secondMargin.order_count || 64,
-        margin: Math.round(secondMargin.margin_percent || 62),
+        category: secondMargin.category || 'ทั่วไป',
+        strategy_type: 'star' as const,
+        order_count: secondMargin.order_count || 0,
+        margin: Math.round(secondMargin.margin_percent || 0),
         tag: 'ดาวเด่นยอดนิยม',
         insight: 'ความถี่ในการสั่งซื้อสม่ำเสมอและทำกำไรได้ดีมาก เป็นเมนูหลักสร้างกระแสเงินสด',
         action_step: 'รักษามาตรฐานรสชาติ และใช้วัตถุดิบล็อตใหม่เสมอเพื่อคงคุณภาพ',
-      },
-      {
-        id: slowMover.id || 3,
-        name: slowMover.name,
-        category: slowMover.category,
-        strategy_type: 'promote',
-        order_count: slowMover.order_count || 12,
-        margin: Math.round(slowMover.margin_percent || 55),
-        tag: 'ควรดันยอดขาย',
-        insight: 'อัตรากำไรอยู่ในเกณฑ์มาตรฐานแต่ยอดสั่งยังต่ำกว่าเป้าหมาย อาจเป็นเพราะลูกค้ายังไม่เห็นจุดเด่น',
-        action_step: 'ทำโปรโมชัน "Happy Hour" หรือติดป้ายแนะนำหน้าร้านเพื่อกระตุ้นยอดทดลองสั่ง',
-      },
+      }] : []),
     ],
     new_recipe_ideas: [
       {

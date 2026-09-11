@@ -197,94 +197,126 @@
    - เพิ่มสถานะ Skeleton Loading ตอนดึงข้อมูลใน Dashboard, Stock (`/stock`), Menu (`/menu`), Orders (`/sales/orders`)
    - ปรับแต่ง Backend [DashboardController.php](file:///c:/meeting/smartsotck-backend/app/Http/Controllers/Api/DashboardController.php) รวบ 26 queries เหลือ 1 bulk query พร้อม eager loading ความเร็วตอบสนองเพิ่มขึ้นชัดเจน ไม่กระทบ business logic
 
+### [2026-09-11 - 2026-09-12] ปรับปรุงระบบ Real-Time Map Search, UI Polish & แผนงานอนาคต
+1. **ระบบค้นหาสถานที่และวิเคราะห์แผนที่แบบเรียลไทม์ (Interactive Map & Place Search)**:
+   - เพิ่มระบบค้นหาสถานที่ผ่าน OpenStreetMap / Nominatim API พร้อมพิกัดและปักหมุด
+   - ดึงข้อมูลร้านคู่แข่ง/ร้านใกล้เคียงในละแวกเพื่อนำมาใช้เป็นฐานวิเคราะห์
+   - พัฒนาคอมโพเนนต์ [InteractiveMapPicker.tsx](file:///c:/meeting/smartStock/src/components/InteractiveMapPicker.tsx) และหน้า [menu/ai-insights](file:///c:/meeting/smartStock/src/app/(app)/menu/ai-insights/page.tsx)
+2. **ขยายพื้นที่แสดงผล & ปรับ Typography Contrast**:
+   - ขยาย Layout หน้าจัดการสต็อกและ AI ให้โปร่ง กว้าง อ่านง่ายขึ้น
+   - สรุปและจัดระเบียบหน้า [worklog.md](file:///c:/meeting/smartStock/worklog.md) ให้พร้อมต่อยอดรอบถัดไป
+
 ---
 
 ## 📌 สรุปสถานะโครงการปัจจุบัน (Current System Status)
 - ✅ UI Theme: สะอาดตา มินิมอล โมโนโครม (Slate/Neutral) ผสานโทนอบอุ่นคาเฟ่ 60-30-10 ระดับ Enterprise
 - ✅ Component Standards: `Button.tsx`, `Badge.tsx`, `Table.tsx`, `Dropdown.tsx`, `Skeleton.tsx` และ shadcn `components/ui/` ใช้งานเป็นมาตรฐานหลัก 100%
-- ✅ Frontend Next.js 16 (Turbopack) & TypeScript ผ่านการทดสอบ `npm run build` สำเร็จ 100% (22 routes generated, 0 errors)
+- ✅ Frontend Next.js 16 (Turbopack) & TypeScript ผ่านการทดสอบ `npm run build` สำเร็จ 100%
 - ✅ Backend Laravel 11 API อัปเกรด Query Optimization พร้อม Eager Loading
 
 ---
 
-## 🚀 แผนการพัฒนารอบถัดไป (Upcoming Roadmap & Execution Plan)
+## 🚀 แผนการพัฒนารอบถัดไป (Upcoming Detailed Roadmap & Implementation Plan)
 
-### 🎯 ภาพรวมและเป้าหมายการพัฒนา (Development Objectives)
-รอบการพัฒนานี้มุ่งเน้นการปรับปรุงระบบคลังสต็อก (Stock Flow Refactor) ให้กระชับ ไม่ซ้ำซ้อน, เพิ่มพื้นที่การแสดงผลข้อมูล (Container Width Expansion) เพื่อแก้ปัญหาตารางบีบตัวอักษร, ยกระดับความคมชัดของข้อความในหน้าระบบวิเคราะห์ AI (Typography Contrast), และเคลียร์ข้อมูลจำลอง (Mock Data Cleanup) ในปฏิทินแดชบอร์ดให้คงไว้เฉพาะยอดขายจริง
+### 🎯 ภาพรวมและเป้าหมายหลัก (Core Objectives)
+รอบการพัฒนานี้มี 5 แกนงานสำคัญที่ต้องดำเนินการตามลำดับเพื่อความต่อเนื่องและป้องกันการลืม:
 
----
-
-### 📋 รายการงานและแผนปฏิบัติการแบบละเอียด (Detailed Action Plan)
-
-#### 1. ปรับปรุง Flow การรับเข้าสต็อก & ตัดแท็บ "ตรวจสอบ & รับเข้าจากบิล" ออกจากหน้าสต็อกหลัก
-- **ไฟล์เป้าหมาย**:
-  - [src/app/(app)/stock/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/page.tsx)
-  - [src/app/(app)/stock/purchase-orders/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/purchase-orders/page.tsx)
-  - [src/app/(app)/stock/components/ReceiptInboundTab.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/components/ReceiptInboundTab.tsx)
-- **สถานะและหลักการทำงานปัจจุบัน**:
-  - ในหน้า [purchase-orders/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/purchase-orders/page.tsx) มีระบบตรวจรับสินค้าและสแกนบิลที่สมบูรณ์แล้ว เมื่อกดปุ่ม **"อนุมัติและรับเข้าสต็อก"** ฟังก์ชัน `handleApproveAndStockIn` จะประมวลผลการรับเข้าสต็อกจริงทันที:
-    - วัตถุดิบเดิมที่มีในระบบ: ปรับยอดเข้าสต็อกด้วย `adjustStock(item.ingredient_id, 'in', item.quantity)` พร้อมอัปเดตต้นทุนล่าสุด `updateIngredient(..., { cost_per_unit })`
-    - วัตถุดิบใหม่: เพิ่มเข้าคลังด้วย `addIngredient(...)` ทันที
-    - บันทึกสถานะ PO เป็น `completed` พร้อมรูปถ่ายใบเสร็จ
-- **สิ่งที่จะดำเนินการในรอบถัดไป**:
-  - [x] **ตัดแท็บ `inbound` ออกจากหน้าหลัก**: นำตัวเลือกแท็บ `"ตรวจสอบ & รับเข้าจากบิล"` (ปุ่ม `activeTab === 'inbound'`) ออกจาก Navigation Tab Bar ใน [stock/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/page.tsx)
-  - [x] **ยุติการ Render `ReceiptInboundTab`**: นำการเรียกใช้ [ReceiptInboundTab.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/components/ReceiptInboundTab.tsx) ออกจาก [stock/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/page.tsx) เพื่อลดความซ้ำซ้อน เนื่องจากผู้ใช้จะบันทึกรับเข้าจากหน้าใบสั่งซื้อ/สแกนบิล หรือคีย์ข้อมูลเข้าโดยตรงจากเมนูนั้นเลย
-  - [x] **Cleanup State ที่ไม่จำเป็น**: ลบ state `pendingReceiptsCount` และการดึงข้อมูลนับจำนวนบิลที่ค้างอยู่
-  - [x] **คงเหลือ 2 แท็บหลักที่คมชัด**:
-    1. `inventory` (วัตถุดิบคงเหลือ - ตรวจสอบ, ลากเรียงลำดับ, แก้ไข, ลบ, ปรับยอดด่วน)
-    2. `movements` (ประวัติการปรับสต็อก - ตรวจสอบรายการเคลื่อนไหวเข้า/ออก/ของเสียย้อนหลัง)
+```
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                             SmartStock Upcoming Roadmap                          │
+├──────────────────────────────────────────────────────────────────────────────────┤
+│ 1. 📦 ตรวจนับสต็อกสิ้นวัน (End-of-Day Stock Audit / Re-check & Reconcile)       │
+│ 2. 🧾 หน้ารายงานยอดขาย: แสดงยอด Refund / บิลคืนเงิน & หักลบสุทธิ                 │
+│ 3. 🛡️ ปรับระบบจัดการสิทธิ์ (Role & Permission Separation) & Layout ใหม่          │
+│ 4. 🛒 ปรับ Layout หน้าซื้อของเข้าร้าน / ใบสั่งซื้อ (Purchase Orders UX Polish)    │
+│ 5. 🤖 AI ผสานข้อมูลแผนที่ (Map Competitors) + ข้อมูลการขายจริงในร้าน (Internal POS) │
+└──────────────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-#### 2. ขยายขนาด Container หน้าจัดการสต็อก ([stock/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/page.tsx))
-- **ปัญหาปัจจุบัน**:
-  - Container หลักถูกจำกัดด้วยคลาส `max-w-7xl` (1280px) ทำให้ตารางวัตถุดิบซึ่งมีจำนวนคอลัมน์เยอะมาก (Drag Handle, ชื่อวัตถุดิบ & ซัพพลายเออร์, หมวดหมู่, รูปแบบการตัดสต็อก, ต้นทุนต่อหน่วย, หลอด Ratio & ระดับสต็อก, คงเหลือ/จุดสั่งซื้อ, ปุ่มลัดเปิดใช้ 1 ชิ้น, ปุ่มแก้ไข/ลบ) เกิดการบีบอัดตัวอักษร (Text Squeeze) และตัดบรรทัดบ่อย
-- **แนวทางแก้ไข**:
-  - [x] ขยาย Wrapper จาก `max-w-7xl` เป็น `max-w-[1600px] mx-auto w-full` เพื่อให้ตารางใช้พื้นที่หน้าจอได้อย่างเต็มประสิทธิภาพ
-  - [x] จัดระเบียบส่วนหัวตารางและกล่องตัวกรอง (Filter & Search Bar) ให้มีความโปร่ง สบายตา เข้ากับสไตล์ Cafe Minimalist
+### 📋 รายละเอียดแผนปฏิบัติการทั้ง 5 ส่วน (Detailed Action Items)
+
+#### 1. 📦 แท็บรีเช็คสต็อกสิ้นวัน / ปิดกะ (End-of-Day Physical Stock Audit & Reconcile)
+> **เป้าหมาย**: ให้พนักงาน/เจ้าของร้านเดินนับวัตถุดิบจริงหลังปิดร้าน (หรือหลังจบคอร์ส) เพื่อเทียบกับตัวเลขในระบบ และบันทึกผลต่าง (Divergence / Loss / Variance) ได้อย่างรวดเร็ว
+
+* **Frontend ([src/app/(app)/stock/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/page.tsx))**:
+  - เพิ่มแท็บใหม่ในหน้า Stock: `audit` ("รีเช็คสต็อกสิ้นวัน / ตรวจนับ")
+  - ตารางตรวจนับวัตถุดิบ (Stock Audit Sheet):
+    - คอลัมน์: รหัส & ชื่อวัตถุดิบ | หมวดหมู่ | ยอดคงเหลือในระบบ (System Qty) | **ยอดนับจริง (Counted Qty - Input)** | ผลต่าง (Variance: + / -) | หมายเหตุสาเหตุ (เช่น ของเสีย, ทำหก, ลืมคีย์)
+    - รองรับการฟิลเตอร์เฉพาะหมวดหมู่ หรือเฉพาะวัตถุดิบหลัก (Strict BOM) ที่เน้นตรวจทุกวัน
+    - ปุ่ม **"⚡ ดึงยอดระบบเป็นค่าเริ่มต้น"** เพื่อให้คีย์เฉพาะตัวที่มีผลต่างได้เร็วขึ้น
+    - ปุ่ม **"ยืนยันและปรับยอดสต็อกจริง (Reconcile & Apply)"**: คำนวณส่วนต่างแล้วยิงปรับสต็อกอัตโนมัติ พร้อมลงบันทึก Movement Type เป็น `audit_adjustment`
+* **Backend ([smartsotck-backend](file:///c:/meeting/smartsotck-backend))**:
+  - เพิ่ม Endpoint `POST /api/ingredients/audit-reconcile` (รับ array ของ `{ ingredient_id, system_qty, counted_qty, note }`)
+  - บันทึกประวัติการกระทบยอดลงตาราง audit logs / stock movements พร้อมระบุ user_id ผู้ตรวจนับ
 
 ---
 
-#### 3. ปรับเฉดสีและความคมชัดตัวหนังสือในหน้า AI Menu Insights ([menu/ai-insights/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/menu/ai-insights/page.tsx))
-- **ปัญหาปัจจุบัน**:
-  - บางข้อความในหน้า AI Insights ใช้สีเทาจาง เช่น `text-stone-400` หรือ `text-stone-500` บนพื้นหลังที่คอนทราสต์ไม่พอ ทำให้อ่านยากเมื่อดูบนจอภาพทั่วไป
-- **แนวทางแก้ไข**:
-  - [x] **Executive Banner (แบนเนอร์สีเข้มบนสุด)**:
-    - ปรับปรุงข้อความคำอธิบายจาก `text-stone-300` เป็น `text-stone-200` ที่สว่าง คมชัด และอ่านง่ายขึ้น
-    - ปรับปรุง Badge ระบุโมเดล AI ให้ตัวอักษร `text-stone-100` สว่างคมชัด
-  - [x] **กล่องบทวิเคราะห์โอกาสเชิงกลยุทธ์ (Strategic Highlights)**:
-    - ปรับสีหัวข้อและข้อความในแต่ละการ์ดจาก `text-stone-700` เป็น `text-stone-800` / `text-stone-900`
-  - [x] **การ์ดเมนูแนะนำ (Existing Menu Recommendations)**:
-    - ปรับสีหมวดหมู่และยอดขายให้ชัดเจนขึ้น
-    - กล่องบทวิเคราะห์ (`bg-stone-50`): ปรับข้อความ `item.insight` ให้อยู่ในเฉด `text-stone-700` ที่เข้มพอเหมาะ และเน้น `text-stone-900` สำหรับแผนปฏิบัติการ
-  - [x] **ไอเดียเมนูใหม่ (New Recipe Ideas) & แนวทางลดของเสีย (Cost Saving Tips)**:
-    - ปรับสีตัวเลขต้นทุน กำไร และราคาแนะนำให้โดดเด่นด้วยฟอนต์โมโนโทนเข้ม
-    - ปรับสีรายการวัตถุดิบและเหตุผลที่ควรเปิดขายให้อ่านง่าย สบายตา
+#### 2. 🧾 หน้ารายงานยอดขาย: แสดงยอด Refund & รายละเอียดการคืนเงิน
+> **เป้าหมาย**: เพิ่มความโปร่งใสทางบัญชี ให้เห็นยอดขายรวม (Gross Sales), ยอดเงินที่ Refund/ยกเลิกบิล, และยอดขายสุทธิ (Net Sales)
+
+* **Frontend ([src/app/(app)/reports/sales/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/reports/sales/page.tsx))**:
+  - เพิ่ม KPI Card:
+    - **ยอดขายรวม (Gross Sales)**
+    - **ยอดเงินคืน/ยกเลิก (Total Refund / Voided)** (ตัวเลขสีแดงหรือโทนเตือน พร้อมจำนวนบิลที่คืน)
+    - **ยอดขายสุทธิ (Net Revenue)** = Gross - Refund
+  - ตารางรายการบิลที่ถูก Refund / Void:
+    - แสดงเลขที่ใบเสร็จ, เวลาที่ยกเลิก, พนักงานที่กดยกเลิก, เหตุผลในการคืนเงิน (เช่น ลูกค้าเปลี่ยนใจ, ออเดอร์ทำผิด)
+    - แสดงวัตถุดิบที่ถูกดึงกลับเข้าสต็อก หรือทิ้งเป็นของเสีย
+* **Backend ([DashboardController.php](file:///c:/meeting/smartsotck-backend/app/Http/Controllers/Api/DashboardController.php) / Order API)**:
+  - เพิ่มฟิลด์ `refund_total`, `refund_count`, `net_sales` ใน API response ของ `/api/reports/sales` และ `/api/dashboard`
 
 ---
 
-#### 4. นำ Mock ข้อมูลเงินแต่ละวันใน Calendar ออก ([DashboardCalendarDropdown.tsx](file:///c:/meeting/smartStock/src/app/(app)/dashboard/components/DashboardCalendarDropdown.tsx) & [Calendar.tsx](file:///c:/meeting/smartStock/src/app/(app)/dashboard/components/Calendar.tsx))
-- **ปัญหาปัจจุบัน**:
-  - ใน [DashboardCalendarDropdown.tsx](file:///c:/meeting/smartStock/src/app/(app)/dashboard/components/DashboardCalendarDropdown.tsx) มีการเขียน Mock ข้อมูลยอดขายย้อนหลังด้วย Array `baseAmounts` เพื่อเติมตัวเลขเงินลงในทุกวันของเดือนที่ผ่านมา ส่งผลให้แสดงตัวเลขเงินจำลอง (เช่น ฿5.2k, ฿3.8k) แม้ว่าจะไม่มีการขายจริงในวันนั้น
-- **แนวทางแก้ไข**:
-  - [x] **ตัดชุดข้อมูลจำลอง (Remove Mock Generator)**: นำลูปจำลองข้อมูล `baseAmounts = [2400, 3100, ...]` ออกจาก `revenueMap`
-  - [x] **คงไว้เฉพาะยอดขายจริง**: ให้ `revenueMap` ดึงและคำนวณจาก `orders` จริงในระบบ และยอดขายวันนี้ (`dashboard.today_sales` / `dashboard.sales_7days`) เท่านั้น
-  - [x] **การแสดงผลวันที่ที่ไม่มีการขาย**: วันที่ไม่มีบิลขายจริง ให้แสดงเฉพาะตัวเลขวันที่สะอาดตา โดยไม่แสดงยอดเงินจำลองหลอกตา
+#### 3. 🛡️ แยกระบบสิทธิ์พนักงานชัดเจน (Strict Role-Based Permissions) & ปรับ Layout หน้าจัดการสิทธิ์
+> **เป้าหมาย**: จัดหมวดหมู่สิทธิ์ (Permissions) ให้เป็นระบบ ไม่ปะปน และปรับหน้าจอ Role & Permission Management ให้สวยงาม เข้าใจง่าย
+
+* **การแยกสิทธิ์แบบละเอียด (Granular Permissions)**:
+  - **POS & Sales**: ขายหน้าร้าน, ให้ส่วนลดพิเศษ, ยกเลิกบิล/Refund (สิทธิ์เฉพาะ Manager/Owner), ดูประวัติบิล
+  - **Stock & Inventory**: ดูสต็อก, ตรวจนับสต็อกสิ้นวัน, รับของเข้าจากบิล, แก้ไขสูตรต้นทุน (BOM), ลบวัตถุดิบ
+  - **Reports & Finance**: ดูยอดขายรายวัน, ดูรายงานกำไร-ขาดทุน, Export ข้อมูลบัญชี
+  - **Settings & AI**: จัดการพนักงาน, จัดการสาขา, ใช้งานฟีเจอร์ AI ขั้นสูง
+* **ปรับ Layout หน้า ([src/app/(app)/roles/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/roles/page.tsx) & [src/app/(app)/staff/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/staff/page.tsx))**:
+  - ออกแบบเป็น **Role Matrix Grid** หรือ Accordion แยกตามหมวดหมู่ฟังก์ชัน (POS / Stock / Finance / Admin)
+  - มี Checkbox / Switch ที่เปิด-ปิดสิทธิ์ได้เป็นกลุ่ม หรือรายข้อ
+  - สรุป Badge สถานะให้ชัดเจน เช่น `เจ้าของร้าน (Super Admin)`, `ผู้จัดการ (Manager)`, `พนักงานขาย (Cashier)`, `พนักงานครัว/บาริสต้า (Kitchen/Barista)`
 
 ---
 
-### 🧪 สรุปผลการทดสอบและการตรวจสอบความถูกต้อง (Verification Results)
-1. **TypeScript & Build Verification**:
-   - รันคำสั่ง `npm run build` สำเร็จ 100% (22 routes generated, 0 errors, Compiled in 10.8s)
-2. **UI & Feature Check**:
-   - หน้า `/stock`: แสดง 2 แท็บ "วัตถุดิบคงเหลือ" และ "ประวัติการปรับสต็อก" สะอาดตา พร้อม Container `max-w-[1600px]` รองรับข้อมูลกว้างขึ้น
-   - หน้า `/menu/ai-insights`: คอนทราสต์ตัวหนังสือเข้มชัดเจน สบายตา อ่านง่ายทุกมุมมอง
-   - หน้า `/dashboard`: ปฏิทินรายวันแสดงเฉพาะยอดขายจริง ไม่มีเลขจำลองสุ่มเติมในวันว่าง
+#### 4. 🛒 ปรับปรุง Layout หน้าซื้อของเข้าร้าน / ใบสั่งซื้อ (Purchase Orders UX Polish)
+> **เป้าหมาย**: ปรับโฉมหน้าซื้อของเข้าร้าน ([src/app/(app)/stock/purchase-orders/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/purchase-orders/page.tsx)) ให้กระชับ สบายตา ใช้งานง่ายสไตล์ Minimal Cafe
+
+* **การปรับ Layout & Flow**:
+  - จัดการแสดงผลส่วนหัว: ปรับปุ่มสร้างใบสั่งซื้อ, ตัวกรองสถานะ (ฉบับร่าง, รอดำเนินการ, ซื้อแล้ว, รับเข้าสต็อกแล้ว) ให้อยู่ในระนาบที่สบายตา
+  - ปรับการ์ดสรุปยอดการจัดซื้อรายเดือน / สัปดาห์ (PO Spending Summary)
+  - ปรับตารางรายการซื้อให้กว้างขึ้น ไม่ตัดบรรทัด มี Badge แสดงสถานะการสแกนบิลชัดเจน
+  - เพิ่มปุ่มด่วนสำหรับสร้างใบตลาดจาก "วัตถุดิบที่ถึงจุดสั่งซื้อ (Re-order point)" ในคลิกเดียว
 
 ---
 
-### 📌 รายการเช็คความพร้อม (Readiness Checklist)
-- [x] งานทุกรายการตามแผนได้รับการปฏิบัติและบันทึกครบถ้วนใน [worklog.md](file:///c:/meeting/smartStock/worklog.md)
-- [x] โค้ดผ่านการคอมไพล์และไม่มีข้อผิดพลาด (Zero Build/Lint Errors)
+#### 5. 🤖 AI Insights ผสานข้อมูลแผนที่คู่แข่ง (Map Location) + ข้อมูลการขายจริงในร้าน (Internal POS Sales)
+> **เป้าหมาย**: ให้ระบบ AI (Gemini) ไม่เพียงแค่วิเคราะห์แยกส่วนแผนที่ หรือแยกส่วนยอดขาย แต่ดึงข้อมูลทั้งสองด้านมา **Cross-Analyze** ร่วมกันเพื่อสร้างคำแนะนำทางธุรกิจที่แม่นยำสูง
+
+* **ข้อมูลนำเข้าที่จะส่งให้ AI (Input Contexts)**:
+  - **ข้อมูลภายนอก (External Location Context)**: พิกัดร้าน, ประเภทคู่แข่งโดยรอบในระยะ 1-3 กม., กลุ่มลูกค้าในพื้นที่ (ออฟฟิศ, มหาวิทยาลัย, คอนโด), ช่องว่างทางการตลาด (Market Gap) จากการสแกนแผนที่
+  - **ข้อมูลภายใน (Internal POS Sales Context)**: เมนูที่ขายดี/ขายไม่ออกของร้าน, สัดส่วนยอดขายตามหมวดหมู่, อัตรากำไร (Margin %), ปริมาณสต็อกคงเหลือที่มีมากเกินไป (Excess Stock)
+* **ผลลัพธ์การวิเคราะห์ที่ชาญฉลาด (AI Strategic Output)**:
+  - **การปรับราคา & ชูจุดขายเทียบกับคู่แข่ง**: เช่น "ร้านกาแฟแบรนด์ใหญ่รอบข้างขายกาแฟ Specialty อยู่ที่ 120-140 บาท แต่ร้านเรามีเมล็ดเกรดดีในสต็อก สามารถชูเมนู Dirty หรือ Drip ในราคา 85-95 บาท เพื่อเจาะกลุ่มคนทำงานได้"
+  - **การระบายสต็อกด้วยเมนูตอบโจทย์พื้นที่**: แนะนำการนำวัตถุดิบที่นอนนิ่งในคลังมาทำเป็นเมนู Seasonal ตามพฤติกรรมลูกค้าในละแวกนั้น
+  - **ปรับ UI หน้า [menu/ai-insights/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/menu/ai-insights/page.tsx)**:
+    - เพิ่มแท็บ/ส่วนแสดงผล **"ผสานอินไซต์แผนที่ + ยอดขายจริง (Cross-Channel Store Strategy)"**
+    - มีตัวเลือกให้กด "ดึงข้อมูลจากแผนที่ล่าสุด" และ "ดึงข้อมูลยอดขาย 30 วันล่าสุด" มารวมเป็น Prompt เดียวกัน
+    - แสดงข้อเสนอแนะเป็น Actionable Cards พร้อมปุ่มกด "นำไปสร้างเป็นโปรโมชั่น / เมนูใหม่" ได้ทันที
+
+---
+
+### 📌 ขั้นตอนการเริ่มทำงานในครั้งถัดไป (Quick Start Checklist)
+1. ตรวจสอบสถานะ Server: Frontend (`npm run dev`) และ Backend (`php artisan serve`)
+2. เริ่มจาก **Task 1 (Stock Audit / ปิดกะตรวจสต็อก)** เพื่อให้ Flow ของคลังสมบูรณ์ก่อน
+3. ต่อด้วย **Task 2 (ยอด Refund ในรายงานยอดขาย)**
+4. ตามด้วย **Task 3 & 4 (จัดการสิทธิ์ และ หน้าซื้อของเข้าร้าน)**
+5. ปิดท้ายด้วย **Task 5 (AI Cross-Analysis: แผนที่ + ยอดขายจริง)**
+
 
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { PieChart as PieIcon, TrendingUp, AlertOctagon, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { PieChart as PieIcon, TrendingUp, RotateCcw, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { ThaiBaht } from '@/components/icons/ThaiBaht';
 import { DashboardKPI } from '@/types';
 
@@ -98,29 +98,26 @@ export const KpiCards: React.FC<KpiCardsProps> = ({ dashboard, view = 'hero-layo
     </div>
   );
 
-  const lowStockCard = (
+  const refundCard = (
     <div className="bg-white rounded-2xl border border-stone-200/90 hover:border-stone-300 shadow-2xs p-5 relative overflow-hidden group flex items-center justify-between gap-4 w-full transition-all">
       <div className="space-y-1.5">
         <span className="text-sm font-semibold text-stone-600 block">
-          วัตถุดิบใกล้หมดสต็อก
+          ยอดคืนเงินลูกค้า (Refund)
         </span>
         <div className="flex items-baseline gap-2">
-          <span className="text-2xl sm:text-3xl font-bold text-stone-900 tracking-tight tabular-nums">
-            {dashboard.low_stock_count}
-          </span>
-          <span className="text-sm font-medium text-stone-600">
-            รายการ
+          <span className="text-2xl sm:text-3xl font-bold text-rose-600 tracking-tight tabular-nums font-mono">
+            ฿{(dashboard.today_refund ?? 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         </div>
         <div>
           <span className="bg-[#fef2f2] text-[#991b1b] border border-[#fee2e2] px-2.5 py-0.5 rounded-md font-medium text-xs">
-            ต้องสั่งซื้อด่วน
+            ยกเลิกแล้ว {dashboard.today_cancelled_count ?? 0} บิล
           </span>
         </div>
       </div>
       {/* Refined Uniform Icon Well */}
-      <div className="w-10 h-10 rounded-xl bg-stone-100 text-stone-700 border border-stone-200/80 flex items-center justify-center shrink-0 shadow-2xs">
-        <AlertOctagon className="w-5 h-5" />
+      <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 border border-rose-200/80 flex items-center justify-center shrink-0 shadow-2xs">
+        <RotateCcw className="w-5 h-5" />
       </div>
     </div>
   );
@@ -134,7 +131,7 @@ export const KpiCards: React.FC<KpiCardsProps> = ({ dashboard, view = 'hero-layo
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 w-full">
         {costCard}
         {profitCard}
-        {lowStockCard}
+        {refundCard}
       </div>
     );
   }
@@ -151,7 +148,7 @@ export const KpiCards: React.FC<KpiCardsProps> = ({ dashboard, view = 'hero-layo
       <div className="lg:col-span-5 flex flex-col gap-4 justify-between">
         {costCard}
         {profitCard}
-        {lowStockCard}
+        {refundCard}
       </div>
     </section>
   );

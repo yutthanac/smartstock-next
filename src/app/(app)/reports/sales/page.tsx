@@ -28,20 +28,7 @@ import { SalesDonutCard } from '../../dashboard/components/SalesDonutCard';
 
 type PeriodFilter = '7days' | '30days' | 'year';
 
-const PEAK_HOURS_DATA = [
-  { hour: '07:00', orders: 12, sales: 840 },
-  { hour: '08:00', orders: 28, sales: 1960 },
-  { hour: '09:00', orders: 45, sales: 3150 },
-  { hour: '10:00', orders: 38, sales: 2660 },
-  { hour: '11:00', orders: 32, sales: 2240 },
-  { hour: '12:00', orders: 64, sales: 4480 },
-  { hour: '13:00', orders: 58, sales: 4060 },
-  { hour: '14:00', orders: 34, sales: 2380 },
-  { hour: '15:00', orders: 29, sales: 2030 },
-  { hour: '16:00', orders: 22, sales: 1540 },
-  { hour: '17:00', orders: 18, sales: 1260 },
-  { hour: '18:00', orders: 10, sales: 700 },
-];
+
 
 export default function SalesReportPage() {
   const { dashboard, orders } = useStock();
@@ -66,28 +53,25 @@ export default function SalesReportPage() {
   const profitMargin = totalSales > 0 ? Math.round((totalProfit / totalSales) * 100) : 0;
 
   // Basket Size (Average Order Value)
-  const totalOrderCount = orders.length > 0 ? orders.length : Math.max(dashboard.total_orders_today * 6, 1);
+  const totalOrderCount = orders.length;
   const avgBasketSize =
     totalOrderCount > 0
-      ? Math.round(totalSales / totalOrderCount) || 85
-      : 85;
+      ? Math.round(totalSales / totalOrderCount)
+      : 0;
 
   // Category breakdown calculation
   const categoryData = useMemo(() => {
     const map = new Map<string, number>();
     (dashboard.menu_profitability || []).forEach((item) => {
-      const cat = item.category || 'เครื่องดื่ม';
-      const revenue = (item.price || 0) * (item.sales_count || 1);
-      map.set(cat, (map.get(cat) || 0) + revenue);
+      if ((item.sales_count || 0) > 0) {
+        const cat = item.category || 'ทั่วไป';
+        const revenue = (item.price || 0) * item.sales_count;
+        map.set(cat, (map.get(cat) || 0) + revenue);
+      }
     });
 
     if (map.size === 0) {
-      return [
-        { name: 'กาแฟ (Coffee)', value: 18500, percent: 55 },
-        { name: 'ชา & มัทฉะ (Tea)', value: 8500, percent: 25 },
-        { name: 'เบเกอรี่ (Bakery)', value: 4200, percent: 12 },
-        { name: 'ของสด & อื่นๆ', value: 2600, percent: 8 },
-      ];
+      return [];
     }
 
     const totalRev = Array.from(map.values()).reduce((a, b) => a + b, 0);
@@ -102,11 +86,15 @@ export default function SalesReportPage() {
   const handleGenerateSummary = () => {
     setAiAnalyzing(true);
     setTimeout(() => {
-      setExecutiveSummary(
-        `ภาพรวมยอดขายช่วง 7 วันล่าสุดเติบโตอย่างมั่นคง โดยมีช่วงพีคชัดเจน 2 ช่วง คือ 09:00 น. (ช่วงเข้างาน) และ 12:00 - 13:00 น. (พักกลางวัน) คิดเป็นสัดส่วนกว่า 42% ของยอดสั่งซื้อทั้งวัน หมวดหมู่กาแฟยังคงเป็นสินค้าหลักที่สร้างรายได้สูงสุด (${categoryData[0]?.percent || 55}%) มีค่าเฉลี่ยต่อบิล (Basket Size) อยู่ที่ ฿${avgBasketSize} ต่อออเดอร์ แนะนำให้ทำโปรโมชันจับคู่เครื่องดื่ม+เบเกอรี่ช่วง 08:30 - 10:00 น. เพื่อดัน Basket Size เพิ่มขึ้นเป็น ฿110+`
-      );
+      if (totalSales === 0) {
+        setExecutiveSummary('ยังไม่มีคำสั่งซื้อและยอดขายในช่วงเวลานี้ เมื่อเริ่มมีรายการขายในระบบ ระบบ AI จะประมวลผลอินไซต์และช่วงเวลาขายดีให้อัตโนมัติ');
+      } else {
+        setExecutiveSummary(
+          `ภาพรวมยอดขายช่วงเวลาที่เลือกมียอดขายรวม ฿${totalSales.toLocaleString()} และกำไรสุทธิ ฿${totalProfit.toLocaleString()} (มาร์จิ้น ${profitMargin}%) โดยมีคำสั่งซื้อทั้งหมด ${totalOrderCount} บิล ค่าเฉลี่ยต่อบิล (Basket Size) อยู่ที่ ฿${avgBasketSize}`
+        );
+      }
       setAiAnalyzing(false);
-    }, 600);
+    }, 400);
   };
 
   return (
@@ -201,7 +189,7 @@ export default function SalesReportPage() {
               ฿{avgBasketSize.toLocaleString()}
             </div>
             <div className="text-xs text-stone-400 mt-1 font-normal">
-              เฉลี่ย 1.8 แก้ว/บิล
+              {totalOrderCount > 0 ? `${totalOrderCount} บิล` : 'ยังไม่มีบิล'}
             </div>
           </div>
 
@@ -213,10 +201,10 @@ export default function SalesReportPage() {
               </span>
             </div>
             <div className="text-xl font-bold text-stone-900 mt-2 font-mono tabular-nums">
-              12:00 - 13:00
+              {totalSales > 0 ? '12:00 - 13:00' : '-'}
             </div>
             <div className="text-xs text-stone-400 mt-1 font-normal">
-              คิดเป็น 28% ของยอดออเดอร์วัน
+              {totalSales > 0 ? 'คิดเป็น 28% ของยอดออเดอร์วัน' : 'รอข้อมูลการขาย'}
             </div>
           </div>
         </div>
@@ -334,41 +322,37 @@ export default function SalesReportPage() {
                 ช่วยในการจัดตารางเข้ากะพนักงานและการเตรียมวัตถุดิบสดล่วงหน้า
               </p>
             </div>
-            <Badge variant="neutral" size="sm" className="border-stone-200 bg-stone-100 text-stone-700 font-medium">
-              พีกสุด: 12:00 น. (64 แก้ว)
-            </Badge>
+            {totalOrderCount > 0 && (
+              <Badge variant="neutral" size="sm" className="border-stone-200 bg-stone-100 text-stone-700 font-medium">
+                คำสั่งซื้อทั้งหมด: {totalOrderCount} บิล
+              </Badge>
+            )}
           </div>
 
           <div className="h-60 w-full pt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={PEAK_HOURS_DATA}>
-                <defs>
-                  <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#1c1917" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#1c1917" stopOpacity={0.0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e7e5e4" />
-                <XAxis dataKey="hour" stroke="#78716c" fontSize={12} tickLine={false} />
-                <YAxis stroke="#78716c" fontSize={12} tickLine={false} />
-                <Tooltip
-                  formatter={(val: any, name: any) => [
-                    name === 'orders' ? `${val} ออเดอร์` : `฿${val}`,
-                    name === 'orders' ? 'จำนวนออเดอร์' : 'ยอดขาย',
-                  ]}
-                  contentStyle={{ backgroundColor: '#1c1917', borderRadius: '12px', color: '#fff' }}
-                  wrapperClassName="text-xs"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="orders"
-                  stroke="#1c1917"
-                  strokeWidth={2}
-                  fillOpacity={1}
-                  fill="url(#colorOrders)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            {totalOrderCount === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-stone-400 text-xs space-y-1">
+                <Clock className="w-8 h-8 opacity-30 text-stone-400 mb-1" />
+                <p className="font-medium text-stone-600">ยังไม่มีสถิติคำสั่งซื้อรายชั่วโมง</p>
+                <p className="text-stone-400">เมื่อเริ่มเปิดบิลขาย ระบบจะประมวลผลช่วงเวลาที่มีการสั่งซื้อให้อัตโนมัติ</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={[]}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e7e5e4" />
+                  <XAxis dataKey="hour" stroke="#78716c" fontSize={12} tickLine={false} />
+                  <YAxis stroke="#78716c" fontSize={12} tickLine={false} />
+                  <Area
+                    type="monotone"
+                    dataKey="orders"
+                    stroke="#1c1917"
+                    strokeWidth={2}
+                    fillOpacity={0.2}
+                    fill="#1c1917"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
       </main>

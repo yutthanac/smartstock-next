@@ -55,6 +55,8 @@ export interface MenuItem {
 }
 
 export interface OrderItem {
+  id?: number;
+  order_id?: number;
   menu_item_id: number;
   name: string;
   price: number;
@@ -95,6 +97,8 @@ export interface DashboardKPI {
   today_cost: number;
   today_profit: number;
   profit_margin: number;
+  today_refund?: number;
+  today_cancelled_count?: number;
   low_stock_count: number;
   total_orders_today: number;
   sales_7days: {
