@@ -21,7 +21,7 @@ export const MenuCard: React.FC<MenuCardProps> = ({ item, onEdit, onDelete }) =>
             className={`w-full h-full ${
               item.image
                 ? 'object-cover group-hover:scale-105 transition-transform duration-300'
-                : 'object-contain p-6 bg-white opacity-80'
+                : 'object-contain p-7 bg-stone-50/50 opacity-30 grayscale contrast-75'
             }`}
           />
           <span className="absolute top-3 left-3 text-xs font-medium px-2.5 py-1 rounded-full bg-stone-900/80 backdrop-blur-xs text-white">

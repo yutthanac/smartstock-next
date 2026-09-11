@@ -74,11 +74,11 @@ function SortableMenuRow({ item, onEdit, onDelete }: SortableMenuRowProps) {
 
       <TableCell>
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-white border border-stone-200/90 overflow-hidden shrink-0 flex items-center justify-center p-1 shadow-2xs">
+          <div className="w-12 h-12 rounded-xl bg-stone-50 border border-stone-200/80 overflow-hidden shrink-0 flex items-center justify-center p-1.5 shadow-2xs">
             <img
               src={item.image || '/images/logo_ss.png'}
               alt={item.name}
-              className={`w-full h-full ${item.image ? 'object-cover rounded-lg' : 'object-contain'}`}
+              className={`w-full h-full ${item.image ? 'object-cover rounded-lg' : 'object-contain opacity-30 grayscale'}`}
             />
           </div>
           <div>

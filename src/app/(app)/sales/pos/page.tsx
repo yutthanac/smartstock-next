@@ -372,7 +372,7 @@ export default function POSPage() {
                           className={`w-full h-full ${
                             menu.image
                               ? 'object-cover group-hover:scale-105 transition-transform duration-300'
-                              : 'object-contain p-5 opacity-85'
+                              : 'object-contain p-6 opacity-30 grayscale contrast-75'
                           }`}
                         />
                         <div className="absolute top-2.5 left-2.5">
@@ -463,11 +463,11 @@ export default function POSPage() {
                         <tr key={menu.id} className="hover:bg-stone-50/80 transition-colors">
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-xl bg-white border border-stone-200 overflow-hidden shrink-0 flex items-center justify-center p-1 shadow-2xs">
+                              <div className="w-10 h-10 rounded-xl bg-stone-50 border border-stone-200/80 overflow-hidden shrink-0 flex items-center justify-center p-1 shadow-2xs">
                                 <img
                                   src={menu.image || '/images/logo_ss.png'}
                                   alt={menu.name}
-                                  className={`w-full h-full ${menu.image ? 'object-cover rounded-lg' : 'object-contain'}`}
+                                  className={`w-full h-full ${menu.image ? 'object-cover rounded-lg' : 'object-contain opacity-30 grayscale'}`}
                                 />
                               </div>
                               <div>

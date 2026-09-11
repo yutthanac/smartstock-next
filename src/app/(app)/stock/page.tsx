@@ -12,7 +12,6 @@ import {
   Edit2,
   Calendar,
   GripVertical,
-  FileCheck,
 } from 'lucide-react';
 import {
   DndContext,
@@ -48,7 +47,6 @@ import {
 } from '@/components/Table';
 import { AddIngredientModal } from './components/AddIngredientModal';
 import { AdjustStockModal } from './components/AdjustStockModal';
-import { ReceiptInboundTab } from './components/ReceiptInboundTab';
 import { TableSkeleton } from '@/components/Skeleton';
 
 interface SortableIngredientRowProps {
@@ -215,22 +213,9 @@ export default function StockPage() {
   const { ingredients, movements, addIngredient, updateIngredient, deleteIngredient, adjustStock, reorderIngredients, isLoading } = useStock();
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState<'inventory' | 'inbound' | 'movements'>('inventory');
-  const [pendingReceiptsCount, setPendingReceiptsCount] = useState<number>(0);
+  const [activeTab, setActiveTab] = useState<'inventory' | 'movements'>('inventory');
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 8;
-
-  // Track pending receipts from POs in localStorage
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('smartstock_shopping_orders');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        const count = parsed.filter((p: any) => p.status === 'receipt_uploaded').length;
-        setPendingReceiptsCount(count);
-      }
-    } catch {}
-  }, [activeTab]);
 
   // Modal States
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -424,7 +409,7 @@ export default function StockPage() {
         subtitle="ควบคุมระดับสต็อก จุดสั่งซื้อซ้ำ (Reorder Point) และประวัติการเคลื่อนไหว"
       />
 
-      <main className="p-4 sm:p-6 lg:p-8 space-y-5 max-w-7xl mx-auto w-full">
+      <main className="p-4 sm:p-6 lg:p-8 space-y-5 max-w-[1600px] mx-auto w-full">
         {/* Navigation Sub-tabs & Action buttons */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="flex items-center gap-1 p-1 bg-stone-100 rounded-xl border border-stone-200/80 overflow-x-auto no-scrollbar max-w-full">
@@ -441,22 +426,6 @@ export default function StockPage() {
               <span className="px-1.5 py-0.2 rounded-full text-xs bg-stone-200 text-stone-700 font-mono tabular-nums font-medium">
                 {ingredients.length}
               </span>
-            </button>
-            <button
-              onClick={() => setActiveTab('inbound')}
-              className={`h-9 px-3.5 rounded-lg text-xs transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
-                activeTab === 'inbound'
-                  ? 'bg-white text-stone-900 border border-stone-200 font-semibold shadow-2xs'
-                  : 'text-stone-600 hover:text-stone-900 font-medium'
-              }`}
-            >
-              <FileCheck className="w-3.5 h-3.5 text-stone-700" />
-              <span>ตรวจสอบ & รับเข้าจากบิล</span>
-              {pendingReceiptsCount > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full text-xs bg-stone-900 text-white font-mono tabular-nums font-medium shadow-2xs">
-                  {pendingReceiptsCount} บิลใหม่
-                </span>
-              )}
             </button>
             <button
               onClick={() => setActiveTab('movements')}
@@ -603,11 +572,6 @@ export default function StockPage() {
               />
             </div>
           </div>
-        )}
-
-        {/* Receipt Inbound Tab */}
-        {activeTab === 'inbound' && (
-          <ReceiptInboundTab />
         )}
 
         {/* Movement History Log View */}

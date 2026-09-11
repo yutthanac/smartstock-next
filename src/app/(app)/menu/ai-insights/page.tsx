@@ -70,13 +70,18 @@ export default function AIInsightsPage() {
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
-        setAnalysis(parsed.data);
-        setLastAnalyzedTime(parsed.timestamp);
+        if (parsed.data?.summary?.headline?.trim()) {
+          setAnalysis(parsed.data);
+          setLastAnalyzedTime(parsed.timestamp);
+          return;
+        }
       } catch {
-        // fallback to initial
+        // fallback
       }
     }
-  }, []);
+    // Auto-run if no valid cached analysis
+    handleRunAnalysis();
+  }, [menuItems.length]);
 
   const handleRunAnalysis = async () => {
     setLoading(true);
@@ -137,21 +142,21 @@ export default function AIInsightsPage() {
         {/* Executive Header Banner */}
         <div className="p-6 md:p-8 rounded-2xl bg-stone-900 text-white shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6 border border-stone-800">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-stone-800 text-stone-200 text-xs font-normal border border-stone-700/60">
-              <Sparkles className="w-3.5 h-3.5 text-stone-300" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-stone-800 text-stone-100 text-xs font-medium border border-stone-700">
+              <Sparkles className="w-3.5 h-3.5 text-stone-200" />
               <span>
                 {analysis?.source === 'gemini'
                   ? 'ขับเคลื่อนด้วย Google Gemini Flash'
                   : 'ประมวลผลด้วยโมเดลวิเคราะห์ธุรกิจภายในร้าน'}
               </span>
               {lastAnalyzedTime && (
-                <span className="text-stone-400">• อัปเดตล่าสุด {lastAnalyzedTime} น.</span>
+                <span className="text-stone-300">• อัปเดตล่าสุด {lastAnalyzedTime} น.</span>
               )}
             </div>
             <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight">
-              {analysis?.summary?.headline || 'วิเคราะห์ความคุ้มค่าและกลยุทธ์พอร์ตโฟลิโอเมนู'}
+              {(analysis?.summary?.headline && analysis.summary.headline.trim()) || 'วิเคราะห์ความคุ้มค่าและกลยุทธ์พอร์ตโฟลิโอเมนู'}
             </h2>
-            <p className="text-xs md:text-sm text-stone-300 max-w-2xl font-normal leading-relaxed">
+            <p className="text-xs md:text-sm text-stone-200 max-w-2xl font-normal leading-relaxed">
               นำข้อมูลการตัดสต็อกจริง อัตรากำไรขั้นต้น และพฤติกรรมการสั่งซื้อของลูกค้า
               มาประมวลผลเพื่อสร้างข้อได้เปรียบทางธุรกิจ
             </p>
@@ -164,7 +169,7 @@ export default function AIInsightsPage() {
               isLoading={loading}
               onClick={handleRunAnalysis}
               icon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}
-              className="bg-white text-stone-900 hover:bg-stone-100 shadow-sm border border-white font-medium rounded-xl"
+              className="bg-white text-stone-900 hover:bg-stone-100 shadow-sm border border-white font-semibold rounded-xl"
             >
               {loading ? 'กำลังวิเคราะห์...' : 'ประมวลผลใหม่ (Re-generate)'}
             </Button>
@@ -174,7 +179,7 @@ export default function AIInsightsPage() {
         {/* Highlight Stats / Opportunities */}
         {analysis?.summary?.key_opportunities && analysis.summary.key_opportunities.length > 0 && (
           <div className="p-5 rounded-2xl bg-white border border-stone-200/90 shadow-xs space-y-3">
-            <div className="flex items-center gap-2 text-xs font-semibold text-stone-800">
+            <div className="flex items-center gap-2 text-xs font-bold text-stone-900">
               <Lightbulb className="w-4 h-4 text-[#78350f]" />
               <span>โอกาสสำคัญในการเพิ่มยอดขาย & ลดต้นทุน (Strategic Highlights)</span>
             </div>
@@ -182,9 +187,9 @@ export default function AIInsightsPage() {
               {analysis.summary.key_opportunities.map((opp, idx) => (
                 <div
                   key={idx}
-                  className="p-3.5 rounded-xl bg-stone-50 border border-stone-100 flex items-start gap-2.5 text-xs text-stone-700 font-normal"
+                  className="p-3.5 rounded-xl bg-stone-50 border border-stone-200/70 flex items-start gap-2.5 text-xs text-stone-800 font-medium"
                 >
-                  <CheckCircle2 className="w-4 h-4 text-stone-800 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-4 h-4 text-stone-900 shrink-0 mt-0.5" />
                   <span className="leading-relaxed">{opp}</span>
                 </div>
               ))}
@@ -199,7 +204,7 @@ export default function AIInsightsPage() {
             className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
               activeTab === 'existing'
                 ? 'bg-stone-900 text-white shadow-xs'
-                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+                : 'text-stone-700 hover:text-stone-900 hover:bg-stone-100'
             }`}
           >
             เมนูปัจจุบัน & แนวทางดันยอดขาย ({displayRecommendations.length})
@@ -209,7 +214,7 @@ export default function AIInsightsPage() {
             className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
               activeTab === 'new_ideas'
                 ? 'bg-stone-900 text-white shadow-xs'
-                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+                : 'text-stone-700 hover:text-stone-900 hover:bg-stone-100'
             }`}
           >
             ไอเดียเมนูใหม่จากสต็อกที่มี ({analysis?.new_recipe_ideas?.length || 2})
@@ -219,7 +224,7 @@ export default function AIInsightsPage() {
             className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
               activeTab === 'cost_saving'
                 ? 'bg-stone-900 text-white shadow-xs'
-                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+                : 'text-stone-700 hover:text-stone-900 hover:bg-stone-100'
             }`}
           >
             แนวทางลดของเสีย & ควบคุมต้นทุน ({analysis?.cost_saving_tips?.length || 2})
@@ -238,7 +243,7 @@ export default function AIInsightsPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <h3 className="font-bold text-stone-900 text-base">{item.name}</h3>
-                      <div className="text-xs text-stone-500 mt-0.5 font-normal">
+                      <div className="text-xs text-stone-600 mt-0.5 font-medium">
                         หมวดหมู่: {item.category} • ยอดสั่งซื้อ {item.order_count} แก้ว
                       </div>
                     </div>
@@ -249,29 +254,29 @@ export default function AIInsightsPage() {
 
                   <div className="grid grid-cols-2 gap-3 pt-1">
                     <div className="p-3 bg-stone-50 rounded-xl border border-stone-100">
-                      <div className="text-xs text-stone-500 font-normal">อัตรากำไร (Margin)</div>
+                      <div className="text-xs text-stone-600 font-medium">อัตรากำไร (Margin)</div>
                       <div className="text-base font-bold text-stone-900 mt-0.5 font-mono tabular-nums">
                         {item.margin}%
                       </div>
                     </div>
                     <div className="p-3 bg-stone-50 rounded-xl border border-stone-100">
-                      <div className="text-xs text-stone-500 font-normal">ยอดขายสะสม</div>
+                      <div className="text-xs text-stone-600 font-medium">ยอดขายสะสม</div>
                       <div className="text-base font-bold text-stone-900 mt-0.5 flex items-center gap-1 font-mono tabular-nums">
-                        <TrendingUp className="w-4 h-4 text-stone-700" />
+                        <TrendingUp className="w-4 h-4 text-stone-800" />
                         {item.order_count || 0} แก้ว
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-2 pt-1 text-xs font-normal">
-                    <div className="p-3.5 rounded-xl bg-stone-50 border border-stone-100 text-stone-700 space-y-1.5">
-                      <div className="font-semibold text-stone-900 flex items-center gap-1.5">
+                    <div className="p-3.5 rounded-xl bg-stone-50 border border-stone-200/70 text-stone-800 space-y-1.5">
+                      <div className="font-bold text-stone-900 flex items-center gap-1.5">
                         <span>บทวิเคราะห์:</span>
                       </div>
-                      <p className="leading-relaxed text-stone-600">{item.insight}</p>
+                      <p className="leading-relaxed text-stone-700">{item.insight}</p>
                       {item.action_step && (
-                        <div className="pt-2 border-t border-stone-200/60 mt-2 text-stone-800">
-                          <strong className="font-semibold">แผนปฏิบัติการ:</strong> {item.action_step}
+                        <div className="pt-2 border-t border-stone-200 mt-2 text-stone-900">
+                          <strong className="font-bold text-stone-900">แผนปฏิบัติการ:</strong> {item.action_step}
                         </div>
                       )}
                     </div>
@@ -279,10 +284,10 @@ export default function AIInsightsPage() {
                 </div>
 
                 <div className="pt-4 border-t border-stone-100 flex items-center justify-between text-xs font-normal">
-                  <span className="text-stone-400">คำนวณจากสูตร BOM ล่าสุด</span>
+                  <span className="text-stone-500">คำนวณจากสูตร BOM ล่าสุด</span>
                   <Link
                     href="/menu"
-                    className="text-stone-800 hover:text-stone-900 font-medium inline-flex items-center gap-1 transition-colors"
+                    className="text-stone-800 hover:text-stone-950 font-semibold inline-flex items-center gap-1 transition-colors"
                   >
                     ปรับปรุงสูตรเมนู <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
@@ -323,7 +328,7 @@ export default function AIInsightsPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <h3 className="font-bold text-stone-900 text-base">{idea.title}</h3>
-                      <div className="text-xs text-stone-500 mt-0.5">
+                      <div className="text-xs text-stone-600 mt-0.5 font-medium">
                         เป้าหมาย: {idea.target_customer}
                       </div>
                     </div>
@@ -333,20 +338,20 @@ export default function AIInsightsPage() {
                   </div>
 
                   <div className="grid grid-cols-3 gap-2.5 py-2">
-                    <div className="p-2.5 bg-stone-50 rounded-xl border border-stone-100 text-center">
-                      <div className="text-xs text-stone-500">ต้นทุนประมาณ</div>
+                    <div className="p-2.5 bg-stone-50 rounded-xl border border-stone-200/70 text-center">
+                      <div className="text-xs text-stone-600 font-medium">ต้นทุนประมาณ</div>
                       <div className="text-sm font-bold text-stone-900 mt-0.5 font-mono tabular-nums">
                         ฿{idea.estimated_cost}
                       </div>
                     </div>
-                    <div className="p-2.5 bg-stone-50 rounded-xl border border-stone-100 text-center">
-                      <div className="text-xs text-stone-500">ราคาแนะนำ</div>
+                    <div className="p-2.5 bg-stone-50 rounded-xl border border-stone-200/70 text-center">
+                      <div className="text-xs text-stone-600 font-medium">ราคาแนะนำ</div>
                       <div className="text-sm font-bold text-stone-900 mt-0.5 font-mono tabular-nums">
                         ฿{idea.suggested_price}
                       </div>
                     </div>
-                    <div className="p-2.5 bg-stone-50 rounded-xl border border-stone-100 text-center">
-                      <div className="text-xs text-stone-500">กำไรต่อแก้ว</div>
+                    <div className="p-2.5 bg-stone-50 rounded-xl border border-stone-200/70 text-center">
+                      <div className="text-xs text-stone-600 font-medium">กำไรต่อแก้ว</div>
                       <div className="text-sm font-bold text-stone-900 mt-0.5 font-mono tabular-nums">
                         ฿{idea.suggested_price - idea.estimated_cost}
                       </div>
@@ -355,12 +360,12 @@ export default function AIInsightsPage() {
 
                   <div className="space-y-2 text-xs">
                     <div>
-                      <span className="text-stone-500 font-medium">วัตถุดิบที่ต้องใช้:</span>
+                      <span className="text-stone-700 font-semibold">วัตถุดิบที่ต้องใช้:</span>
                       <div className="flex flex-wrap gap-1.5 mt-1.5">
                         {idea.ingredients_used.map((ing, i) => (
                           <span
                             key={i}
-                            className="px-2.5 py-1 rounded-md bg-stone-100 text-stone-700 text-xs"
+                            className="px-2.5 py-1 rounded-md bg-stone-100 border border-stone-200 text-stone-800 text-xs font-medium"
                           >
                             {ing}
                           </span>
@@ -368,8 +373,8 @@ export default function AIInsightsPage() {
                       </div>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-stone-50 border border-stone-100 text-stone-600 leading-relaxed mt-3">
-                      <strong className="text-stone-800">เหตุผลที่ควรเริ่มขาย:</strong> {idea.why_launch}
+                    <div className="p-3 rounded-xl bg-stone-50 border border-stone-200/70 text-stone-700 leading-relaxed mt-3">
+                      <strong className="text-stone-900 font-semibold">เหตุผลที่ควรเริ่มขาย:</strong> {idea.why_launch}
                     </div>
                   </div>
                 </div>
@@ -380,7 +385,7 @@ export default function AIInsightsPage() {
                       variant="outline"
                       size="sm"
                       icon={<PlusCircle className="w-3.5 h-3.5" />}
-                      className="text-xs rounded-xl border-stone-300 text-stone-700 hover:bg-stone-100"
+                      className="text-xs rounded-xl border-stone-300 text-stone-800 hover:bg-stone-100 font-medium"
                     >
                       นำไปสร้างเป็นเมนูใหม่
                     </Button>
@@ -407,12 +412,12 @@ export default function AIInsightsPage() {
               ]).map((tip, idx) => (
                 <div
                   key={idx}
-                  className="p-4 rounded-xl bg-stone-50 border border-stone-100 flex items-start gap-3 text-xs md:text-sm text-stone-700 font-normal leading-relaxed"
+                  className="p-4 rounded-xl bg-stone-50 border border-stone-200/70 flex items-start gap-3 text-xs md:text-sm text-stone-800 font-medium leading-relaxed"
                 >
-                  <div className="w-6 h-6 rounded-full bg-stone-200 text-stone-800 font-bold flex items-center justify-center shrink-0 text-xs mt-0.5">
+                  <div className="w-6 h-6 rounded-full bg-stone-200 text-stone-900 font-bold flex items-center justify-center shrink-0 text-xs mt-0.5">
                     {idx + 1}
                   </div>
-                  <p>{tip}</p>
+                  <p className="text-stone-800">{tip}</p>
                 </div>
               ))}
             </div>

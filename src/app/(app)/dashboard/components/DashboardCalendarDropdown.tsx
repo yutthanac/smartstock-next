@@ -51,52 +51,34 @@ export const DashboardCalendarDropdown: React.FC = () => {
 
     // 2. Today's sales from dashboard KPI
     const todayKey = format(today, 'yyyy-MM-dd');
-    if (!map[todayKey] || map[todayKey].sales === 0) {
-      map[todayKey] = {
-        sales: dashboard.today_sales || 188.4,
-        orderCount: dashboard.total_orders_today || 4,
-      };
+    if (dashboard.today_sales) {
+      if (!map[todayKey]) {
+        map[todayKey] = {
+          sales: dashboard.today_sales,
+          orderCount: dashboard.total_orders_today || 1,
+        };
+      }
     }
 
     // 3. Sales 7 days from dashboard
     if (dashboard.sales_7days && dashboard.sales_7days.length > 0) {
       dashboard.sales_7days.forEach((item, idx) => {
+        if (!item.sales || item.sales <= 0) return;
         const dayOffset = 6 - idx;
         const targetDate = new Date(today);
         targetDate.setDate(today.getDate() - dayOffset);
         const key = format(targetDate, 'yyyy-MM-dd');
-        if (!map[key] || map[key].sales === 0) {
+        if (!map[key]) {
           map[key] = {
-            sales: item.sales || (item.sales === 0 ? 0 : 4200),
-            orderCount: Math.max(1, Math.round((item.sales || 3000) / 120)),
+            sales: item.sales,
+            orderCount: Math.max(1, Math.round(item.sales / 120)),
           };
         }
       });
     }
 
-    // 4. Fill baseline historical data for the current month so user sees a rich revenue calendar
-    const year = currentViewDate.getFullYear();
-    const month = currentViewDate.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const baseAmounts = [2400, 3100, 4800, 5200, 3800, 6400, 7100, 4300, 5600, 3900, 6800, 8200, 5100, 4900];
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const d = new Date(year, month, day);
-      // only for past or current days
-      if (d <= today) {
-        const key = format(d, 'yyyy-MM-dd');
-        if (!map[key]) {
-          const simulatedSales = baseAmounts[(day * 3) % baseAmounts.length];
-          map[key] = {
-            sales: simulatedSales,
-            orderCount: Math.round(simulatedSales / 110),
-          };
-        }
-      }
-    }
-
     return map;
-  }, [orders, dashboard, today, currentViewDate]);
+  }, [orders, dashboard, today]);
 
   // Calendar calculations for 1-month view
   const currentYear = currentViewDate.getFullYear();
