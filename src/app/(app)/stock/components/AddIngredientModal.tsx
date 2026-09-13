@@ -20,6 +20,11 @@ interface AddIngredientModalProps {
     category: string;
     supplier: string;
     tracking_type: 'strict' | 'bulk_expense';
+    package_unit?: string;
+    package_size?: number | string;
+    is_two_tier?: boolean;
+    backstock_quantity?: number | string;
+    bar_quantity?: number | string;
   };
   setFormData: React.Dispatch<
     React.SetStateAction<{
@@ -32,6 +37,11 @@ interface AddIngredientModalProps {
       category: string;
       supplier: string;
       tracking_type: 'strict' | 'bulk_expense';
+      package_unit?: string;
+      package_size?: number | string;
+      is_two_tier?: boolean;
+      backstock_quantity?: number | string;
+      bar_quantity?: number | string;
     }>
   >;
 }
@@ -184,6 +194,8 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
       cost_per_unit: unitCost,
       reorder_point: suggestedReorder || prev.reorder_point,
       max_stock: baseQty,
+      package_unit: prev.package_unit || (standardUnit === 'มล.' ? 'ขวด' : standardUnit === 'กรัม' ? 'ถุง' : 'แพ็ค'),
+      package_size: (size * (packUnit === 'กก.' || packUnit === 'ลิตร' ? 1000 : 1)) || 1,
     }));
     setShowPackCalc(false);
   };
@@ -191,19 +203,21 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
       <form
         onSubmit={onSubmit}
-        className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-stone-200 animate-scale-in"
+        className="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-stone-200 animate-scale-in overflow-hidden"
       >
-        <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+        <div className="flex items-center justify-between p-5 sm:px-7 border-b border-stone-100 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-stone-100 border border-stone-200/80 text-stone-700 flex items-center justify-center font-normal">
+            <div className="w-9 h-9 rounded-xl bg-stone-100 border border-stone-200/80 text-stone-700 flex items-center justify-center font-normal shadow-2xs">
               {editingTarget ? <Edit2 className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
             </div>
-            <h3 className="font-semibold text-stone-900 text-base">
-              {editingTarget ? `แก้ไขวัตถุดิบ: ${editingTarget.name}` : 'เพิ่มวัตถุดิบ / เมล็ดกาแฟ'}
-            </h3>
+            <div>
+              <h3 className="font-semibold text-stone-900 text-base">
+                {editingTarget ? `แก้ไขวัตถุดิบ: ${editingTarget.name}` : 'เพิ่มวัตถุดิบ'}
+              </h3>
+            </div>
           </div>
           <button
             type="button"
@@ -214,41 +228,8 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
           </button>
         </div>
 
-        {/* Tracking Type Selection */}
-        <div className="p-3 rounded-2xl bg-stone-50 border border-stone-200 space-y-2">
-          <label className="font-medium text-stone-800 text-xs block">
-            ลักษณะการตัดสต็อก
-          </label>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <button
-              type="button"
-              onClick={() => setFormData({ ...formData, tracking_type: 'strict' })}
-              className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                formData.tracking_type === 'strict'
-                  ? 'bg-stone-900 text-white shadow-xs border-stone-900'
-                  : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-100'
-              }`}
-            >
-              <div className="flex items-center gap-1.5">
-                <span className={`text-xs ${formData.tracking_type === 'strict' ? 'font-medium text-white' : 'font-normal text-stone-800'}`}>ตัดตามแก้ว (สูตรชง BOM)</span>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setFormData({ ...formData, tracking_type: 'bulk_expense' })}
-              className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                formData.tracking_type === 'bulk_expense'
-                  ? 'bg-stone-900 text-white shadow-xs border-stone-900'
-                  : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-100'
-              }`}
-            >
-              <div className="flex items-center gap-1.5">
-                <span className={`text-xs ${formData.tracking_type === 'bulk_expense' ? 'font-medium text-white' : 'font-normal text-stone-800'}`}>เปิดใช้ทั้งแพ็ค (ก้อนใหญ่)</span>
-              </div>
-            </button>
-          </div>
-        </div>
+        {/* Scrollable Form Body */}
+        <div className="p-5 sm:p-7 overflow-y-auto space-y-5 flex-1">
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
           <div className="sm:col-span-2">
@@ -367,17 +348,20 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
                   </div>
                   <div>
                     <label className="text-xs text-stone-600 block mb-1">หน่วยของแพ็ค</label>
-                    <select
+                    <Dropdown
                       value={packUnit}
-                      onChange={(e) => setPackUnit(e.target.value)}
-                      className="w-full p-2 bg-white border border-stone-200 rounded-xl text-xs font-medium text-stone-800"
-                    >
-                      <option value="กรัม">กรัม (g)</option>
-                      <option value="กก.">กก. (kg)</option>
-                      <option value="มล.">มล. (ml)</option>
-                      <option value="ลิตร">ลิตร (L)</option>
-                      <option value="ชิ้น">ชิ้น / ฟอง</option>
-                    </select>
+                      onChange={(val) => setPackUnit(String(val))}
+                      options={[
+                        { value: 'กรัม', label: 'กรัม (g)' },
+                        { value: 'กก.', label: 'กก. (kg)' },
+                        { value: 'มล.', label: 'มล. (ml)' },
+                        { value: 'ลิตร', label: 'ลิตร (L)' },
+                        { value: 'ชิ้น', label: 'ชิ้น / ฟอง' },
+                      ]}
+                      size="sm"
+                      className="w-full"
+                      buttonClassName="p-2 bg-white border border-stone-200 rounded-xl text-xs font-medium text-stone-800"
+                    />
                   </div>
                   <div>
                     <label className="text-xs text-stone-600 block mb-1">จำนวนที่ซื้อ</label>
@@ -421,13 +405,21 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
 
           {/* Smooth Numeric Input: Initial Quantity */}
           <div>
-            <label className="font-semibold text-stone-700 block mb-1">
-              จำนวนเริ่มต้น ({formData.unit})
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="font-semibold text-stone-700">
+                {formData.is_two_tier ? `จำนวนรวมทั้งร้าน (${formData.unit})` : `จำนวนเริ่มต้น (${formData.unit})`}
+              </label>
+              {formData.is_two_tier && (
+                <span className="text-[11px] text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 font-medium">
+                  คำนวณอัตโนมัติ
+                </span>
+              )}
+            </div>
             <input
               type="text"
               inputMode="decimal"
               required
+              disabled={formData.is_two_tier}
               placeholder="เช่น 500"
               value={formData.quantity === 0 ? '' : formData.quantity}
               onChange={(e) => handleQuantityChange(e.target.value)}
@@ -435,8 +427,17 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
                 const val = parseFloat(e.target.value);
                 setFormData((prev) => ({ ...prev, quantity: isNaN(val) || val < 0 ? 0 : val }));
               }}
-              className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl font-mono tabular-nums font-bold text-stone-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400"
+              className={`w-full p-2.5 border rounded-xl font-mono tabular-nums font-bold transition-colors ${
+                formData.is_two_tier
+                  ? 'bg-stone-100/80 border-stone-200 text-stone-600 cursor-not-allowed'
+                  : 'bg-stone-50 border-stone-200 text-stone-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400'
+              }`}
             />
+            {formData.is_two_tier && (
+              <p className="text-[11px] text-stone-400 mt-1">
+                = (หลังร้าน {formData.backstock_quantity || 0} × {formData.package_size || 0}) + หน้าบาร์ {formData.bar_quantity || 0} {formData.unit}
+              </p>
+            )}
           </div>
 
           {/* New Input: ราคาที่ซื้อมาทั้งหมด */}
@@ -486,8 +487,9 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="font-semibold text-stone-700">
-                ความจุสต็อก ({formData.unit})
+                ความจุสต็อกสูงสุด ({formData.unit})
               </label>
+              <span className="text-[11px] text-stone-500 font-normal">สำหรับคำนวณหลอด % สต็อก</span>
             </div>
             <input
               type="text"
@@ -506,6 +508,178 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
               }}
               className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl font-mono tabular-nums font-bold text-stone-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400"
             />
+          </div>
+
+          {/* Two-Tier Stock Management Toggle & Configuration */}
+          <div className="sm:col-span-2 p-4 bg-stone-50 border border-stone-200/90 rounded-2xl space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-colors ${
+                  formData.is_two_tier ? 'bg-amber-100 border-amber-300 text-amber-800' : 'bg-stone-200 border-stone-300 text-stone-600'
+                }`}>
+                  <Package className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-stone-900 text-xs">เปิดระบบ 2 คลัง (หลังร้าน / หน้าบาร์)</span>
+                    <span className="text-[10px] font-medium bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full">
+                      นม / เมล็ดกาแฟ / ไซรัป
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-stone-500 mt-0.5">
+                    เก็บเป็นขวด/ถุงที่ยังไม่เปิดในคลังหลังร้าน และตัดปริมาณตามแก้ว ({formData.unit}) หน้าบาร์
+                  </p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                <input
+                  type="checkbox"
+                  checked={!!formData.is_two_tier}
+                  onChange={(e) => {
+                    const isChecked = e.target.checked;
+                    setFormData((prev) => {
+                      const next = { ...prev, is_two_tier: isChecked };
+                      if (isChecked) {
+                        const bs = parseFloat(String(next.backstock_quantity || 0)) || 0;
+                        const ps = parseFloat(String(next.package_size || 0)) || 0;
+                        const bar = parseFloat(String(next.bar_quantity || 0)) || 0;
+                        if (ps > 0) {
+                          next.quantity = (bs * ps) + bar;
+                        }
+                      }
+                      return next;
+                    });
+                  }}
+                  className="sr-only peer"
+                />
+                <div className="w-10 h-5 bg-stone-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-5 after:transition-all peer-checked:bg-stone-900"></div>
+              </label>
+            </div>
+
+            {/* Package Unit & Size fields */}
+            <div className="grid grid-cols-2 gap-2.5 text-xs pt-2 border-t border-stone-200">
+              <div>
+                <label className="text-[11px] text-stone-700 font-medium block mb-1">
+                  หน่วยบรรจุภัณฑ์ที่ซื้อมา {formData.is_two_tier && <span className="text-rose-500">*</span>}
+                </label>
+                <input
+                  type="text"
+                  placeholder="เช่น ขวด, ลัง, ถุง, กล่อง, แกลลอน"
+                  value={formData.package_unit || ''}
+                  onChange={(e) => setFormData({ ...formData, package_unit: e.target.value })}
+                  className="w-full p-2 bg-white border border-stone-200 rounded-xl font-medium text-stone-900 focus:outline-none focus:border-stone-400"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] text-stone-700 font-medium block mb-1">
+                  ขนาดบรรจุต่อ 1 {formData.package_unit || 'แพ็ค/ขวด'} ({formData.unit}) {formData.is_two_tier && <span className="text-rose-500">*</span>}
+                </label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder={`เช่น 2000 (${formData.unit})`}
+                  value={formData.package_size === undefined || formData.package_size === '' ? '' : formData.package_size}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                      setFormData((prev) => {
+                        const next = { ...prev, package_size: val === '' ? '' : val };
+                        if (next.is_two_tier) {
+                          const bs = parseFloat(String(next.backstock_quantity || 0)) || 0;
+                          const ps = parseFloat(val) || 0;
+                          const bar = parseFloat(String(next.bar_quantity || 0)) || 0;
+                          next.quantity = (bs * ps) + bar;
+                        }
+                        return next;
+                      });
+                    }
+                  }}
+                  className="w-full p-2 bg-white border border-stone-200 rounded-xl font-mono tabular-nums font-bold text-stone-900 focus:outline-none focus:border-stone-400"
+                />
+              </div>
+            </div>
+
+            {/* If Two-tier is enabled, show Backstock & Bar stock initial inputs */}
+            {formData.is_two_tier ? (
+              <div className="p-3 bg-white border border-amber-200/90 rounded-xl space-y-2.5 animate-fade-in shadow-2xs">
+                <span className="text-xs font-semibold text-stone-900 block">
+                  ระบุสต็อกเริ่มต้นแยก 2 จุด
+                </span>
+                <div className="grid grid-cols-2 gap-2.5 text-xs">
+                  <div>
+                    <label className="text-[11px] text-stone-600 block mb-1">
+                      หลังร้าน (ยังไม่เปิด) ({formData.package_unit || 'แพ็ค'})
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="เช่น 5"
+                      value={formData.backstock_quantity === undefined || formData.backstock_quantity === '' ? '' : formData.backstock_quantity}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                          setFormData((prev) => {
+                            const next = { ...prev, backstock_quantity: val === '' ? '' : val };
+                            const bs = parseFloat(val) || 0;
+                            const ps = parseFloat(String(next.package_size || 0)) || 0;
+                            const bar = parseFloat(String(next.bar_quantity || 0)) || 0;
+                            next.quantity = (bs * ps) + bar;
+                            return next;
+                          });
+                        }
+                      }}
+                      className="w-full p-2 bg-stone-50 border border-stone-200 rounded-xl font-mono tabular-nums font-bold text-stone-900 focus:bg-white focus:outline-none focus:border-stone-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-stone-600 block mb-1">
+                      หน้าบาร์ (เปิดใช้แล้ว) ({formData.unit})
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder={`เช่น 1200 (${formData.unit})`}
+                      value={formData.bar_quantity === undefined || formData.bar_quantity === '' ? '' : formData.bar_quantity}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                          setFormData((prev) => {
+                            const next = { ...prev, bar_quantity: val === '' ? '' : val };
+                            const bs = parseFloat(String(next.backstock_quantity || 0)) || 0;
+                            const ps = parseFloat(String(next.package_size || 0)) || 0;
+                            const bar = parseFloat(val) || 0;
+                            next.quantity = (bs * ps) + bar;
+                            return next;
+                          });
+                        }
+                      }}
+                      className="w-full p-2 bg-stone-50 border border-stone-200 rounded-xl font-mono tabular-nums font-bold text-stone-900 focus:bg-white focus:outline-none focus:border-stone-400"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs">
+                  <span className="text-stone-500 text-[11px]">ยอดรวมทั้งร้านอัตโนมัติ:</span>
+                  <span className="font-mono font-bold text-stone-900">
+                    {Number(formData.quantity || 0).toLocaleString()} {formData.unit}
+                    {Boolean(Number(formData.package_size) > 0) && (
+                      <span className="text-stone-500 font-normal font-sans ml-1.5 text-[11px]">
+                        (≈ {(Number(formData.quantity || 0) / Number(formData.package_size)).toFixed(1)} {formData.package_unit || 'แพ็ค'})
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              Boolean(formData.package_unit && Number(formData.package_size) > 0 && Number(formData.quantity) > 0) && (
+                <p className="text-[11px] text-stone-500 font-mono">
+                  💡 สต็อกปัจจุบัน {formData.quantity} {formData.unit} เทียบเท่ากับประมาณ{' '}
+                  <strong className="text-stone-900 font-bold font-mono">
+                    {(Number(formData.quantity) / Number(formData.package_size)).toFixed(1)} {formData.package_unit}
+                  </strong>
+                </p>
+              )
+            )}
           </div>
 
           {/* Smooth Numeric Input: Cost per unit */}
@@ -546,8 +720,10 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
             />
           </div>
         </div>
+        </div>
 
-        <div className="pt-3 border-t border-stone-100 flex justify-end gap-2 text-xs">
+        {/* Pinned Modal Footer */}
+        <div className="p-4 sm:px-7 border-t border-stone-100 bg-stone-50/50 flex items-center justify-end gap-2 text-xs shrink-0">
           <Button
             type="button"
             variant="outline"

@@ -30,6 +30,7 @@ export default function RecipeMenuPage() {
   const [image, setImage] = useState('');
   const [description, setDescription] = useState('');
   const [recipes, setRecipes] = useState<RecipeItem[]>([]);
+  const [optionIngredients, setOptionIngredients] = useState<{ id?: number; name: string; price?: number; ingredient_id: number; quantity: number }[]>([]);
 
   // Open modal for create
   const handleOpenCreate = () => {
@@ -40,6 +41,7 @@ export default function RecipeMenuPage() {
     setImage('');
     setDescription('');
     setRecipes([{ ingredient_id: ingredients[0]?.id || 1, quantity_used: 0.1 }]);
+    setOptionIngredients([]);
     setIsModalOpen(true);
   };
 
@@ -52,6 +54,7 @@ export default function RecipeMenuPage() {
     setImage(item.image || '');
     setDescription(item.description || '');
     setRecipes(item.recipes && item.recipes.length > 0 ? [...item.recipes] : [{ ingredient_id: ingredients[0]?.id || 1, quantity_used: 0.1 }]);
+    setOptionIngredients(item.option_ingredients && item.option_ingredients.length > 0 ? [...item.option_ingredients] : []);
     setIsModalOpen(true);
   };
 
@@ -69,6 +72,26 @@ export default function RecipeMenuPage() {
 
   const handleUpdateRecipeRow = (index: number, field: string, value: any) => {
     setRecipes((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
+    });
+  };
+
+  // Option modifier helpers
+  const handleAddOptionRow = () => {
+    setOptionIngredients((prev) => [
+      ...prev,
+      { name: '', price: 15, ingredient_id: ingredients[0]?.id || 1, quantity: 15 },
+    ]);
+  };
+
+  const handleRemoveOptionRow = (index: number) => {
+    setOptionIngredients((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUpdateOptionRow = (index: number, field: string, value: any) => {
+    setOptionIngredients((prev) => {
       const next = [...prev];
       next[index] = { ...next[index], [field]: value };
       return next;
@@ -93,6 +116,7 @@ export default function RecipeMenuPage() {
       .map((r) => ({
         ingredient_id: Number(r.ingredient_id),
         quantity_used: typeof r.quantity_used === 'number' ? r.quantity_used : parseFloat(r.quantity_used as any) || 0.01,
+        waste_percent: typeof r.waste_percent === 'number' ? r.waste_percent : parseFloat(r.waste_percent as any) || 0,
       }))
       .filter((r) => r.ingredient_id && r.quantity_used > 0);
 
@@ -100,6 +124,15 @@ export default function RecipeMenuPage() {
       alert('กรุณาระบุวัตถุดิบและสัดส่วนอย่างน้อย 1 รายการ');
       return;
     }
+
+    const formattedOptions = optionIngredients
+      .filter((o) => o.name.trim() && o.ingredient_id && (Number(o.quantity) || 0) > 0)
+      .map((o) => ({
+        name: o.name.trim(),
+        price: Number(o.price || 0),
+        ingredient_id: Number(o.ingredient_id),
+        quantity: Number(o.quantity || 1),
+      }));
 
     let success = false;
     if (editingItem) {
@@ -110,6 +143,7 @@ export default function RecipeMenuPage() {
         image: image.trim() || undefined,
         description: description.trim(),
         recipes: formattedRecipes,
+        option_ingredients: formattedOptions,
       });
     } else {
       success = await addMenuItem({
@@ -119,6 +153,7 @@ export default function RecipeMenuPage() {
         image: image.trim() || undefined,
         description: description.trim(),
         recipes: formattedRecipes,
+        option_ingredients: formattedOptions,
       });
     }
 
@@ -291,6 +326,10 @@ export default function RecipeMenuPage() {
         onAddRecipeRow={handleAddRecipeRow}
         onRemoveRecipeRow={handleRemoveRecipeRow}
         onUpdateRecipeRow={handleUpdateRecipeRow}
+        optionIngredients={optionIngredients}
+        onAddOptionRow={handleAddOptionRow}
+        onRemoveOptionRow={handleRemoveOptionRow}
+        onUpdateOptionRow={handleUpdateOptionRow}
       />
     </div>
   );

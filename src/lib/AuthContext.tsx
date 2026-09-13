@@ -30,6 +30,7 @@ interface AuthContextType {
   refreshStores: () => Promise<void>;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
+  updateProfile: (data: { name: string; email?: string; password?: string; avatar?: string }) => Promise<{ success: boolean; error?: string }>;
   hasRole: (role: string) => boolean;
   hasPermission: (permission: string) => boolean;
 }
@@ -119,10 +120,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   const freshActive = sList.find((s) => s.id === parsed.id) || parsed;
                   setActiveStoreState(freshActive);
                   localStorage.setItem(ACTIVE_STORE_KEY, JSON.stringify(freshActive));
+                  localStorage.setItem('active_store_id', String(freshActive.id));
                 } else if (sList.length > 0) {
                   const defaultCafe = sList.find((s) => s.type === 'cafe' || s.name.includes('คาเฟ่') || s.name.toLowerCase().includes('cafe')) || sList[0];
                   setActiveStoreState(defaultCafe);
                   localStorage.setItem(ACTIVE_STORE_KEY, JSON.stringify(defaultCafe));
+                  localStorage.setItem('active_store_id', String(defaultCafe.id));
                 }
               }
             } else if (res.status === 401) {
@@ -163,15 +166,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user, isLoading, pathname, router, activeStore]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (identifier: string, password: string) => {
     try {
+      // Clear previous cached credentials/stores before logging in as a new user
+      clearAuth();
+
       const res = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          login: identifier,
+          email: identifier,
+          password,
+        }),
       });
 
       const data = await res.json();
@@ -215,6 +225,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setActiveStore = (store: StoreInfo) => {
     setActiveStoreState(store);
     localStorage.setItem(ACTIVE_STORE_KEY, JSON.stringify(store));
+    localStorage.setItem('active_store_id', String(store.id));
   };
 
   const clearAuth = () => {
@@ -222,6 +233,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(STORES_KEY);
     localStorage.removeItem(ACTIVE_STORE_KEY);
+    localStorage.removeItem('active_store_id');
     setToken(null);
     setUser(null);
     setStores([]);
@@ -247,6 +259,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateProfile = async (data: { name: string; email?: string; password?: string; avatar?: string }) => {
+    try {
+      const activeToken = token || (typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null);
+      if (!activeToken) return { success: false, error: 'กรุณาเข้าสู่ระบบ' };
+
+      const res = await fetch(`${API_BASE_URL}/auth/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${activeToken}`,
+          Accept: 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      const resData = await res.json();
+      if (!res.ok) {
+        return { success: false, error: resData.message || 'บันทึกข้อมูลไม่สำเร็จ' };
+      }
+
+      if (resData.user) {
+        setUser(resData.user);
+        localStorage.setItem(USER_KEY, JSON.stringify(resData.user));
+      }
+
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message || 'ไม่สามารถเชื่อมต่อ Server ได้' };
+    }
+  };
+
   const hasRole = (role: string) => user?.roles?.includes(role) || false;
   const hasPermission = (permission: string) => user?.permissions?.includes(permission) || false;
 
@@ -262,6 +305,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         refreshStores,
         login,
         logout,
+        updateProfile,
         hasRole,
         hasPermission,
       }}

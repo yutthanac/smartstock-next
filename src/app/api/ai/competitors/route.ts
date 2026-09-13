@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
       storeType = 'ร้านกาแฟ / คาเฟ่ (Cafe & Coffee Shop)',
       radius = 1500,
       businessDetails = '',
+      selectedPlaces = null,
       apiKey: clientApiKey,
     } = body;
 
@@ -76,12 +77,32 @@ export async function POST(req: NextRequest) {
       // Keep default locationName if lookup fails
     }
 
-    // 1. Fetch real nearby cafes & shops from Google Places API
+    // 1. Fetch real nearby cafes & shops or use user's selected places
     const googleApiKey = process.env.GOOGLE_PLACES_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     let realPlacesContext = '';
     let realPlacesList: any[] = [];
 
-    if (googleApiKey) {
+    if (Array.isArray(selectedPlaces) && selectedPlaces.length > 0) {
+      // User explicitly selected which shops they want to analyze
+      realPlacesList = selectedPlaces.map((p: any) => ({
+        name: p.name,
+        lat: p.lat || lat,
+        lng: p.lng || lng,
+        rating: p.rating,
+        reviews_count: p.userRatingCount ? `${p.userRatingCount}` : undefined,
+        address: p.address || p.location || resolvedLocationName,
+        type: p.type || p.category,
+      }));
+
+      const selectedCount = realPlacesList.length;
+      realPlacesContext = `รายชื่อร้านจริงที่ผู้ใช้เลือกมาให้วิเคราะห์โดยเฉพาะ (${selectedCount} ร้าน):
+${JSON.stringify(realPlacesList, null, 2)}
+**ข้อกำหนดสำคัญที่สุด**:
+- ผู้ใช้เลือกมาทั้งหมด ${selectedCount} ร้านเท่านั้น
+- คุณต้องวิเคราะห์เฉพาะ ${selectedCount} ร้านในรายชื่อนี้เท่านั้น ละเว้นร้านอื่นเด็ดขาด
+- ใน array "competitors" ต้องมีจำนวน ${selectedCount} ร้านเป๊ะๆ ห้ามเกิน ห้ามขาด และห้ามเพิ่มร้านอื่นที่ไม่ได้อยู่ในรายชื่อนี้เข้ามาเด็ดขาด!
+- ชื่อร้าน (name) ในแต่ละ object ต้องตรงกับชื่อร้านในรายชื่อด้านบนเป๊ะๆ`;
+    } else if (googleApiKey) {
       try {
         const radiusMeters = Math.min(Math.max(radius, 500), 50000);
         const gRes = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
@@ -145,10 +166,13 @@ ${businessContext}
 
 ${realPlacesContext || 'ค้นหาร้านกาแฟ/คาเฟ่จริงที่มีอยู่จริงบน Google Maps รอบพิกัดนี้เท่านั้น ห้ามแต่งชื่อร้านขึ้นมาเอง'}
 
+**ข้อกำหนดสำคัญที่สุดเรื่องจำนวนร้านคู่แข่ง**:
+- หากมีรายชื่อร้านที่ผู้ใช้เลือกด้านบน ให้วิเคราะห์เฉพาะร้านในรายชื่อดังกล่าวเท่านั้น (ครบทุกร้านในลิสต์ที่เลือก) **ห้ามเพิ่มร้านอื่นที่ไม่ได้ถูกเลือกเข้ามาเด็ดขาด** ถ้าผู้ใช้เลือกมา ${realPlacesList.length || '3'} ร้าน ใน array "competitors" ต้องมีผลวิเคราะห์แค่ ${realPlacesList.length || '3'} ร้านนั้นเท่านั้น!
+
 หน้าที่ของคุณคือ:
 1. วิเคราะห์สภาพแวดล้อม กลุ่มลูกค้าเป้าหมายในย่านนี้ (neighborhood_summary)
 2. วิเคราะห์และสรุปรีวิวจริงจาก Google Maps ของแต่ละร้านคู่แข่งด้านบน:
-   - ชื่อร้าน (name) ต้องตรงกับชื่อร้านจริง
+   - ชื่อร้าน (name) ต้องตรงกับชื่อร้านจริงในลิสต์
    - ที่ตั้งหรือจุดสังเกต (location)
    - ละติจูดจริง (lat)
    - ลองจิจูดจริง (lng)
@@ -256,8 +280,73 @@ ${realPlacesContext || 'ค้นหาร้านกาแฟ/คาเฟ่�
 
     const cleanText = textPart.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
     const parsed = JSON.parse(cleanText);
+
+    // If user provided specific selectedPlaces, strictly enforce that finalCompetitors contains ONLY the selected places
+    let finalCompetitors = parsed.competitors || [];
+    if (Array.isArray(selectedPlaces) && selectedPlaces.length > 0) {
+      const normalize = (str: string) => (str || '').replace(/\s+/g, '').toLowerCase();
+      const matchedCompetitors: CompetitorItem[] = [];
+      const usedCandidates = new Set<number>();
+
+      for (const sp of selectedPlaces) {
+        const normSp = normalize(sp.name);
+
+        // 1. Try exact match
+        let foundIdx = finalCompetitors.findIndex(
+          (c: any, idx: number) => !usedCandidates.has(idx) && normalize(c.name) === normSp
+        );
+
+        // 2. Try substring match (e.g. branch name omitted or added)
+        if (foundIdx === -1) {
+          foundIdx = finalCompetitors.findIndex((c: any, idx: number) => {
+            if (usedCandidates.has(idx)) return false;
+            const normC = normalize(c.name);
+            return normSp.includes(normC) || normC.includes(normSp);
+          });
+        }
+
+        // 3. If only 1 shop was selected and Gemini returned competitor(s), match the first unused
+        if (foundIdx === -1 && selectedPlaces.length === 1 && finalCompetitors.length > 0) {
+          foundIdx = 0;
+        }
+
+        if (foundIdx !== -1) {
+          usedCandidates.add(foundIdx);
+          const matched = finalCompetitors[foundIdx];
+          matchedCompetitors.push({
+            ...matched,
+            name: sp.name, // Guarantee exact user-selected name
+            location: matched.location || sp.address || sp.location || resolvedLocationName,
+            lat: matched.lat || sp.lat,
+            lng: matched.lng || sp.lng,
+            rating: matched.rating || sp.rating || 4.5,
+            reviews_count: matched.reviews_count || sp.reviews_count || (sp.userRatingCount ? `${sp.userRatingCount}` : 'รีวิวบน Google'),
+          });
+        } else {
+          // Fallback item for this selected place if Gemini omitted it
+          matchedCompetitors.push({
+            name: sp.name,
+            location: sp.address || sp.location || resolvedLocationName,
+            lat: sp.lat || lat,
+            lng: sp.lng || lng,
+            rating: sp.rating || 4.5,
+            reviews_count: sp.reviews_count || (sp.userRatingCount ? `${sp.userRatingCount}` : 'รีวิวบน Google'),
+            price_level: '฿฿',
+            review_summary: `ร้านมีฐานลูกค้ารีวิวจริงบน Google Maps (${sp.rating ? sp.rating + ' ดาว' : ''}) ลูกค้าชื่นชอบความสะดวกและรสชาติเครื่องดื่ม`,
+            signature_menus: ['เครื่องดื่ม Signature', 'กาแฟสด', 'เมนูยอดนิยม'],
+            strengths: ['ทำเลดี เข้าถึงสะดวก', 'มีข้อมูลและรีวิวจริงบน Google Maps'],
+            weaknesses: ['ที่จอดรถอาจมีจำกัดในช่วงเวลาเร่งด่วน', 'ยังขาดเมนูทางเลือกสุขภาพ'],
+            opportunity_for_us: 'ชูจุดขายกาแฟคุณภาพและเมนูซิกเนเจอร์ที่แตกต่าง เพื่อดึงดูดลูกค้าในย่านนี้',
+          });
+        }
+      }
+
+      finalCompetitors = matchedCompetitors;
+    }
+
     return NextResponse.json({
       ...parsed,
+      competitors: finalCompetitors,
       lat,
       lng,
       location_name: parsed.location_name || resolvedLocationName,

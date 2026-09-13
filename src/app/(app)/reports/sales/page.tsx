@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   BarChart3,
   TrendingUp,
@@ -8,6 +8,11 @@ import {
   ShoppingBag,
   Sparkles,
   Filter,
+  Receipt,
+  Minus,
+  AlertCircle,
+  ArrowDownLeft,
+  Trash2,
 } from 'lucide-react';
 import {
   BarChart,
@@ -21,20 +26,53 @@ import {
   Area,
 } from 'recharts';
 import { useStock } from '@/lib/StockContext';
+import { useAuth } from '@/lib/AuthContext';
 import { Topbar } from '@/components/Topbar';
 import { Button } from '@/components/Button';
 import { Badge } from '@/components/Badge';
 import { SalesDonutCard } from '../../dashboard/components/SalesDonutCard';
+import { WasteStatsResponse } from '@/types';
 
 type PeriodFilter = '7days' | '30days' | 'year';
 
-
-
 export default function SalesReportPage() {
-  const { dashboard, orders } = useStock();
+  const { activeStore } = useAuth();
+  const { dashboard, orders, fetchWasteStats, fetchRefundStats } = useStock();
   const [period, setPeriod] = useState<PeriodFilter>('7days');
   const [aiAnalyzing, setAiAnalyzing] = useState<boolean>(false);
   const [executiveSummary, setExecutiveSummary] = useState<string | null>(null);
+  const [wasteStats, setWasteStats] = useState<WasteStatsResponse | null>(null);
+
+  // Refund stats state
+  const [refundStats, setRefundStats] = useState<{
+    gross_sales: number;
+    refund_total: number;
+    refund_count: number;
+    net_sales: number;
+    refunded_orders: Array<{
+      id: number;
+      order_number: string;
+      total: number;
+      status: string;
+      refund_reason: string;
+      refunded_at: string;
+      refunded_by: string;
+      created_at: string;
+    }>;
+  } | null>(null);
+
+  useEffect(() => {
+    // Reset stats on store change to avoid showing previous store's data
+    setRefundStats(null);
+    setWasteStats(null);
+
+    fetchRefundStats().then((data) => {
+      if (data) setRefundStats(data);
+    });
+
+    const wastePeriod = period === 'year' ? 'all' : period === '30days' ? 'month' : 'week';
+    fetchWasteStats(wastePeriod).then(setWasteStats);
+  }, [fetchRefundStats, fetchWasteStats, period, activeStore?.id]);
 
   // Total 7 days sales
   const salesDataset = useMemo(() => {
@@ -53,7 +91,12 @@ export default function SalesReportPage() {
   const profitMargin = totalSales > 0 ? Math.round((totalProfit / totalSales) * 100) : 0;
 
   // Basket Size (Average Order Value)
-  const totalOrderCount = orders.length;
+  const scopedOrders = useMemo(() => {
+    if (!activeStore) return orders;
+    return orders.filter((o) => !o.store_id || o.store_id === activeStore.id);
+  }, [orders, activeStore]);
+
+  const totalOrderCount = scopedOrders.length;
   const avgBasketSize =
     totalOrderCount > 0
       ? Math.round(totalSales / totalOrderCount)
@@ -209,6 +252,69 @@ export default function SalesReportPage() {
           </div>
         </div>
 
+        {/* Refund / Cancellation & Waste KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Gross Sales */}
+          <div className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-stone-500 font-normal">ยอดขายรวม (Gross Sales)</span>
+              <span className="p-1.5 rounded-xl bg-stone-100 border border-stone-200/80 text-stone-700">
+                <BarChart3 className="w-4 h-4" />
+              </span>
+            </div>
+            <div className="text-2xl font-bold text-stone-900 mt-2 font-mono tabular-nums">
+              ฿{(refundStats?.gross_sales ?? totalSales).toLocaleString()}
+            </div>
+            <div className="text-xs text-stone-400 mt-1 font-normal">ก่อนหักยอดคืนเงิน</div>
+          </div>
+
+          {/* Refund Total */}
+          <div className="bg-white p-5 rounded-2xl border border-rose-200/80 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-rose-500 font-normal">ยอดเงินคืน/ยกเลิกบิล (Refund)</span>
+              <span className="p-1.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-600">
+                <ArrowDownLeft className="w-4 h-4" />
+              </span>
+            </div>
+            <div className="text-2xl font-bold text-rose-600 mt-2 font-mono tabular-nums">
+              -฿{(refundStats?.refund_total ?? 0).toLocaleString()}
+            </div>
+            <div className="text-xs text-rose-400 mt-1 font-normal">
+              {refundStats?.refund_count ?? 0} บิลที่ถูกยกเลิก/คืนเงิน
+            </div>
+          </div>
+
+          {/* Net Sales */}
+          <div className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-stone-500 font-normal">ยอดขายสุทธิ (Net Revenue)</span>
+              <span className="p-1.5 rounded-xl bg-stone-100 border border-stone-200/80 text-stone-700">
+                <TrendingUp className="w-4 h-4" />
+              </span>
+            </div>
+            <div className="text-2xl font-bold text-stone-900 mt-2 font-mono tabular-nums">
+              ฿{(refundStats?.net_sales ?? totalSales).toLocaleString()}
+            </div>
+            <div className="text-xs text-stone-400 mt-1 font-normal">หลังหักยอดคืนเงินแล้ว</div>
+          </div>
+
+          {/* Waste Cost */}
+          <div className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-stone-500 font-normal">มูลค่าของเสีย (Waste Cost)</span>
+              <span className="p-1.5 rounded-xl bg-stone-100 border border-stone-200/80 text-stone-700">
+                <Trash2 className="w-4 h-4 text-stone-600" />
+              </span>
+            </div>
+            <div className="text-2xl font-bold text-stone-900 mt-2 font-mono tabular-nums">
+              ฿{(wasteStats?.total_waste_value ?? 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+            <div className="text-xs text-stone-400 mt-1 font-normal">
+              {wasteStats?.total_waste_count ?? 0} ครั้งที่มีการบันทึกทิ้ง/หก
+            </div>
+          </div>
+        </div>
+
         {/* AI Executive Summary Card */}
         <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200/90 shadow-2xs space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -355,6 +461,61 @@ export default function SalesReportPage() {
             )}
           </div>
         </div>
+
+        {/* Refunded Orders Table */}
+        {refundStats && refundStats.refund_count > 0 && (
+          <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200/90 shadow-2xs space-y-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center shrink-0">
+                <ArrowDownLeft className="w-4 h-4 text-rose-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-stone-900 text-sm">รายการบิลที่ถูกคืนเงิน / ยกเลิก</h3>
+                <p className="text-xs text-stone-400 font-normal mt-0.5">
+                  {refundStats.refund_count} บิล — รวม ฿{refundStats.refund_total.toLocaleString()}
+                </p>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-stone-200">
+                    <th className="text-left pb-2 text-xs text-stone-500 font-normal">เลขที่บิล</th>
+                    <th className="text-left pb-2 text-xs text-stone-500 font-normal">เวลา</th>
+                    <th className="text-right pb-2 text-xs text-stone-500 font-normal">มูลค่าบิล</th>
+                    <th className="text-left pb-2 text-xs text-stone-500 font-normal">เหตุผลการคืน</th>
+                    <th className="text-left pb-2 text-xs text-stone-500 font-normal">ผู้ดำเนินการ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {refundStats.refunded_orders.map((order) => (
+                    <tr key={order.id} className="border-b border-stone-100 hover:bg-rose-50/40 transition-colors">
+                      <td className="py-2.5 font-mono text-xs text-stone-700">{order.order_number}</td>
+                      <td className="py-2.5 text-xs text-stone-500 font-normal">
+                        {new Date(order.refunded_at || order.created_at).toLocaleString('th-TH', {
+                          day: '2-digit',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </td>
+                      <td className="py-2.5 text-right font-mono text-xs text-rose-600 font-semibold tabular-nums">
+                        -฿{Number(order.total).toLocaleString()}
+                      </td>
+                      <td className="py-2.5 text-xs text-stone-500 font-normal">
+                        {order.refund_reason || '—'}
+                      </td>
+                      <td className="py-2.5 text-xs text-stone-400 font-normal">
+                        {order.refunded_by || '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

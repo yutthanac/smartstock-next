@@ -7,9 +7,6 @@ import { Skeleton, CardSkeleton } from '@/components/Skeleton';
 import { KpiCards } from './components/KpiCards';
 import { SalesAnalyticsChart } from './components/SalesAnalyticsChart';
 import { DashboardCalendarDropdown } from './components/DashboardCalendarDropdown';
-import { AiInsightsCard } from './components/AiInsightsCard';
-import { LowStockAlertCard } from './components/LowStockAlertCard';
-import { MenuProfitabilityTable } from './components/MenuProfitabilityTable';
 
 export default function DashboardPage() {
   const { dashboard, isLoading } = useStock();
@@ -72,15 +69,6 @@ export default function DashboardPage() {
                 salesYearly={dashboard.sales_yearly}
               />
             </section>
-
-            {/* Section 3: AI Insights & Low Stock Alerts */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-              <AiInsightsCard recommendations={dashboard.ai_recommendations} />
-              <LowStockAlertCard alerts={dashboard.low_stock_alerts} />
-            </section>
-
-            {/* Section 4: Cost & Profit Margin Per Dish Table */}
-            <MenuProfitabilityTable menuProfitability={dashboard.menu_profitability} />
           </>
         )}
       </main>

@@ -68,8 +68,6 @@ const ROLE_DISPLAY_NAMES: Record<string, string> = {
   staff:   'พนักงานทั่วไป (Staff)',
 };
 
-const SIMULATE_ROLES = ['admin', 'manager', 'chef', 'cashier', 'staff'];
-
 export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) => {
   const pathname = usePathname();
   const router = useRouter();
@@ -80,7 +78,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
   const closeMobileSidebar = onMobileClose || sidebarContext.closeMobileSidebar;
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isStoreDropdownOpen, setIsStoreDropdownOpen] = useState(false);
-  const [simulatedRole, setSimulatedRole] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Auto-close mobile drawer on route navigation
@@ -155,12 +152,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
   };
 
   // Determine Effective Role
-  const actualRole = activeStore?.my_role || (user?.roles?.[0] as string) || 'admin';
-  const effectiveRole = simulatedRole || actualRole;
+  const actualRole = (user?.roles?.[0] as string) || activeStore?.my_role || 'owner';
+  const effectiveRole = actualRole;
 
   const isRoleAllowed = (allowedRoles: string[]): boolean => {
-    // Admin and Owner have master access to all enabled store modules
-    if (effectiveRole === 'admin' || effectiveRole === 'owner') return true;
+    // Admin (system administrator) has master access to everything
+    if (effectiveRole === 'admin') return true;
     return allowedRoles.includes(effectiveRole);
   };
 
@@ -274,14 +271,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
           href: '/roles',
           icon: ShieldCheck,
           moduleKey: 'roles',
-          allowedRoles: ['admin', 'owner'],
+          allowedRoles: ['admin'],
         },
         {
           label: 'ตั้งค่าระบบ',
           href: '/settings',
           icon: Settings,
           moduleKey: 'settings',
-          allowedRoles: ['admin', 'owner'],
+          allowedRoles: ['admin'],
         },
       ],
     },
@@ -565,52 +562,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
         })}
       </div>
 
-      {/* Role Simulation Switcher for Testing (only when expanded) */}
-      {!isCollapsed && (
-        <div className="px-3 py-2.5 border-t border-stone-200 bg-stone-50/50">
-          <div className="flex items-center justify-between text-xs font-normal text-stone-500 mb-1.5">
-            <span className="flex items-center gap-1">
-              <Eye className="w-3.5 h-3.5 text-stone-500" />
-              จำลองมุมมอง:
-            </span>
-            {simulatedRole && (
-              <button
-                onClick={() => setSimulatedRole(null)}
-                className="text-xs text-stone-700 hover:underline font-semibold cursor-pointer"
-              >
-                รีเซ็ต
-              </button>
-            )}
-          </div>
-          <div className="grid grid-cols-5 gap-1.5">
-            {SIMULATE_ROLES.map((r) => {
-              const isActive = effectiveRole === r;
-              return (
-                <button
-                  key={r}
-                  onClick={() => setSimulatedRole(r === actualRole ? null : r)}
-                  className={`py-1.5 text-xs font-medium rounded-xl transition-all capitalize cursor-pointer ${
-                    isActive
-                      ? 'bg-[#ebecf0] text-slate-900 font-semibold skeuo-inset'
-                      : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80'
-                  }`}
-                  title={`ดูเมนูในมุมมอง ${ROLE_DISPLAY_NAMES[r]}`}
-                >
-                  {r === 'admin' ? 'Admin' : r === 'manager' ? 'Mgr' : r === 'chef' ? 'Chef' : r === 'cashier' ? 'POS' : 'Staff'}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+
 
       {/* Footer User Info & Logout Button */}
       <div className={`p-3 border-t border-slate-100 ${isCollapsed ? 'flex flex-col items-center gap-2' : 'space-y-2'}`}>
         {!isCollapsed ? (
           <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-200/70 flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-medium text-xs shrink-0">
-                <UserIcon className="w-4 h-4" />
+              <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-medium text-xs shrink-0 overflow-hidden shadow-2xs">
+                {user?.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                ) : (
+                  <UserIcon className="w-4 h-4" />
+                )}
               </div>
               <div className="min-w-0">
                 <div className="text-sm font-semibold text-slate-800 truncate">
@@ -633,9 +601,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
           <div className="flex flex-col items-center gap-2 py-1">
             <div
               title={`${user?.name || 'ผู้ใช้'} (${ROLE_DISPLAY_NAMES[effectiveRole] ?? effectiveRole})`}
-              className="w-9 h-9 rounded-full bg-stone-200 text-stone-700 flex items-center justify-center font-medium text-xs shrink-0 cursor-pointer"
+              className="w-9 h-9 rounded-full bg-stone-200 text-stone-700 flex items-center justify-center font-medium text-xs shrink-0 cursor-pointer overflow-hidden shadow-2xs"
             >
-              <UserIcon className="w-4 h-4" />
+              {user?.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="w-full h-full object-cover rounded-full"
+                />
+              ) : (
+                <UserIcon className="w-4 h-4" />
+              )}
             </div>
             <button
               onClick={() => logout()}

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { menus = [], ingredients = [], dashboardKPI = {}, apiKey: clientApiKey } = body;
+    const { menus = [], ingredients = [], dashboardKPI = {}, mapContext = null, salesContext = null, apiKey: clientApiKey } = body;
 
     const apiKey = clientApiKey || process.env.GEMINI_API_KEY;
 
@@ -12,18 +12,33 @@ export async function POST(req: NextRequest) {
 
     // If no API key, return sophisticated rule-based analysis
     if (!apiKey) {
-      return generateFallbackInsights(menus, ingredients, dashboardKPI);
+      return generateFallbackInsights(menus, ingredients, dashboardKPI, mapContext, salesContext);
+    }
+
+    let extraContextPrompt = '';
+    if (mapContext) {
+      extraContextPrompt += `\n- ข้อมูลทำเลและคู่แข่งรอบร้าน (Location & Competitor Insights):
+  - พิกัด/ย่าน: ${mapContext.locationName || 'ไม่ระบุ'}
+  - กลุ่มเป้าหมายในพื้นที่: ${mapContext.targetAudience || 'ไม่ระบุ'}
+  - ช่องว่างในตลาด (Market Gap): ${mapContext.marketGap || 'ไม่มีข้อมูล'}
+  - จำนวนร้านคู่แข่งรอบข้าง: ${mapContext.competitorCount || 0} ร้าน`;
+    }
+    if (salesContext) {
+      extraContextPrompt += `\n- ข้อมูลยอดขายจริงจากระบบ POS (Internal POS Sales Insights):
+  - ยอดขายสุทธิล่าสุด: ฿${salesContext.netSales || 0}
+  - เมนูยอดนิยม Top Sellers: ${(salesContext.topSellers || []).join(', ') || 'ไม่มี'}
+  - วัตถุดิบค้างสต็อกหรือสต็อกเกิน (Excess Stock): ${(salesContext.excessStock || []).join(', ') || 'ไม่มี'}`;
     }
 
     const systemPrompt = `คุณคือที่ปรึกษาเชิงกลยุทธ์ธุรกิจร้านอาหารและคาเฟ่ (F&B Business Strategy & Recipe Development Consultant) ในไทย
-หน้าที่ของคุณคือวิเคราะห์ข้อมูลเมนู ต้นทุน วัตถุดิบในคลัง และยอดขาย เพื่อให้คำแนะนำที่นำไปปฏิบัติได้จริง (Actionable Business Recommendations)
+หน้าที่ของคุณคือวิเคราะห์ข้อมูลเมนู ต้นทุน วัตถุดิบในคลัง และยอดขาย เพื่อให้คำแนะนำที่นำไปปฏิบัติได้จริง (Actionable Business Recommendations) โดยเฉพาะการผสานจุดแข็งจากทำเล/คู่แข่ง (Map Context) เข้ากับสต็อกและยอดขายจริง (Internal Sales Context)
 
 ข้อมูลร้านค้าปัจจุบัน:
 - กำไรเฉลี่ยร้าน: ${dashboardKPI.profit_margin || 0}%
 - เมนูทั้งหมด (${menus.length} รายการ):
 ${menus.slice(0, 15).map((m: any) => `  - ${m.name} (${m.category}): ขาย ${m.price}฿, ทุน ${m.cost_price || 0}฿, มาร์จิ้น ${m.margin_percent || 0}%, ยอดขายสะสม ${m.order_count || 0}`).join('\n')}
 - วัตถุดิบคงคลังตัวอย่าง (${ingredients.length} รายการ, ใกล้หมด ${lowStockIngredients.length} รายการ):
-${ingredients.slice(0, 15).map((ing: any) => `  - ${ing.name}: เหลือ ${ing.current_stock} ${ing.unit} (จุดสั่งซื้อ ${ing.min_stock}) ทุน ${ing.cost_per_unit}฿/${ing.unit}`).join('\n')}
+${ingredients.slice(0, 15).map((ing: any) => `  - ${ing.name}: เหลือ ${ing.current_stock} ${ing.unit} (จุดสั่งซื้อ ${ing.min_stock}) ทุน ${ing.cost_per_unit}฿/${ing.unit}`).join('\n')}${extraContextPrompt}
 
 กรุณาวิเคราะห์และส่งออก JSON ในรูปแบบต่อไปนี้เท่านั้น โดยไม่ต้องใส่ markdown code block หรือคำอธิบายเพิ่มเติม:
 {
@@ -59,7 +74,12 @@ ${ingredients.slice(0, 15).map((ing: any) => `  - ${ing.name}: เหลือ $
   "cost_saving_tips": [
     "เคล็ดลับลดต้นทุนหรือจัดการคลังวัตถุดิบข้อ 1",
     "เคล็ดลับลดต้นทุนหรือจัดการคลังวัตถุดิบข้อ 2"
-  ]
+  ],
+  "cross_strategy": {
+    "pricing_vs_competitors": "คำแนะนำการตั้งราคาและจุดขายเทียบกับคู่แข่งในพื้นที่",
+    "excess_stock_campaign": "แคมเปญหรือเมนูระบายวัตถุดิบที่ตอบโจทย์ลูกค้าในย่านนี้",
+    "market_positioning": "ทิศทางการวางตำแหน่งร้านให้อยู่เหนือคู่แข่งรอบข้าง"
+  }
 }`;
 
     const requestPayload = {
@@ -122,7 +142,14 @@ ${ingredients.slice(0, 15).map((ing: any) => `  - ${ing.name}: เหลือ $
   }
 }
 
-function generateFallbackInsights(menus: any[], ingredients: any[], dashboardKPI: any, note?: string) {
+function generateFallbackInsights(
+  menus: any[],
+  ingredients: any[],
+  dashboardKPI: any,
+  mapContext?: any,
+  salesContext?: any,
+  note?: string
+) {
   if (!menus || menus.length === 0) {
     return NextResponse.json({
       source: 'rule_engine',
@@ -138,6 +165,7 @@ function generateFallbackInsights(menus: any[], ingredients: any[], dashboardKPI
         'ตั้งเกณฑ์จุดสั่งซื้อวัตถุดิบ (Reorder Point) ตามสถิติยอดขายจริง ไม่สั่งตุนเกินความจำเป็น',
         'ตรวจเช็กสต็อกวัตถุดิบสม่ำเสมอเพื่อป้องกันสินค้าหมดอายุ',
       ],
+      cross_strategy: null,
     });
   }
 
@@ -145,6 +173,9 @@ function generateFallbackInsights(menus: any[], ingredients: any[], dashboardKPI
   const topMargin = sortedByMargin[0];
   const secondMargin = sortedByMargin[1] || topMargin;
   const slowMover = [...menus].sort((a, b) => (a.order_count || 0) - (b.order_count || 0))[0] || topMargin;
+
+  const locName = mapContext?.locationName || 'พื้นที่ใกล้เคียง';
+  const targetAud = mapContext?.targetAudience || 'ลูกค้าทั่วไปและคนทำงาน';
 
   return NextResponse.json({
     source: 'rule_engine',
@@ -205,5 +236,10 @@ function generateFallbackInsights(menus: any[], ingredients: any[], dashboardKPI
       'ตรวจเช็กการละลายและสเกลน้ำแข็งในเครื่องทำน้ำแข็งเพื่อควบคุมอุณหภูมิและลดการละลายเร็วเกินไป',
       'ใช้ช้อนตวงหรือกระบอกตวงมาตรฐานสำหรับไซรัปและนม เพื่อหลีกเลี่ยงการเทเกินมาตรฐานแก้วละ 5-10 มล.',
     ],
+    cross_strategy: {
+      pricing_vs_competitors: `ในย่าน ${locName} กลุ่มลูกค้าหลักคือ ${targetAud} แนะนำคงราคาเครื่องดื่มมาตรฐาน 65-85 บาท และเพิ่มเมนู Specialty 95-120 บาท เพื่อจับตลาดระดับบน`,
+      excess_stock_campaign: `ใช้วัตถุดิบเมล็ดกาแฟและไซรัปค้างคลังมาจัดโปรโมชั่น "Afternoon Refresh Combo" ลด 15% ช่วง 13:00-16:00 เพื่อดึงทราฟฟิกช่วงบ่าย`,
+      market_positioning: `ชูจุดเด่นวัตถุดิบพรีเมียมและความรวดเร็วในการเสิร์ฟเพื่อสร้างความแตกต่างจากร้านคู่แข่ง ${mapContext?.competitorCount || 3} ร้านในรัศมีรอบข้าง`,
+    },
   });
 }

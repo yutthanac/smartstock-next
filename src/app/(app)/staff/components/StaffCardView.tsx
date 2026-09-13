@@ -5,6 +5,7 @@ import { StaffUser } from './types';
 interface StaffCardViewProps {
   staffList: StaffUser[];
   currentUserId?: string;
+  currentUserRole?: string;
   onEdit: (staff: StaffUser) => void;
   onDelete: (id: string, name: string) => void;
 }
@@ -12,6 +13,7 @@ interface StaffCardViewProps {
 export const StaffCardView: React.FC<StaffCardViewProps> = ({
   staffList,
   currentUserId,
+  currentUserRole,
   onEdit,
   onDelete,
 }) => {
@@ -19,6 +21,8 @@ export const StaffCardView: React.FC<StaffCardViewProps> = ({
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
       {staffList.map((staff) => {
         const isMe = currentUserId === staff.id;
+        const isAdminTarget = staff.username === 'admin' || staff.roles.some((r) => r.name === 'admin');
+        const canEdit = currentUserRole === 'admin' || !isAdminTarget;
 
         return (
           <div
@@ -94,15 +98,22 @@ export const StaffCardView: React.FC<StaffCardViewProps> = ({
 
             {/* Actions */}
             <div className="pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
-              <button
-                onClick={() => onEdit(staff)}
-                className="flex-1 py-2 px-3 rounded-xl bg-stone-100 hover:bg-stone-200/80 text-stone-800 font-medium text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <Edit2 className="w-3.5 h-3.5" />
-                แก้ไขสิทธิ์
-              </button>
+              {canEdit ? (
+                <button
+                  onClick={() => onEdit(staff)}
+                  className="flex-1 py-2 px-3 rounded-xl bg-stone-100 hover:bg-stone-200/80 text-stone-800 font-medium text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  แก้ไขสิทธิ์
+                </button>
+              ) : (
+                <div className="flex-1 py-2 px-3 rounded-xl bg-stone-50 text-stone-400 font-normal text-xs flex items-center justify-center gap-1.5 border border-stone-200/60">
+                  <Shield className="w-3.5 h-3.5 text-stone-400" />
+                  System Admin (สงวนสิทธิ์)
+                </div>
+              )}
 
-              {!isMe && (
+              {!isMe && !isAdminTarget && (
                 <button
                   onClick={() => onDelete(staff.id, staff.name)}
                   className="p-2 rounded-xl text-stone-400 hover:text-rose-600 hover:bg-stone-100 transition-colors cursor-pointer"

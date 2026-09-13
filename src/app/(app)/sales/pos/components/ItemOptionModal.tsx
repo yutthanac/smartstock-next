@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { X, Coffee, Sparkles, Plus, Minus, Layers } from 'lucide-react';
-import { MenuItem } from '@/types';
+import { MenuItem, MenuOptionIngredient } from '@/types';
 import { Button } from '@/components/Button';
 import { useStock } from '@/lib/StockContext';
 
@@ -15,6 +15,7 @@ export interface CartItemOption {
   isSpecial?: boolean;
   spiciness?: string;
   customNote: string;
+  selectedModifiers?: MenuOptionIngredient[];
 }
 
 interface ItemOptionModalProps {
@@ -32,7 +33,7 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
   onClose,
   onConfirm,
 }) => {
-  const { ingredients } = useStock();
+  const { ingredients, getMenuOptions } = useStock();
   if (!isOpen || !item) return null;
 
   // Normalise legacy isSpecial → extraShots
@@ -43,6 +44,21 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
   const [diningOption, setDiningOption] = useState<string>(initialOptions?.diningOption || 'ทานที่ร้าน');
   const [extraShots, setExtraShots] = useState<number>(initShots);
   const [customNote, setCustomNote] = useState<string>(initialOptions?.customNote || '');
+  const [availableOptions, setAvailableOptions] = useState<MenuOptionIngredient[]>([]);
+  const [selectedModifiers, setSelectedModifiers] = useState<MenuOptionIngredient[]>(initialOptions?.selectedModifiers || []);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      if (item?.option_ingredients && item.option_ingredients.length > 0) {
+        setAvailableOptions(item.option_ingredients);
+      } else {
+        getMenuOptions().then((opts) => {
+          const matching = opts.filter((o) => !o.menu_item_id || o.menu_item_id === item?.id);
+          setAvailableOptions(matching);
+        });
+      }
+    }
+  }, [isOpen, item]);
 
   const quickTags = ['แยกน้ำแข็ง', 'วิปครีม', 'ไม่ใส่ไซรัป'];
 
@@ -60,7 +76,8 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
   };
 
   const blendExtra = temperature === 'ปั่น (+10฿)' ? 10 : 0;
-  const currentPrice = item.price + extraShots * 15 + blendExtra;
+  const modifierTotal = selectedModifiers.reduce((sum, m) => sum + (Number(m.price) || 0), 0);
+  const currentPrice = item.price + extraShots * 15 + blendExtra + modifierTotal;
 
   // Real-time BOM stock calculation based on live options
   let sweetnessMultiplier = 1.0;
@@ -139,6 +156,29 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
     };
   });
 
+  const modifierDeductions = selectedModifiers.map((mod) => {
+    const ing = ingredients.find((i) => i.id === mod.ingredient_id);
+    const ingName = ing ? ing.name : (mod.ingredient_name || 'วัตถุดิบเสริม');
+    const ingUnit = ing ? ing.unit : (mod.ingredient_unit || 'หน่วย');
+    const ingCurrent = ing ? Number(ing.quantity) : 0;
+    const deductQty = Number(mod.quantity) || 1;
+    const remaining = Math.max(0, ingCurrent - deductQty);
+
+    return {
+      id: `mod-${mod.id}`,
+      name: `${ingName} (+${mod.name})`,
+      unit: ingUnit,
+      baseQty: deductQty,
+      deductedQty: deductQty,
+      currentQty: ingCurrent,
+      remainingQty: Math.round(remaining * 10) / 10,
+      badgeText: 'ตัวเลือกเสริม',
+      isSweetener: false,
+    };
+  });
+
+  const allPreviewDeductions = [...previewDeductions, ...modifierDeductions];
+
   const isTakeaway = diningOption === 'กลับบ้าน' || customNote.includes('กลับบ้าน');
   const takeawayCup = isTakeaway
     ? ingredients.find(
@@ -156,6 +196,7 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
       diningOption,
       extraShots,
       customNote: customNote.trim(),
+      selectedModifiers,
     });
     onClose();
   };
@@ -301,6 +342,45 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
             )}
           </div>
 
+          {/* Dynamic Option Modifiers Chips */}
+          {availableOptions.length > 0 && (
+            <div>
+              <label className="font-semibold text-stone-700 block mb-1.5 text-xs">
+                ตัวเลือกเสริม (ตัดสต็อกอัตโนมัติ)
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {availableOptions.map((opt) => {
+                  const isSelected = selectedModifiers.some((m) => m.id === opt.id || m.name === opt.name);
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => {
+                        if (isSelected) {
+                          setSelectedModifiers(selectedModifiers.filter((m) => m.id !== opt.id && m.name !== opt.name));
+                        } else {
+                          setSelectedModifiers([...selectedModifiers, opt]);
+                        }
+                      }}
+                      className={`px-2.5 py-1.5 rounded-xl text-xs font-medium border transition-all cursor-pointer flex items-center gap-1.5 ${
+                        isSelected
+                          ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
+                          : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
+                      }`}
+                    >
+                      <span>{opt.name}</span>
+                      {opt.price > 0 && (
+                        <span className={`text-[10px] font-mono font-semibold ${isSelected ? 'text-stone-300' : 'text-stone-500'}`}>
+                          (+฿{opt.price})
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Quick Tags */}
           <div>
             <label className="font-semibold text-stone-700 block mb-1.5">ตัวเลือกเพิ่มเติม</label>
@@ -341,12 +421,12 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
                 <span>ตัดสต็อกแก้วนี้ (Preview)</span>
               </span>
               <span className="text-xs text-stone-500 font-medium">
-                {previewDeductions.length + (takeawayCup ? 1 : 0)} รายการ
+                {allPreviewDeductions.length + (takeawayCup ? 1 : 0)} รายการ
               </span>
             </div>
 
             <div className="space-y-1.5 max-h-48 overflow-y-auto pr-0.5">
-              {previewDeductions.map((d) => (
+              {allPreviewDeductions.map((d) => (
                 <div
                   key={d.id}
                   className="flex items-center justify-between text-xs p-2 rounded-xl bg-white border border-stone-200/80 shadow-2xs"

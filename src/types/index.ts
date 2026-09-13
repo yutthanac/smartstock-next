@@ -2,6 +2,9 @@ export interface UserProfile {
   id: string;
   name: string;
   email: string;
+  username?: string;
+  avatar?: string | null;
+  role?: string;
   roles: string[];
   permissions: string[];
 }
@@ -16,6 +19,7 @@ export interface AuthResponse {
 
 export interface Ingredient {
   id: number;
+  store_id?: number | null;
   name: string;
   unit: string;
   quantity: number;
@@ -26,8 +30,27 @@ export interface Ingredient {
   tracking_type?: 'strict' | 'bulk_expense';
   category?: string;
   supplier?: string;
+  package_unit?: string; // เช่น 'ขวด', 'ลัง', 'ถุง', 'กล่อง', 'กระป๋อง'
+  package_size?: number; // เช่น 2000 (มล.), 1000 (กรัม)
+  is_two_tier?: boolean; // ระบบ 2 คลัง (หลังร้าน/หน้าบาร์)
+  backstock_quantity?: number; // สต็อกหลังร้าน (ขวด/ถุง/ลัง)
+  bar_quantity?: number; // สต็อกหน้าบาร์ (มล./กรัม)
+  opened_unit_remaining?: number; // เศษที่เปิดค้างอยู่จากแพ็คปัจจุบัน (มล./กรัม)
   sort_order?: number;
   updated_at?: string;
+}
+
+export interface MenuOptionIngredient {
+  id: number;
+  store_id?: number | null;
+  menu_item_id?: number | null;
+  menu_item_name?: string;
+  name: string;
+  price: number;
+  ingredient_id: number;
+  ingredient_name?: string;
+  ingredient_unit?: string;
+  quantity: number;
 }
 
 export interface RecipeItem {
@@ -37,10 +60,12 @@ export interface RecipeItem {
   ingredient_unit?: string;
   ingredient_cost?: number;
   quantity_used: number;
+  waste_percent?: number; // เปอร์เซ็นต์สูญเสีย/หก/ฟองทิ้ง เช่น 10%
 }
 
 export interface MenuItem {
   id: number;
+  store_id?: number | null;
   name: string;
   category: string;
   price: number;
@@ -50,8 +75,10 @@ export interface MenuItem {
   margin_percent: number;
   status: 'available' | 'sold_out';
   recipes: RecipeItem[];
+  option_ingredients?: MenuOptionIngredient[];
   available_plates?: number; // Calculated from current stock
   sort_order?: number;
+  order_count?: number;
 }
 
 export interface OrderItem {
@@ -67,6 +94,7 @@ export interface OrderItem {
 
 export interface Order {
   id: number;
+  store_id?: number | null;
   order_number: string;
   table_no: string;
   items: OrderItem[];
@@ -76,6 +104,8 @@ export interface Order {
   status: 'completed' | 'cancelled' | 'pending';
   payment_method: 'cash' | 'qr_promptpay' | 'credit_card';
   created_at: string;
+  refund_reason?: string;
+  refunded_by?: string;
 }
 
 export interface StockMovement {
@@ -83,12 +113,23 @@ export interface StockMovement {
   ingredient_id: number;
   ingredient_name: string;
   unit: string;
-  type: 'in' | 'out' | 'adjust' | 'waste';
+  type: 'in' | 'out' | 'adjust' | 'open' | 'consume' | 'waste' | 'audit_adjustment';
   quantity: number;
+  unit_cost?: number;
   remaining_quantity: number;
   note: string;
   created_at: string;
   staff_name?: string;
+}
+
+export interface WasteStatsResponse {
+  status: string;
+  period: string;
+  total_waste_value: number;
+  total_waste_count: number;
+  by_reason: Record<string, number>;
+  by_ingredient: Record<string, number>;
+  recent_wastes: StockMovement[];
 }
 
 export interface DashboardKPI {
@@ -99,6 +140,8 @@ export interface DashboardKPI {
   profit_margin: number;
   today_refund?: number;
   today_cancelled_count?: number;
+  today_waste_value?: number;
+  today_waste_count?: number;
   low_stock_count: number;
   total_orders_today: number;
   sales_7days: {

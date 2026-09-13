@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Ingredient, MenuItem, Order, StockMovement, DashboardKPI, UnitSetting } from '@/types';
+import { Ingredient, MenuItem, Order, StockMovement, DashboardKPI, UnitSetting, MenuOptionIngredient, WasteStatsResponse } from '@/types';
 import { useAuth } from './AuthContext';
 
 interface StockContextType {
@@ -21,13 +21,21 @@ interface StockContextType {
   deleteIngredient: (id: number) => Promise<boolean>;
   adjustStock: (id: number, type: 'in' | 'out' | 'adjust' | 'waste', amount: number, note: string) => Promise<boolean>;
   bulkUseIngredient: (id: number, amount?: number, note?: string) => Promise<boolean>;
-  addMenuItem: (menu: { name: string; category: string; price: number; image?: string; description?: string; recipes: { ingredient_id: number; quantity_used: number }[] }) => Promise<boolean>;
-  updateMenuItem: (id: number, menu: { name?: string; category?: string; price?: number; image?: string; description?: string; recipes?: { ingredient_id: number; quantity_used: number }[] }) => Promise<boolean>;
+  openPackage: (id: number, count?: number) => Promise<boolean>;
+  addBackstock: (id: number, count: number, note?: string, packageSize?: number, updateDefault?: boolean) => Promise<boolean>;
+  addMenuItem: (menu: { name: string; category: string; price: number; image?: string; description?: string; recipes: { ingredient_id: number; quantity_used: number; waste_percent?: number }[]; option_ingredients?: { name: string; price?: number; ingredient_id: number; quantity: number }[] }) => Promise<boolean>;
+  updateMenuItem: (id: number, menu: { name?: string; category?: string; price?: number; image?: string; description?: string; recipes?: { ingredient_id: number; quantity_used: number; waste_percent?: number }[]; option_ingredients?: { name: string; price?: number; ingredient_id: number; quantity: number }[] }) => Promise<boolean>;
   deleteMenuItem: (id: number) => Promise<boolean>;
+  wasteAdjust: (id: number, data: { quantity: number; reason: string; tier?: 'bar' | 'backstock'; notes?: string }) => Promise<boolean>;
+  fetchWasteStats: (period?: string) => Promise<WasteStatsResponse | null>;
+  fetchRefundStats: (startDate?: string, endDate?: string) => Promise<any>;
+  getMenuOptions: () => Promise<MenuOptionIngredient[]>;
+  saveMenuOption: (option: Partial<MenuOptionIngredient>) => Promise<boolean>;
+  deleteMenuOption: (id: number) => Promise<boolean>;
   reorderIngredients: (orderedIds: number[]) => Promise<boolean>;
   reorderMenuItems: (orderedIds: number[]) => Promise<boolean>;
   createOrder: (tableNo: string, items: { menu_item_id: number; quantity: number; note?: string; options?: any }[], paymentMethod: 'cash' | 'qr_promptpay' | 'credit_card') => Promise<Order | null>;
-  cancelOrder: (orderId: number) => Promise<boolean>;
+  cancelOrder: (orderId: number, refundReason?: string) => Promise<boolean>;
   updateOrder: (orderId: number, data: { table_no?: string; payment_method?: 'cash' | 'qr_promptpay' | 'credit_card'; status?: 'completed' | 'cancelled' | 'pending'; items?: { id: number; note?: string }[] }) => Promise<boolean>;
 }
 
@@ -236,8 +244,36 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
 
   // Re-fetch whenever token or active store changes
   useEffect(() => {
+    // Reset data first to prevent flash of stale data from previous store
+    setOrders([]);
+    setIngredients([]);
+    setMenuItems([]);
+    setMovements([]);
+    setDashboard(defaultDashboard);
     fetchData();
   }, [token, activeStore?.id]);
+
+  const fetchRefundStats = async (startDate?: string, endDate?: string) => {
+    try {
+      let url = `${API_BASE_URL}/pos/orders/refund-stats`;
+      const params = new URLSearchParams();
+      if (startDate) params.append('start_date', startDate);
+      if (endDate) params.append('end_date', endDate);
+      if (activeStore) params.append('store_id', String(activeStore.id));
+      if (params.toString()) url += `?${params.toString()}`;
+
+      const res = await fetch(url, {
+        headers: apiHeaders(),
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+      return null;
+    } catch (e) {
+      console.error('Error fetching refund stats:', e);
+      return null;
+    }
+  };
 
   // Ingredients API calls
   const addIngredient = async (item: Omit<Ingredient, 'id' | 'status'>): Promise<boolean> => {
@@ -329,8 +365,147 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const openPackage = async (id: number, count: number = 1): Promise<boolean> => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/ingredients/${id}/open-package`, {
+        method: 'POST',
+        headers: apiHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ count }),
+      });
+      if (res.ok) {
+        await fetchData();
+        return true;
+      }
+      const err = await res.json();
+      alert(err.message || 'ไม่สามารถเปิดแพ็ควัตถุดิบได้');
+      return false;
+    } catch (e) {
+      console.error('Error opening package:', e);
+      return false;
+    }
+  };
+
+  const addBackstock = async (
+    id: number,
+    count: number,
+    note?: string,
+    packageSize?: number,
+    updateDefault?: boolean
+  ): Promise<boolean> => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/ingredients/${id}/add-backstock`, {
+        method: 'POST',
+        headers: apiHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          count,
+          note,
+          package_size: packageSize,
+          update_default_package_size: updateDefault,
+        }),
+      });
+      if (res.ok) {
+        await fetchData();
+        return true;
+      }
+      const err = await res.json();
+      alert(err.message || 'ไม่สามารถรับของเข้าหลังร้านได้');
+      return false;
+    } catch (e) {
+      console.error('Error adding backstock:', e);
+      return false;
+    }
+  };
+
+  const wasteAdjust = async (
+    id: number,
+    data: { quantity: number; reason: string; tier?: 'bar' | 'backstock'; notes?: string }
+  ): Promise<boolean> => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/ingredients/${id}/waste-adjust`, {
+        method: 'POST',
+        headers: apiHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        await fetchData();
+        return true;
+      }
+      const err = await res.json();
+      alert(err.message || 'ไม่สามารถบันทึกของเสียได้');
+      return false;
+    } catch (e) {
+      console.error('Error recording waste:', e);
+      return false;
+    }
+  };
+
+  const fetchWasteStats = async (period = 'today'): Promise<WasteStatsResponse | null> => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/reports/waste-stats?period=${period}`, {
+        headers: apiHeaders(),
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+      return null;
+    } catch (e) {
+      console.error('Error fetching waste stats:', e);
+      return null;
+    }
+  };
+
+  const getMenuOptions = async (): Promise<MenuOptionIngredient[]> => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/menu-options`, {
+        headers: apiHeaders(),
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+      return [];
+    } catch (e) {
+      console.error('Error fetching menu options:', e);
+      return [];
+    }
+  };
+
+  const saveMenuOption = async (option: Partial<MenuOptionIngredient>): Promise<boolean> => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/menu-options`, {
+        method: 'POST',
+        headers: apiHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(option),
+      });
+      if (res.ok) {
+        await fetchData();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error('Error saving menu option:', e);
+      return false;
+    }
+  };
+
+  const deleteMenuOption = async (id: number): Promise<boolean> => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/menu-options/${id}`, {
+        method: 'DELETE',
+        headers: apiHeaders(),
+      });
+      if (res.ok) {
+        await fetchData();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error('Error deleting menu option:', e);
+      return false;
+    }
+  };
+
   // Menu API calls
-  const addMenuItem = async (menu: { name: string; category: string; price: number; image?: string; description?: string; recipes: { ingredient_id: number; quantity_used: number }[] }): Promise<boolean> => {
+  const addMenuItem = async (menu: { name: string; category: string; price: number; image?: string; description?: string; recipes: { ingredient_id: number; quantity_used: number; waste_percent?: number }[] }): Promise<boolean> => {
     try {
       const res = await fetch(`${API_BASE_URL}/menus`, {
         method: 'POST',
@@ -351,7 +526,7 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateMenuItem = async (id: number, menu: { name?: string; category?: string; price?: number; image?: string; description?: string; recipes?: { ingredient_id: number; quantity_used: number }[] }): Promise<boolean> => {
+  const updateMenuItem = async (id: number, menu: { name?: string; category?: string; price?: number; image?: string; description?: string; recipes?: { ingredient_id: number; quantity_used: number; waste_percent?: number }[] }): Promise<boolean> => {
     try {
       const res = await fetch(`${API_BASE_URL}/menus/${id}`, {
         method: 'PUT',
@@ -486,11 +661,12 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const cancelOrder = async (orderId: number): Promise<boolean> => {
+  const cancelOrder = async (orderId: number, refundReason?: string): Promise<boolean> => {
     try {
       const res = await fetch(`${API_BASE_URL}/pos/orders/${orderId}/cancel`, {
         method: 'POST',
         headers: apiHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ refund_reason: refundReason ?? '' }),
       });
       if (res.ok) {
         await fetchData();
@@ -541,9 +717,17 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
         deleteIngredient,
         adjustStock,
         bulkUseIngredient,
+        openPackage,
+        addBackstock,
         addMenuItem,
         updateMenuItem,
         deleteMenuItem,
+        wasteAdjust,
+        fetchWasteStats,
+        fetchRefundStats,
+        getMenuOptions,
+        saveMenuOption,
+        deleteMenuOption,
         reorderIngredients,
         reorderMenuItems,
         createOrder,

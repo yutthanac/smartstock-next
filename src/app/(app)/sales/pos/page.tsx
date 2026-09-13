@@ -71,6 +71,11 @@ export default function POSPage() {
     if (options.sweetness && options.sweetness !== 'หวาน 100%') parts.push(options.sweetness);
     const shots = options.extraShots ?? (options.isSpecial ? 1 : 0);
     if (shots > 0) parts.push(`เพิ่ม ${shots} ช็อต (+฿${shots * 15})`);
+    if (options.selectedModifiers && options.selectedModifiers.length > 0) {
+      options.selectedModifiers.forEach((m) => {
+        parts.push(`+${m.name}${m.price > 0 ? ` (+฿${m.price})` : ''}`);
+      });
+    }
     if (options.diningOption && options.diningOption !== 'ทานที่ร้าน') parts.push('🥤 กลับบ้าน');
     if (options.spiciness && options.spiciness !== 'ไม่เผ็ด') parts.push(options.spiciness);
     if (options.customNote) parts.push(options.customNote);
@@ -150,11 +155,15 @@ export default function POSPage() {
 
   const clearCart = () => setCartItems([]);
 
-  // Calculate totals: base price + extra shots (+15฿ each) + blend upcharge (+10฿)
+  // Calculate totals: base price + extra shots (+15฿ each) + blend upcharge (+10฿) + modifiers
   const getItemEffectivePrice = (entry: CartEntry) => {
     const shots = entry.options.extraShots ?? (entry.options.isSpecial ? 1 : 0);
     const blendExtra = entry.options.temperature === 'ปั่น (+10฿)' ? 10 : 0;
-    return entry.item.price + shots * 15 + blendExtra;
+    const modExtra = (entry.options.selectedModifiers || []).reduce(
+      (sum: number, m: any) => sum + (Number(m.price) || 0),
+      0
+    );
+    return entry.item.price + shots * 15 + blendExtra + modExtra;
   };
 
   const subtotal = cartItems.reduce((sum, c) => sum + getItemEffectivePrice(c) * c.quantity, 0);
@@ -245,6 +254,14 @@ export default function POSPage() {
         addBOMImpact(cupIng.id, cupIng.name, cupIng.unit, cupIng.quantity, quantity);
       }
     }
+
+    // Deduct dynamic modifiers from stock
+    options.selectedModifiers?.forEach((mod: any) => {
+      const ing = ingredients.find((i) => i.id === mod.ingredient_id);
+      if (ing) {
+        addBOMImpact(ing.id, `${ing.name} (+${mod.name})`, ing.unit, ing.quantity, (Number(mod.quantity) || 1) * quantity);
+      }
+    });
   });
 
   const handleCheckout = async () => {

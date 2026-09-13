@@ -360,6 +360,7 @@ export default function StaffPage() {
           <StaffTableView
             staffList={filteredStaff}
             currentUserId={currentUser?.id}
+            currentUserRole={currentUser?.roles?.[0]}
             onEdit={handleOpenEdit}
             onDelete={handleDeleteUser}
           />
@@ -367,6 +368,7 @@ export default function StaffPage() {
           <StaffCardView
             staffList={filteredStaff}
             currentUserId={currentUser?.id}
+            currentUserRole={currentUser?.roles?.[0]}
             onEdit={handleOpenEdit}
             onDelete={handleDeleteUser}
           />

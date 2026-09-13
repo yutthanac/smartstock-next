@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Settings as SettingsIcon,
   Save,
@@ -19,14 +19,22 @@ import {
 } from 'lucide-react';
 import { Topbar } from '@/components/Topbar';
 import { useStock } from '@/lib/StockContext';
+import { useAuth } from '@/lib/AuthContext';
 import { UnitSetting } from '@/types';
 import StoresSettingsPage from './stores/page';
 import SidebarCustomizer from './components/SidebarCustomizer';
 
 export default function SettingsPage() {
   const { units, addUnit, updateUnit, deleteUnit } = useStock();
+  const { user, hasRole } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<'sidebar' | 'stores' | 'units' | 'store' | 'api'>('sidebar');
+  useEffect(() => {
+    if (user && !hasRole('admin')) {
+      window.location.href = '/dashboard';
+    }
+  }, [user]);
+
+  const [activeTab, setActiveTab] = useState<'sidebar' | 'stores' | 'units'>('sidebar');
 
   // Form states for adding new unit
   const [newUnitName, setNewUnitName] = useState('');
@@ -62,8 +70,6 @@ export default function SettingsPage() {
 
   const handleCancelEdit = () => {
     setEditingUnitId(null);
-    setEditingName('');
-    setEditingDesc('');
   };
 
   const handleSaveEdit = async (id: number | string) => {
@@ -71,6 +77,7 @@ export default function SettingsPage() {
       alert('กรุณากรอกชื่อหน่วย');
       return;
     }
+
     const success = await updateUnit(id, editingName, editingDesc);
     if (success) {
       setEditingUnitId(null);
@@ -80,7 +87,7 @@ export default function SettingsPage() {
   };
 
   const handleDeleteUnit = async (id: number | string, name: string) => {
-    if (confirm(`คุณต้องการลบหน่วยนับ "${name}" ออกจากระบบหรือไม่?`)) {
+    if (confirm(`คุณต้องการลบหน่วย "${name}" หรือไม่?`)) {
       await deleteUnit(id);
     }
   };
@@ -89,12 +96,12 @@ export default function SettingsPage() {
     <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
       <Topbar
         title="ตั้งค่าระบบ"
-        subtitle="จัดการเมนู ร้านค้า หน่วยนับ และข้อมูลระบบ"
+        subtitle="จัดการหน่วยนับ ปรับแต่งเมนู และสิทธิ์ร้านค้า"
       />
 
-      <main className="p-6 md:p-8 space-y-6 max-w-5xl mx-auto w-full">
+      <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-1.5 bg-stone-100 p-1.5 rounded-2xl border border-stone-200/80 w-fit flex-wrap">
+        <div className="flex items-center gap-1.5 p-1 bg-stone-100 rounded-2xl w-fit border border-stone-200/80">
           <button
             onClick={() => setActiveTab('sidebar')}
             className={`px-4 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
@@ -127,28 +134,6 @@ export default function SettingsPage() {
           >
             <Scale className="w-4 h-4" />
             <span>หน่วยนับ ({units.length})</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('store')}
-            className={`px-4 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
-              activeTab === 'store'
-                ? 'bg-stone-900 text-white shadow-xs'
-                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
-            }`}
-          >
-            <Store className="w-4 h-4" />
-            <span>ข้อมูลร้าน</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('api')}
-            className={`px-4 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
-              activeTab === 'api'
-                ? 'bg-stone-900 text-white shadow-xs'
-                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
-            }`}
-          >
-            <Database className="w-4 h-4" />
-            <span>API & ระบบ</span>
           </button>
         </div>
 
@@ -326,94 +311,6 @@ export default function SettingsPage() {
                   </tbody>
                 </table>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 2: Store Information */}
-        {activeTab === 'store' && (
-          <div className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-xs space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-stone-100">
-              <Store className="w-5 h-5 text-stone-800" />
-              <h3 className="font-semibold text-stone-900 text-base">ข้อมูลร้านอาหาร</h3>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div>
-                <label className="font-medium text-stone-700 block mb-1">ชื่อร้านอาหาร</label>
-                <input
-                  type="text"
-                  defaultValue="Smart Gourmet & Bistro"
-                  className="w-full px-3.5 py-2.5 bg-stone-50 rounded-xl border border-stone-200/80 focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 font-medium text-stone-900"
-                />
-              </div>
-              <div>
-                <label className="font-medium text-stone-700 block mb-1">สาขา</label>
-                <input
-                  type="text"
-                  defaultValue="สาขาหลัก (Main Kitchen)"
-                  className="w-full px-3.5 py-2.5 bg-stone-50 rounded-xl border border-stone-200/80 focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 text-stone-900"
-                />
-              </div>
-              <div>
-                <label className="font-medium text-stone-700 block mb-1">อัตราภาษีมูลค่าเพิ่ม (VAT %)</label>
-                <input
-                  type="number"
-                  defaultValue="7"
-                  className="w-full px-3.5 py-2.5 bg-stone-50 rounded-xl border border-stone-200/80 focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 text-stone-900 font-mono tabular-nums"
-                />
-              </div>
-              <div>
-                <label className="font-medium text-stone-700 block mb-1">เบอร์โทรศัพท์</label>
-                <input
-                  type="text"
-                  defaultValue="02-123-4567"
-                  className="w-full px-3.5 py-2.5 bg-stone-50 rounded-xl border border-stone-200/80 focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 text-stone-900 font-mono"
-                />
-              </div>
-            </div>
-
-            <div className="pt-2 flex justify-end">
-              <button className="px-5 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-medium text-xs flex items-center gap-2 cursor-pointer shadow-xs">
-                <Save className="w-4 h-4" /> บันทึกข้อมูลร้าน
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 3: Backend API */}
-        {activeTab === 'api' && (
-          <div className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-xs space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-stone-100">
-              <Database className="w-5 h-5 text-stone-800" />
-              <h3 className="font-semibold text-stone-900 text-base">การเชื่อมต่อ Backend (Laravel API)</h3>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="font-medium text-stone-700 block mb-1">
-                  Laravel API Endpoint (NEXT_PUBLIC_API_URL)
-                </label>
-                <input
-                  type="text"
-                  defaultValue="http://localhost:8000/api"
-                  className="w-full px-3.5 py-2.5 bg-stone-50 rounded-xl border border-stone-200/80 focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 font-mono text-stone-800"
-                />
-                <p className="text-xs text-stone-400 mt-1">
-                  เชื่อมต่อ Laravel REST API บน Laragon (เช่น http://stockapp.test/api หรือ http://localhost:8000/api)
-                </p>
-              </div>
-
-              <div className="p-3 rounded-xl bg-stone-50 border border-stone-200 text-stone-700 text-xs flex items-center justify-between">
-                <span>สถานะเชื่อมต่อ: พร้อมใช้งาน (โหมด Local Client-Side Cache & Fallback เปิดใช้งานอยู่)</span>
-                <span className="font-medium text-emerald-700">Online</span>
-              </div>
-            </div>
-
-            <div className="pt-2 flex justify-end">
-              <button className="px-5 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-medium text-xs flex items-center gap-2 cursor-pointer shadow-xs">
-                <Save className="w-4 h-4" /> บันทึกการเชื่อมต่อ
-              </button>
             </div>
           </div>
         )}

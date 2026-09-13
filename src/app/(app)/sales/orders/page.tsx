@@ -27,6 +27,7 @@ import {
   Check
 } from 'lucide-react';
 import { useStock } from '@/lib/StockContext';
+import { useAuth } from '@/lib/AuthContext';
 import { Topbar } from '@/components/Topbar';
 import { TableSkeleton } from '@/components/Skeleton';
 import { Order } from '@/types';
@@ -40,6 +41,7 @@ const monthNamesTh = [
 type FilterMode = 'today' | 'yesterday' | 'week' | 'month' | 'custom' | 'all';
 
 export default function OrdersHistoryPage() {
+  const { token, activeStore } = useAuth();
   const { orders: contextOrders, isLoading: contextLoading, cancelOrder, updateOrder } = useStock();
 
   // Selected date / mode state
@@ -65,6 +67,7 @@ export default function OrdersHistoryPage() {
   // Modal states for Cancel & Edit
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [cancellingOrder, setCancellingOrder] = useState<Order | null>(null);
+  const [refundReason, setRefundReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Edit form state
@@ -141,28 +144,41 @@ export default function OrdersHistoryPage() {
     try {
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
       let url = `${apiBaseUrl}/pos/orders`;
+      const queryParams: string[] = [];
 
       if (filterMode === 'today' || filterMode === 'yesterday' || filterMode === 'custom') {
-        url += `?date=${selectedDate}`;
+        queryParams.push(`date=${selectedDate}`);
       } else if (filterMode === 'week') {
         const end = new Date();
         const start = new Date();
         start.setDate(end.getDate() - 6);
         const startStr = start.toISOString().split('T')[0];
         const endStr = end.toISOString().split('T')[0];
-        url += `?start_date=${startStr}&end_date=${endStr}&limit=500`;
+        queryParams.push(`start_date=${startStr}&end_date=${endStr}&limit=500`);
       } else if (filterMode === 'month') {
         const now = new Date();
         const start = new Date(now.getFullYear(), now.getMonth(), 1);
         const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         const startStr = start.toISOString().split('T')[0];
         const endStr = end.toISOString().split('T')[0];
-        url += `?start_date=${startStr}&end_date=${endStr}&limit=500`;
+        queryParams.push(`start_date=${startStr}&end_date=${endStr}&limit=500`);
       } else if (filterMode === 'all') {
-        url += `?all=true`;
+        queryParams.push(`all=true`);
       }
 
-      const res = await fetch(url);
+      if (activeStore) {
+        queryParams.push(`store_id=${activeStore.id}`);
+      }
+
+      if (queryParams.length > 0) {
+        url += `?${queryParams.join('&')}`;
+      }
+
+      const headers: Record<string, string> = { Accept: 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      if (activeStore) headers['X-Store-ID'] = String(activeStore.id);
+
+      const res = await fetch(url, { headers });
       if (res.ok) {
         const data = await res.json();
         setFetchedOrders(data);
@@ -177,10 +193,10 @@ export default function OrdersHistoryPage() {
     }
   };
 
-  // Fetch orders from backend when date or filter changes
+  // Fetch orders from backend when date, filter, or activeStore changes
   useEffect(() => {
     fetchOrdersByFilter();
-  }, [filterMode, selectedDate]);
+  }, [filterMode, selectedDate, activeStore?.id]);
 
   // Open Edit Modal
   const openEditModal = (order: Order) => {
@@ -275,15 +291,16 @@ export default function OrdersHistoryPage() {
     }
   };
 
-  // Confirm Cancel Order
+  // Confirm Cancel / Refund Order
   const handleConfirmCancel = async () => {
     if (!cancellingOrder) return;
     setIsSubmitting(true);
     try {
-      const success = await cancelOrder(cancellingOrder.id);
+      const success = await cancelOrder(cancellingOrder.id, refundReason.trim() || undefined);
       if (success) {
         await fetchOrdersByFilter();
         setCancellingOrder(null);
+        setRefundReason('');
       } else {
         alert('เกิดข้อผิดพลาด ไม่สามารถยกเลิกคำสั่งซื้อได้');
       }
@@ -297,20 +314,27 @@ export default function OrdersHistoryPage() {
 
   // Base list of orders to filter
   const activeOrdersList = useMemo(() => {
+    let rawList = fetchedOrders !== null ? fetchedOrders : contextOrders;
+
+    // Filter by activeStore to prevent any data leak
+    if (activeStore) {
+      rawList = rawList.filter((order) => !order.store_id || order.store_id === activeStore.id);
+    }
+
     if (fetchedOrders !== null) {
-      return fetchedOrders;
+      return rawList;
     }
     // Context orders fallback client filter
-    if (filterMode === 'all') return contextOrders;
+    if (filterMode === 'all') return rawList;
 
-    return contextOrders.filter((order) => {
+    return rawList.filter((order) => {
       const orderDate = (order.created_at || '').substring(0, 10);
       if (filterMode === 'today' || filterMode === 'yesterday' || filterMode === 'custom') {
         return orderDate === selectedDate;
       }
       return true;
     });
-  }, [fetchedOrders, contextOrders, filterMode, selectedDate]);
+  }, [fetchedOrders, contextOrders, filterMode, selectedDate, activeStore]);
 
   // Apply search, payment method filter, and status tab filter
   const filteredOrders = useMemo(() => {
@@ -1322,10 +1346,22 @@ export default function OrdersHistoryPage() {
               </ul>
             </div>
 
+            {/* Refund Reason Input */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-stone-700 block">\u0e40\u0e2b\u0e15\u0e38\u0e1c\u0e25\u0e01\u0e32\u0e23\u0e04\u0e37\u0e19\u0e40\u0e07\u0e34\u0e19 <span className="font-normal text-stone-400">(\u0e44\u0e21\u0e48\u0e1a\u0e31\u0e07\u0e04\u0e31\u0e1a)</span></label>
+              <textarea
+                value={refundReason}
+                onChange={(e) => setRefundReason(e.target.value)}
+                placeholder="\u0e40\u0e0a\u0e48\u0e19 \u0e25\u0e39\u0e01\u0e04\u0e49\u0e32\u0e44\u0e14\u0e49\u0e23\u0e31\u0e1a\u0e2a\u0e34\u0e19\u0e04\u0e49\u0e32\u0e1c\u0e34\u0e14, \u0e40\u0e2b\u0e15\u0e38\u0e1c\u0e25\u0e2d\u0e37\u0e48\u0e19..."
+                rows={2}
+                className="w-full text-xs px-3 py-2 rounded-xl border border-stone-200 bg-stone-50 text-stone-700 placeholder:text-stone-400 focus:outline-none focus:border-stone-400 transition-colors font-normal resize-none"
+              />
+            </div>
+
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 type="button"
-                onClick={() => setCancellingOrder(null)}
+                onClick={() => { setCancellingOrder(null); setRefundReason(''); }}
                 className="px-4 py-2 rounded-xl border border-stone-200 text-xs font-semibold text-stone-600 hover:bg-stone-100 cursor-pointer"
               >
                 ปิดหน้าต่าง

@@ -21,6 +21,7 @@ import { CreatePOModal } from './components/CreatePOModal';
 import { POPrintViewModal } from './components/POPrintViewModal';
 import { UploadReceiptModal } from './components/UploadReceiptModal';
 import { ReceiptVerificationModal, VerifiedReceiptItem } from './components/ReceiptVerificationModal';
+import { Ingredient } from '@/types';
 import { Button } from '@/components/Button';
 import { Badge } from '@/components/Badge';
 import {
@@ -233,14 +234,15 @@ export default function PurchaseOrdersPage() {
     setIsCreateModalOpen(false);
   };
 
-  // Staff uploads receipt
-  const handleUploadSuccess = (poId: string, receiptImage: string, actualStore?: string) => {
+  // Staff uploads receipts (can be single or multiple images)
+  const handleUploadSuccess = (poId: string, receiptImages: string[], actualStore?: string) => {
     const updated = poList.map((po) => {
       if (po.id === poId) {
         return {
           ...po,
           status: 'receipt_uploaded' as const,
-          receipt_image: receiptImage,
+          receipt_image: receiptImages[0] || po.receipt_image,
+          receipt_images: receiptImages,
           receipt_uploaded_at: new Date().toISOString(),
           actual_store_name: actualStore || po.store_name,
         };
@@ -258,7 +260,7 @@ export default function PurchaseOrdersPage() {
     verifiedItems: VerifiedReceiptItem[],
     actualStore?: string,
     totalReceiptAmount?: number,
-    newReceiptImage?: string
+    receiptImages?: string[]
   ) => {
     const targetPO = poList.find((p) => p.id === poId);
     if (!targetPO) return;
@@ -266,22 +268,34 @@ export default function PurchaseOrdersPage() {
     const actualStoreName = actualStore || targetPO.actual_store_name || targetPO.store_name;
     const finalTotal = totalReceiptAmount !== undefined ? totalReceiptAmount : targetPO.totalAmount;
 
-    // Execute actual Stock IN for each verified item
+    // Execute actual Stock IN for each verified item with converted units
     for (const item of verifiedItems) {
+      const stockInQty = item.quantity; // converted inventory quantity (e.g. 2000 ml instead of 2 bottles)
+      const costToRecord =
+        item.inventory_cost_per_unit !== undefined && item.inventory_cost_per_unit > 0
+          ? item.inventory_cost_per_unit
+          : item.cost_per_unit;
+
       if (item.ingredient_id) {
         // Stock IN existing item
         await adjustStock(
           item.ingredient_id,
           'in',
-          item.quantity,
-          `รับเข้าจากบิล #${poId} (${actualStoreName})`
+          stockInQty,
+          `รับเข้าจากบิล #${poId} (${actualStoreName}) [ซื้อ ${item.purchase_quantity} ${item.purchase_unit}]`
         );
 
-        // Update cost per unit if provided
-        if (item.cost_per_unit > 0) {
-          await updateIngredient(item.ingredient_id, {
-            cost_per_unit: item.cost_per_unit,
-          });
+        // Update cost per unit and save package info if set
+        const updatePayload: Partial<Ingredient> = {};
+        if (costToRecord > 0) {
+          updatePayload.cost_per_unit = costToRecord;
+        }
+        if (item.purchase_unit && item.pack_size && item.pack_size > 1) {
+          updatePayload.package_unit = item.purchase_unit;
+          updatePayload.package_size = item.pack_size;
+        }
+        if (Object.keys(updatePayload).length > 0) {
+          await updateIngredient(item.ingredient_id, updatePayload);
         }
       } else {
         // New item: create in stock
@@ -289,12 +303,14 @@ export default function PurchaseOrdersPage() {
           name: item.name,
           category: 'other',
           unit: item.unit || 'ชิ้น',
-          quantity: item.quantity,
-          cost_per_unit: item.cost_per_unit,
+          quantity: stockInQty,
+          cost_per_unit: costToRecord,
           reorder_point: 5,
-          max_stock: item.quantity * 3,
+          max_stock: stockInQty * 3,
           tracking_type: 'strict',
           supplier: actualStoreName,
+          package_unit: item.purchase_unit && item.pack_size > 1 ? item.purchase_unit : undefined,
+          package_size: item.pack_size && item.pack_size > 1 ? item.pack_size : undefined,
         });
       }
     }
@@ -302,13 +318,15 @@ export default function PurchaseOrdersPage() {
     // Update PO status to completed
     const updated = poList.map((po) => {
       if (po.id === poId) {
+        const finalImages = receiptImages && receiptImages.length > 0 ? receiptImages : po.receipt_images;
         return {
           ...po,
           status: 'completed' as const,
           verified_at: new Date().toISOString(),
           totalAmount: finalTotal,
           actual_store_name: actualStoreName,
-          receipt_image: newReceiptImage || po.receipt_image,
+          receipt_image: (finalImages && finalImages[0]) || po.receipt_image,
+          receipt_images: finalImages,
           items: verifiedItems.map((vi) => ({
             ingredient_id: vi.ingredient_id,
             name: vi.name,
@@ -352,6 +370,21 @@ export default function PurchaseOrdersPage() {
     saveOrders(updated);
   };
 
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'receipt_uploaded' | 'completed'>('all');
+
+  // Summary Metrics
+  const totalSpent = poList
+    .filter((p) => p.status === 'completed')
+    .reduce((sum, p) => sum + (p.totalAmount || 0), 0);
+  const pendingCount = poList.filter((p) => p.status === 'pending').length;
+  const uploadedCount = poList.filter((p) => p.status === 'receipt_uploaded').length;
+  const completedCount = poList.filter((p) => p.status === 'completed').length;
+
+  const filteredPOs = poList.filter((po) => {
+    if (statusFilter === 'all') return true;
+    return po.status === statusFilter;
+  });
+
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
       <Topbar
@@ -360,6 +393,38 @@ export default function PurchaseOrdersPage() {
       />
 
       <main className="p-4 sm:p-6 md:p-8 space-y-5 max-w-7xl mx-auto w-full">
+        {/* PO Spending Summary KPI Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs p-4 flex flex-col justify-between">
+            <span className="text-xs text-stone-500 font-normal">ยอดจัดซื้อรับเข้าแล้ว</span>
+            <div className="mt-2 text-xl font-bold font-mono tabular-nums text-stone-900">
+              ฿{totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+            <span className="text-[11px] text-stone-400 mt-1">{completedCount} ใบสั่งซื้อสำเร็จ</span>
+          </div>
+          <div className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs p-4 flex flex-col justify-between">
+            <span className="text-xs text-stone-500 font-normal">รอนำไปซื้อ</span>
+            <div className="mt-2 text-xl font-bold font-mono tabular-nums text-stone-700">
+              {pendingCount}
+            </div>
+            <span className="text-[11px] text-stone-400 mt-1">รายการเช็คลิสต์เปิดอยู่</span>
+          </div>
+          <div className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs p-4 flex flex-col justify-between">
+            <span className="text-xs text-stone-500 font-normal">มีใบเสร็จรอตรวจ</span>
+            <div className="mt-2 text-xl font-bold font-mono tabular-nums text-amber-700">
+              {uploadedCount}
+            </div>
+            <span className="text-[11px] text-amber-600 mt-1">รอ AI / ผู้จัดการตรวจ</span>
+          </div>
+          <div className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs p-4 flex flex-col justify-between">
+            <span className="text-xs text-stone-500 font-normal">ของใกล้หมด</span>
+            <div className="mt-2 text-xl font-bold font-mono tabular-nums text-rose-600">
+              {lowStock.length}
+            </div>
+            <span className="text-[11px] text-rose-500 mt-1">รายการสต็อกต่ำกว่าเกณฑ์</span>
+          </div>
+        </div>
+
         {/* Recommended Low-Stock Alert Card */}
         {lowStock.length > 0 && (
           <div className="p-4 rounded-2xl bg-white border border-stone-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -395,21 +460,71 @@ export default function PurchaseOrdersPage() {
                 <div className="w-8 h-8 rounded-xl bg-stone-100 border border-stone-200/80 flex items-center justify-center text-stone-700 shrink-0">
                   <ShoppingBag className="w-4 h-4" />
                 </div>
-                <span>ประวัติรายการไปซื้อของ (<span className="font-mono tabular-nums font-bold">{poList.length}</span>)</span>
+                <span>ประวัติรายการไปซื้อของ (<span className="font-mono tabular-nums font-bold">{filteredPOs.length}</span>)</span>
               </h3>
               <p className="text-xs text-stone-400 font-normal mt-0.5">
                 คลิกรายการเพื่อดูเช็คลิสต์ ส่งรูปใบเสร็จ หรือตรวจบิลรับเข้าสต็อก
               </p>
             </div>
 
-            <Button
-              onClick={handleOpenBlankCreate}
-              icon={<Plus className="w-4 h-4" />}
-              size="md"
-              className="shrink-0 whitespace-nowrap shadow-xs w-full sm:w-auto cursor-pointer rounded-xl bg-stone-900 text-white hover:bg-stone-800"
-            >
-              สร้างลิสต์ไปซื้อของใหม่
-            </Button>
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Filter Tabs */}
+              <div className="inline-flex p-1 bg-stone-100 rounded-xl text-xs font-medium">
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('all')}
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                    statusFilter === 'all'
+                      ? 'bg-white text-stone-900 shadow-2xs font-semibold'
+                      : 'text-stone-500 hover:text-stone-900'
+                  }`}
+                >
+                  ทั้งหมด ({poList.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('pending')}
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                    statusFilter === 'pending'
+                      ? 'bg-white text-stone-900 shadow-2xs font-semibold'
+                      : 'text-stone-500 hover:text-stone-900'
+                  }`}
+                >
+                  รอซื้อ ({pendingCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('receipt_uploaded')}
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                    statusFilter === 'receipt_uploaded'
+                      ? 'bg-white text-stone-900 shadow-2xs font-semibold'
+                      : 'text-stone-500 hover:text-stone-900'
+                  }`}
+                >
+                  รอตรวจ ({uploadedCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('completed')}
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                    statusFilter === 'completed'
+                      ? 'bg-white text-stone-900 shadow-2xs font-semibold'
+                      : 'text-stone-500 hover:text-stone-900'
+                  }`}
+                >
+                  สำเร็จ ({completedCount})
+                </button>
+              </div>
+
+              <Button
+                onClick={handleOpenBlankCreate}
+                icon={<Plus className="w-4 h-4" />}
+                size="md"
+                className="shrink-0 whitespace-nowrap shadow-xs w-full sm:w-auto cursor-pointer rounded-xl bg-stone-900 text-white hover:bg-stone-800"
+              >
+                สร้างลิสต์ไปซื้อของใหม่
+              </Button>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -427,14 +542,16 @@ export default function PurchaseOrdersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {poList.length === 0 ? (
+                {filteredPOs.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-12 text-stone-400 font-normal">
-                      ยังไม่มีรายการไปซื้อของ กดปุ่ม "+ สร้างลิสต์ไปซื้อของใหม่" เพื่อเริ่มต้น
+                      {statusFilter === 'all'
+                        ? 'ยังไม่มีรายการไปซื้อของ กดปุ่ม "+ สร้างลิสต์ไปซื้อของใหม่" เพื่อเริ่มต้น'
+                        : 'ไม่พบรายการที่ตรงกับสถานะที่เลือก'}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  poList.map((po) => {
+                  filteredPOs.map((po) => {
                     const isReceiptUploaded = po.status === 'receipt_uploaded';
                     const isCompleted = po.status === 'completed';
                     const isPending = po.status === 'pending';

@@ -92,9 +92,16 @@ export const AdjustStockModal: React.FC<AdjustStockModalProps> = ({
 
           {/* Smooth Numeric Input: Adjust Amount */}
           <div>
-            <label className="font-semibold text-stone-700 block mb-1">
-              {adjustType === 'adjust' ? 'ยอดที่นับได้จริงใหม่' : 'จำนวนที่ต้องการปรับ'} ({adjustTarget.unit})
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="font-semibold text-stone-700">
+                {adjustType === 'adjust' ? 'ยอดที่นับได้จริงใหม่' : 'จำนวนที่ต้องการปรับ'} ({adjustTarget.unit})
+              </label>
+              {Boolean(adjustTarget.package_unit && adjustTarget.package_size && adjustTarget.package_size > 0) && (
+                <span className="text-[11px] text-stone-500 font-medium">
+                  1 {adjustTarget.package_unit} = {adjustTarget.package_size} {adjustTarget.unit}
+                </span>
+              )}
+            </div>
             <input
               type="text"
               inputMode="decimal"
@@ -113,6 +120,25 @@ export const AdjustStockModal: React.FC<AdjustStockModalProps> = ({
               }}
               className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl font-mono tabular-nums font-bold text-stone-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 text-sm"
             />
+
+            {Boolean(adjustTarget.package_unit && adjustTarget.package_size && adjustTarget.package_size > 0) && (
+              <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                <span className="text-[11px] text-stone-500">ปรับทีละ {adjustTarget.package_unit}:</span>
+                {[1, 2, 5].map((multiplier) => {
+                  const qtyToAdd = multiplier * (adjustTarget.package_size || 1);
+                  return (
+                    <button
+                      key={multiplier}
+                      type="button"
+                      onClick={() => setAdjustAmount(qtyToAdd)}
+                      className="px-2 py-0.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-800 text-[11px] font-mono cursor-pointer transition-colors"
+                    >
+                      {multiplier} {adjustTarget.package_unit} ({qtyToAdd.toLocaleString()} {adjustTarget.unit})
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div>

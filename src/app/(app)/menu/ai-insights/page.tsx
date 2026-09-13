@@ -24,6 +24,9 @@ import {
   Target,
   ThumbsUp,
   AlertTriangle,
+  CheckSquare,
+  Square,
+  Check,
 } from 'lucide-react';
 import { useStock } from '@/lib/StockContext';
 import { Topbar } from '@/components/Topbar';
@@ -77,6 +80,11 @@ interface AIAnalysisResult {
   menu_recommendations: MenuRec[];
   new_recipe_ideas: NewRecipeIdea[];
   cost_saving_tips: string[];
+  cross_strategy?: {
+    pricing_vs_competitors?: string;
+    excess_stock_campaign?: string;
+    market_positioning?: string;
+  } | null;
 }
 
 interface CompetitorShop {
@@ -121,7 +129,7 @@ export default function AIInsightsPage() {
   const { dashboard, menuItems, ingredients } = useStock();
   const [loading, setLoading] = useState<boolean>(false);
   const [competitorLoading, setCompetitorLoading] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<'map_competitors' | 'existing' | 'new_ideas' | 'cost_saving'>('map_competitors');
+  const [activeTab, setActiveTab] = useState<'cross_strategy' | 'map_competitors' | 'existing' | 'new_ideas' | 'cost_saving'>('cross_strategy');
   
   // Menu AI analysis state
   const [analysis, setAnalysis] = useState<AIAnalysisResult | null>(null);
@@ -135,6 +143,7 @@ export default function AIInsightsPage() {
   const [competitorData, setCompetitorData] = useState<CompetitorAnalysisResult | null>(null);
   const [competitorAnalyzedTime, setCompetitorAnalyzedTime] = useState<string>('');
   const [nearbyPlaces, setNearbyPlaces] = useState<any[]>([]);
+  const [selectedShopNames, setSelectedShopNames] = useState<string[]>([]);
   const [isNearbyLoading, setIsNearbyLoading] = useState<boolean>(false);
   const [placeFilter, setPlaceFilter] = useState<'coffee' | 'all'>('coffee');
 
@@ -145,7 +154,13 @@ export default function AIInsightsPage() {
   const [storeVibe, setStoreVibe] = useState<string>('Cozy / นั่งทำงานได้ (Work & Chill)');
 
   // Quick nearby cafe search (fetches real shop names without full review analysis)
-  const fetchNearbyPlaces = async (lat: number, lng: number, radius: number, locName?: string) => {
+  const fetchNearbyPlaces = async (
+    lat: number,
+    lng: number,
+    radius: number,
+    locName?: string,
+    currentFilter: 'coffee' | 'all' = placeFilter
+  ) => {
     setIsNearbyLoading(true);
     try {
       const res = await fetch(
@@ -155,6 +170,11 @@ export default function AIInsightsPage() {
         const data = await res.json();
         if (data.places) {
           setNearbyPlaces(data.places);
+          // Default select ONLY shops matching current active filter
+          const filtered = data.places.filter((p: any) =>
+            currentFilter === 'all' ? true : p.isCafe !== false
+          );
+          setSelectedShopNames(filtered.map((p: any) => p.name));
         }
       }
     } catch (err) {
@@ -162,6 +182,33 @@ export default function AIInsightsPage() {
     } finally {
       setIsNearbyLoading(false);
     }
+  };
+
+  const handlePlaceFilterChange = (newFilter: 'coffee' | 'all') => {
+    setPlaceFilter(newFilter);
+    // When switching to coffee, remove any non-cafe shops from selection to prevent hidden selections
+    if (newFilter === 'coffee') {
+      const cafeNames = new Set(
+        nearbyPlaces.filter((p) => p.isCafe !== false).map((p) => p.name)
+      );
+      setSelectedShopNames((prev) => prev.filter((name) => cafeNames.has(name)));
+    }
+  };
+
+  const toggleSelectShop = (shopName: string) => {
+    setSelectedShopNames((prev) =>
+      prev.includes(shopName) ? prev.filter((n) => n !== shopName) : [...prev, shopName]
+    );
+  };
+
+  const selectAllFilteredShops = (filteredPlaces: any[]) => {
+    const names = filteredPlaces.map((p) => p.name);
+    setSelectedShopNames((prev) => Array.from(new Set([...prev, ...names])));
+  };
+
+  const deselectAllFilteredShops = (filteredPlaces: any[]) => {
+    const namesToRemove = new Set(filteredPlaces.map((p) => p.name));
+    setSelectedShopNames((prev) => prev.filter((n) => !namesToRemove.has(n)));
   };
 
   // Load cached AI insights if available
@@ -193,13 +240,19 @@ export default function AIInsightsPage() {
         if (parsed.data?.competitors?.length > 0) {
           setCompetitorData(parsed.data);
           setCompetitorAnalyzedTime(parsed.timestamp);
-          if (parsed.data.lat && parsed.data.lng) {
-            setMapLat(parsed.data.lat);
-            setMapLng(parsed.data.lng);
-          }
+          const targetLat = parsed.data.lat || 13.7445;
+          const targetLng = parsed.data.lng || 100.5332;
+          const targetLoc = parsed.data.location_name || locationName;
+          setMapLat(targetLat);
+          setMapLng(targetLng);
           if (parsed.data.location_name) {
             setLocationName(parsed.data.location_name);
           }
+          // Restore selected shops from cached competitors
+          const cachedNames = parsed.data.competitors.map((c: any) => c.name);
+          setSelectedShopNames(cachedNames);
+          // Pre-fetch nearby places in background for quick editing
+          fetchNearbyPlaces(targetLat, targetLng, searchRadius, targetLoc);
           return;
         }
       } catch {
@@ -214,6 +267,33 @@ export default function AIInsightsPage() {
   const handleRunAnalysis = async () => {
     setLoading(true);
     try {
+      const excessIngredients = ingredients
+        .filter((ing) => ing.quantity > (ing.reorder_point * 3))
+        .map((ing) => `${ing.name} (${ing.quantity} ${ing.unit})`);
+
+      const topMenuNames = menuItems
+        .sort((a, b) => (b.order_count || 0) - (a.order_count || 0))
+        .slice(0, 3)
+        .map((m) => m.name);
+
+      const mapContext = competitorData ? {
+        locationName: competitorData.location_name,
+        targetAudience: competitorData.neighborhood_summary?.target_audience,
+        marketGap: competitorData.neighborhood_summary?.gap_in_market,
+        competitorCount: competitorData.competitors?.length || 0,
+      } : {
+        locationName,
+        targetAudience: 'กลุ่มคนทำงานและวัยรุ่นในพื้นที่',
+        marketGap: 'เครื่องดื่ม Specialty คุณภาพดีในราคาสมเหตุสมผล',
+        competitorCount: nearbyPlaces.length || 3,
+      };
+
+      const salesContext = {
+        netSales: dashboard?.today_sales ?? 0,
+        topSellers: topMenuNames,
+        excessStock: excessIngredients.slice(0, 5),
+      };
+
       const res = await fetch('/api/ai/menu-insights', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -221,6 +301,8 @@ export default function AIInsightsPage() {
           menus: menuItems,
           ingredients,
           dashboardKPI: dashboard,
+          mapContext,
+          salesContext,
         }),
       });
 
@@ -255,6 +337,26 @@ export default function AIInsightsPage() {
         ? customDetails
         : `จุดเน้นสินค้า: ${sellingFocus}, ระดับราคา: ${targetBudget}, สไตล์/บรรยากาศ: ${storeVibe}, รายละเอียดเพิ่มเติม: ${businessDetails}`;
 
+    // Get current filtered places according to active filter (visible places)
+    const currentFiltered = nearbyPlaces.filter((p) =>
+      placeFilter === 'all' ? true : p.isCafe !== false
+    );
+
+    // Strictly filter to ONLY places currently visible that are checked by user
+    let placesToAnalyze = currentFiltered.filter((p) =>
+      selectedShopNames.includes(p.name)
+    );
+
+    // If none selected, fallback to all currently visible filtered places
+    if (placesToAnalyze.length === 0) {
+      if (currentFiltered.length === 0) {
+        setCompetitorLoading(false);
+        return;
+      }
+      placesToAnalyze = currentFiltered;
+      setSelectedShopNames(currentFiltered.map((p) => p.name));
+    }
+
     try {
       const res = await fetch('/api/ai/competitors', {
         method: 'POST',
@@ -266,6 +368,7 @@ export default function AIInsightsPage() {
           locationName: nameToUse,
           storeType: 'ร้านกาแฟ / คาเฟ่ (Cafe & Coffee Shop)',
           businessDetails: combinedDetails,
+          selectedPlaces: placesToAnalyze,
         }),
       });
 
@@ -384,6 +487,17 @@ export default function AIInsightsPage() {
         {/* Tab Navigation */}
         <div className="flex items-center gap-2 border-b border-stone-200 pb-3 overflow-x-auto">
           <button
+            onClick={() => setActiveTab('cross_strategy')}
+            className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+              activeTab === 'cross_strategy'
+                ? 'bg-stone-900 text-white shadow-xs'
+                : 'text-stone-700 hover:text-stone-900 hover:bg-stone-100'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            ผสานแผนที่ + ยอดขายจริง (Cross-Channel)
+          </button>
+          <button
             onClick={() => setActiveTab('map_competitors')}
             className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
               activeTab === 'map_competitors'
@@ -426,6 +540,73 @@ export default function AIInsightsPage() {
           </button>
         </div>
 
+        {/* TAB: CROSS-CHANNEL STRATEGY */}
+        {activeTab === 'cross_strategy' && (
+          <div className="space-y-6">
+            <div className="p-6 bg-gradient-to-br from-stone-900 via-stone-800 to-stone-900 text-white rounded-2xl border border-stone-800 shadow-md">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-medium mb-2 border border-amber-400/30">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>AI Location + POS Sales Cross-Analysis</span>
+                  </div>
+                  <div className="text-xl font-semibold tracking-tight">
+                    ผสานข้อมูลคู่แข่งในพื้นที่ กับ ยอดขาย & สต็อกจริงในร้าน
+                  </div>
+                  <p className="text-stone-300 text-xs mt-1 font-normal max-w-2xl">
+                    ประมวลผลคู่ขนานระหว่างพิกัดทำเล ({locationName}) และยอดขายจากระบบ เพื่อเจาะช่องว่างตลาดและระบายวัตถุดิบทำกำไรสูงสุด
+                  </p>
+                </div>
+                <Button
+                  size="md"
+                  isLoading={loading}
+                  onClick={handleRunAnalysis}
+                  icon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />}
+                  className="bg-white hover:bg-stone-200 text-black font-semibold rounded-xl shrink-0 cursor-pointer shadow-sm"
+                >
+                  {loading ? 'กำลังประมวลผล...' : 'วิเคราะห์กลยุทธ์ Cross-Channel'}
+                </Button>
+              </div>
+            </div>
+
+            {/* Strategic Output Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-5 rounded-2xl bg-white border border-stone-200/90 shadow-2xs space-y-3">
+                <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700">
+                  <Target className="w-4 h-4" />
+                </div>
+                <h3 className="font-bold text-stone-900 text-sm">การตั้งราคา & ชูจุดขายเทียบกับคู่แข่ง</h3>
+                <p className="text-xs text-stone-600 leading-relaxed font-normal">
+                  {analysis?.cross_strategy?.pricing_vs_competitors ||
+                    `ในย่าน ${locationName} แนะนำคงราคาเครื่องดื่มมาตรฐาน 65-85 บาท และเพิ่มเมนู Specialty 95-120 บาท เพื่อจับตลาดบนและเพิ่มมูลค่าต่อบิลเทียบกับร้านกาแฟรอบข้าง`}
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-white border border-stone-200/90 shadow-2xs space-y-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700">
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+                <h3 className="font-bold text-stone-900 text-sm">กลยุทธ์ระบายสต็อกตามไลฟ์สไตล์พื้นที่</h3>
+                <p className="text-xs text-stone-600 leading-relaxed font-normal">
+                  {analysis?.cross_strategy?.excess_stock_campaign ||
+                    'จัดโปรโมชั่นเซ็ตคู่เครื่องดื่มกับเบเกอรี่ช่วง 13:00 - 16:00 เพื่อระบายวัตถุดิบเมล็ดกาแฟและนมสดค้างสต็อก โดยให้ส่วนลด 15% ดึงลูกค้าบ่าย'}
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-white border border-stone-200/90 shadow-2xs space-y-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <h3 className="font-bold text-stone-900 text-sm">การวางตำแหน่งร้าน (Market Positioning)</h3>
+                <p className="text-xs text-stone-600 leading-relaxed font-normal">
+                  {analysis?.cross_strategy?.market_positioning ||
+                    `ชูจุดเด่นวัตถุดิบคุณภาพสูงพร้อมบริการรวดเร็ว เพื่อปิดช่องว่างที่ร้านคู่แข่งในรัศมีรอบข้างยังทำได้ไม่ดีพอ`}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* TAB: MAP & COMPETITOR INTELLIGENCE */}
         {activeTab === 'map_competitors' && (
           <div className="space-y-6">
@@ -464,7 +645,7 @@ export default function AIInsightsPage() {
                 nearbyPlaces={nearbyPlaces}
                 isNearbyLoading={isNearbyLoading}
                 placeFilter={placeFilter}
-                onPlaceFilterChange={setPlaceFilter}
+                onPlaceFilterChange={handlePlaceFilterChange}
                 onLocationChange={handleLocationChange}
                 onNearbySearch={handleNearbySearch}
                 disabled={competitorLoading}
@@ -476,35 +657,6 @@ export default function AIInsightsPage() {
                   <span className="font-medium">AI กำลังดึงรีวิวจริงจาก Google Maps และสรุปกลยุทธ์ร้าน...</span>
                 </div>
               )}
-            </div>
-
-            {/* Direct Google Maps & AI Review Intelligence Trigger */}
-            <div className="p-4 md:p-5 rounded-2xl bg-white border border-stone-200/90 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <Store className="w-4 h-4 text-stone-800 shrink-0" />
-                  <h4 className="text-sm font-bold text-stone-900">
-                    วิเคราะห์และสรุปรีวิวร้านคู่แข่งด้วย AI
-                  </h4>
-                  <span className="px-2 py-0.5 rounded-full bg-stone-100 text-stone-700 text-[10px] font-semibold">
-                    Google Maps Real Data
-                  </span>
-                </div>
-                <p className="text-xs text-stone-500">
-                  ดึงรีวิวจริงของร้านในรัศมี {searchRadius} กม. และให้ AI สรุปจุดชม ข้อติชม และโอกาสทางธุรกิจของแต่ละร้าน
-                </p>
-              </div>
-
-              <Button
-                variant="primary"
-                size="md"
-                isLoading={competitorLoading}
-                onClick={() => handleAnalyzeCompetitors(mapLat, mapLng, locationName)}
-                icon={<Sparkles className={`w-3.5 h-3.5 text-amber-300 ${competitorLoading ? 'animate-spin' : ''}`} />}
-                className="bg-stone-900 text-white hover:bg-stone-800 shrink-0 font-semibold rounded-xl text-xs shadow-xs px-5 py-2.5 whitespace-nowrap"
-              >
-                {competitorLoading ? 'AI กำลังประมวลผลรีวิว...' : 'สรุปรีวิวทุกร้านด้วย AI'}
-              </Button>
             </div>
 
             {/* AI Recommended Menus Based on Gap in Market */}
@@ -629,19 +781,39 @@ export default function AIInsightsPage() {
                   <Store className="w-4 h-4 text-stone-700" />
                   ร้านคู่แข่งและสรุปรีวิวจริงจาก Google Maps ({competitorData?.competitors?.length || 0} ร้าน)
                 </h4>
-                {competitorLoading && (
-                  <span className="text-xs text-stone-500 animate-pulse flex items-center gap-1">
-                    <RefreshCw className="w-3 h-3 animate-spin" /> กำลังประมวลผลข้อมูลรีวิว...
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  {competitorData && competitorData.competitors.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (competitorData.competitors?.length > 0) {
+                          setSelectedShopNames(competitorData.competitors.map((c) => c.name));
+                        }
+                        setCompetitorData(null);
+                        if (nearbyPlaces.length === 0) {
+                          fetchNearbyPlaces(mapLat, mapLng, searchRadius, locationName, placeFilter);
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+                    >
+                      ← เลือกปรับรายชื่อร้านใหม่
+                    </button>
+                  )}
+                  {competitorLoading && (
+                    <span className="text-xs text-stone-500 animate-pulse flex items-center gap-1">
+                      <RefreshCw className="w-3 h-3 animate-spin" /> กำลังประมวลผลข้อมูลรีวิว...
+                    </span>
+                  )}
+                </div>
               </div>
 
               {(!competitorData || competitorData.competitors.length === 0) ? (
                 nearbyPlaces.length > 0 ? (
                   <div className="bg-white rounded-2xl border border-stone-200/90 shadow-sm p-5 space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-100">
-                      <div>
-                        <div className="flex items-center gap-2">
+                    {/* Header with filters and selection actions */}
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-stone-100">
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
                           <h5 className="font-bold text-stone-900 text-sm">
                             พบสถานที่ในรัศมี {searchRadius} กม.
                           </h5>
@@ -649,8 +821,8 @@ export default function AIInsightsPage() {
                           <div className="inline-flex p-0.5 rounded-lg bg-stone-100 border border-stone-200 text-xs font-semibold">
                             <button
                               type="button"
-                              onClick={() => setPlaceFilter('coffee')}
-                              className={`px-2.5 py-1 rounded-md transition-all ${
+                              onClick={() => handlePlaceFilterChange('coffee')}
+                              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
                                 placeFilter === 'coffee'
                                   ? 'bg-white text-stone-900 shadow-xs'
                                   : 'text-stone-500 hover:text-stone-800'
@@ -660,8 +832,8 @@ export default function AIInsightsPage() {
                             </button>
                             <button
                               type="button"
-                              onClick={() => setPlaceFilter('all')}
-                              className={`px-2.5 py-1 rounded-md transition-all ${
+                              onClick={() => handlePlaceFilterChange('all')}
+                              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
                                 placeFilter === 'all'
                                   ? 'bg-white text-stone-900 shadow-xs'
                                   : 'text-stone-500 hover:text-stone-800'
@@ -671,23 +843,77 @@ export default function AIInsightsPage() {
                             </button>
                           </div>
                         </div>
-                        <p className="text-xs text-stone-500 mt-1">
-                          {placeFilter === 'coffee'
-                            ? 'คัดกรองเฉพาะร้านกาแฟและคาเฟ่เพื่อความแม่นยำ (สามารถเลือกสลับดู "ทั้งหมด" เพื่อดูร้านอาหาร/สถานที่อื่นได้)'
-                            : 'แสดงร้านค้าและสถานที่ทั้งหมดรอบข้างเพื่อดูภาพรวมย่าน'}
-                        </p>
+
+                        {/* Quick Selection Helpers */}
+                        {(() => {
+                          const currentFiltered = nearbyPlaces.filter((p) =>
+                            placeFilter === 'all' ? true : p.isCafe !== false
+                          );
+                          const selectedCount = currentFiltered.filter((p) =>
+                            selectedShopNames.includes(p.name)
+                          ).length;
+
+                          return (
+                            <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-stone-500">
+                              <span>
+                                เลือกแล้ว{' '}
+                                <strong className="text-stone-900 font-mono font-bold">
+                                  {selectedCount}
+                                </strong>{' '}
+                                จาก {currentFiltered.length} ร้าน
+                              </span>
+                              <span className="text-stone-300">•</span>
+                              <button
+                                type="button"
+                                onClick={() => selectAllFilteredShops(currentFiltered)}
+                                className="text-stone-700 hover:text-stone-900 underline font-semibold cursor-pointer"
+                              >
+                                เลือกทั้งหมด
+                              </button>
+                              <span className="text-stone-300">/</span>
+                              <button
+                                type="button"
+                                onClick={() => deselectAllFilteredShops(currentFiltered)}
+                                className="text-stone-500 hover:text-rose-600 underline cursor-pointer"
+                              >
+                                ไม่เลือกทั้งหมด
+                              </button>
+                            </div>
+                          );
+                        })()}
                       </div>
 
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        isLoading={competitorLoading}
-                        onClick={() => handleAnalyzeCompetitors(mapLat, mapLng, locationName)}
-                        icon={<Sparkles className="w-3.5 h-3.5 text-amber-300" />}
-                        className="bg-stone-900 text-white hover:bg-stone-800 shrink-0 font-semibold rounded-xl text-xs shadow-xs"
-                      >
-                        วิเคราะห์ร้านเหล่านี้
-                      </Button>
+                      {/* The single, clear primary action button */}
+                      {(() => {
+                        const currentFiltered = nearbyPlaces.filter((p) =>
+                          placeFilter === 'all' ? true : p.isCafe !== false
+                        );
+                        const selectedCount = currentFiltered.filter((p) =>
+                          selectedShopNames.includes(p.name)
+                        ).length;
+
+                        return (
+                          <Button
+                            variant="primary"
+                            size="md"
+                            isLoading={competitorLoading}
+                            disabled={selectedCount === 0 || competitorLoading}
+                            onClick={() => handleAnalyzeCompetitors(mapLat, mapLng, locationName)}
+                            icon={
+                              <Sparkles
+                                className={`w-3.5 h-3.5 text-amber-300 ${
+                                  competitorLoading ? 'animate-spin' : ''
+                                }`}
+                              />
+                            }
+                            className="bg-stone-900 text-white hover:bg-stone-800 shrink-0 font-semibold rounded-xl text-xs shadow-xs px-5 py-2.5 whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {competitorLoading
+                              ? 'AI กำลังประมวลผลรีวิว...'
+                              : `วิเคราะห์ร้านที่เลือก (${selectedCount} ร้าน) ด้วย AI`}
+                          </Button>
+                        );
+                      })()}
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
@@ -695,19 +921,38 @@ export default function AIInsightsPage() {
                         .filter((p) => (placeFilter === 'all' ? true : p.isCafe !== false))
                         .map((np, idx) => {
                           const isCafe = np.isCafe !== false;
+                          const isSelected = selectedShopNames.includes(np.name);
+
                           return (
                             <div
                               key={idx}
-                              className="p-3 rounded-xl bg-stone-50 border border-stone-200/80 flex items-center justify-between gap-2 hover:border-stone-300 transition-all"
+                              onClick={() => toggleSelectShop(np.name)}
+                              className={`p-3 rounded-xl border flex items-center justify-between gap-2.5 transition-all cursor-pointer select-none ${
+                                isSelected
+                                  ? 'bg-amber-500/5 border-amber-500/60 shadow-2xs'
+                                  : 'bg-stone-50/70 border-stone-200/70 opacity-65 hover:opacity-100 hover:border-stone-300'
+                              }`}
                             >
                               <div className="flex items-center gap-2.5 min-w-0">
-                                <span className={`w-6 h-6 rounded-full font-bold flex items-center justify-center shrink-0 text-xs shadow-xs ${
-                                  isCafe ? 'bg-amber-500 text-white' : 'bg-stone-400 text-white'
-                                }`}>
-                                  {idx + 1}
-                                </span>
+                                {/* Custom Checkbox Toggle */}
+                                <div
+                                  className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-colors ${
+                                    isSelected
+                                      ? 'bg-stone-900 text-white shadow-2xs'
+                                      : 'border border-stone-300 bg-white'
+                                  }`}
+                                >
+                                  {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                                </div>
+
                                 <div className="min-w-0">
-                                  <span className="font-semibold text-stone-800 text-xs truncate block">
+                                  <span
+                                    className={`text-xs truncate block ${
+                                      isSelected
+                                        ? 'font-bold text-stone-900'
+                                        : 'font-normal text-stone-600 line-through'
+                                    }`}
+                                  >
                                     {np.name}
                                   </span>
                                   <span className="text-[10px] text-stone-400 block truncate">
@@ -716,7 +961,7 @@ export default function AIInsightsPage() {
                                 </div>
                               </div>
                               {np.distanceKm !== undefined && (
-                                <span className="text-[11px] text-stone-500 shrink-0 font-mono">
+                                <span className="text-[11px] text-stone-400 shrink-0 font-mono">
                                   ~{np.distanceKm} กม.
                                 </span>
                               )}

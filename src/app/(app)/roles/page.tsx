@@ -62,6 +62,8 @@ export default function RolesPermissionPage() {
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'card' | 'matrix'>('card');
+  const [matrixDraft, setMatrixDraft] = useState<Record<string, string[]>>({});
 
   const fetchRoleData = async () => {
     setLoading(true);
@@ -88,6 +90,10 @@ export default function RolesPermissionPage() {
         const initial = data.roles[0];
         setSelectedRole(initial);
         setCurrentPermissions(initial.permissions);
+        // Build matrix draft from all roles
+        const draft: Record<string, string[]> = {};
+        data.roles.forEach((r: RoleData) => { draft[r.id] = [...r.permissions]; });
+        setMatrixDraft(draft);
       }
     } catch (e: any) {
       console.error('API fetch error in RolesPermissionPage:', e);
@@ -98,8 +104,12 @@ export default function RolesPermissionPage() {
   };
 
   useEffect(() => {
+    if (currentUser && !hasRole('admin')) {
+      window.location.href = '/dashboard';
+      return;
+    }
     fetchRoleData();
-  }, [token]);
+  }, [token, currentUser]);
 
   const handleSelectRole = (role: RoleData) => {
     setSelectedRole(role);
@@ -176,6 +186,41 @@ export default function RolesPermissionPage() {
     }
   };
 
+  // Save a single-role permission toggle in the Matrix Grid (optimistic)
+  const handleMatrixToggle = async (roleId: string, permName: string) => {
+    const role = roles.find((r) => r.id === roleId);
+    if (!role || role.name === 'admin') return;
+
+    const current = matrixDraft[roleId] || [];
+    const newPerms = current.includes(permName)
+      ? current.filter((p) => p !== permName)
+      : [...current, permName];
+
+    // Optimistic update
+    setMatrixDraft((prev) => ({ ...prev, [roleId]: newPerms }));
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/roles-permissions/${roleId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({ permissions: newPerms }),
+      });
+      if (!res.ok) {
+        // Rollback
+        setMatrixDraft((prev) => ({ ...prev, [roleId]: current }));
+        setErrorMsg('บันทึกสิทธิ์ไม่สำเร็จ');
+      } else {
+        setRoles((prev) => prev.map((r) => r.id === roleId ? { ...r, permissions: newPerms } : r));
+      }
+    } catch {
+      setMatrixDraft((prev) => ({ ...prev, [roleId]: current }));
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
       <Topbar
@@ -209,7 +254,29 @@ export default function RolesPermissionPage() {
           </div>
         )}
 
-        {/* Roles Tabs & Matrix Grid */}
+        {/* View Mode Toggle */}
+        <div className="flex items-center justify-between bg-white rounded-2xl border border-stone-200/90 shadow-2xs p-3.5">
+          <h3 className="font-semibold text-stone-900 text-sm">นโยบายสิทธิ์บทบาท</h3>
+          <div className="inline-flex rounded-xl border border-stone-200/80 p-1 bg-stone-100 gap-1">
+            <button
+              type="button"
+              onClick={() => setViewMode('card')}
+              className={`h-8 px-3 text-xs rounded-lg font-medium transition-all cursor-pointer ${viewMode === 'card' ? 'bg-white text-stone-900 border border-stone-200 shadow-2xs font-semibold' : 'text-stone-500 hover:text-stone-800'}`}
+            >
+              แลกทีละ Role
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('matrix')}
+              className={`h-8 px-3 text-xs rounded-lg font-medium transition-all cursor-pointer ${viewMode === 'matrix' ? 'bg-white text-stone-900 border border-stone-200 shadow-2xs font-semibold' : 'text-stone-500 hover:text-stone-800'}`}
+            >
+              Matrix Grid
+            </button>
+          </div>
+        </div>
+
+        {/* CARD VIEW */}
+        {viewMode === 'card' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column: Role Selector */}
           <div className="lg:col-span-4 space-y-3">
@@ -386,6 +453,75 @@ export default function RolesPermissionPage() {
             )}
           </div>
         </div>
+        )}
+
+        {/* MATRIX GRID VIEW */}
+        {viewMode === 'matrix' && (
+          <div className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-stone-50 border-b border-stone-200">
+                    <th className="text-left p-4 text-xs font-normal text-stone-500 w-64 sticky left-0 bg-stone-50">สิทธิ์</th>
+                    {roles.map((role) => (
+                      <th key={role.id} className="text-center p-4 text-xs font-semibold text-stone-900 whitespace-nowrap min-w-[120px]">
+                        <div>{role.display_name.split(' ')[0]}</div>
+                        {role.name === 'admin' && (
+                          <span className="text-[10px] text-stone-400 font-normal">สิทธิ์เต็ม</span>
+                        )}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(permissionCategories).map(([catKey, items]) => (
+                    <React.Fragment key={catKey}>
+                      {/* Category header row */}
+                      <tr className="bg-stone-100/70 border-b border-stone-200">
+                        <td colSpan={roles.length + 1} className="px-4 py-2 text-xs font-semibold text-stone-600 uppercase tracking-wide sticky left-0">
+                          {categoryLabels[catKey]?.label || catKey}
+                        </td>
+                      </tr>
+                      {items.map((perm) => (
+                        <tr key={perm.id} className="border-b border-stone-100 hover:bg-stone-50/60 transition-colors">
+                          <td className="p-4 sticky left-0 bg-white hover:bg-stone-50">
+                            <div className="text-xs font-medium text-stone-800">{perm.display_name}</div>
+                            {perm.description && (
+                              <div className="text-[11px] text-stone-400 font-normal mt-0.5">{perm.description}</div>
+                            )}
+                          </td>
+                          {roles.map((role) => {
+                            const isAdmin = role.name === 'admin';
+                            const isGranted = isAdmin || (matrixDraft[role.id] || []).includes(perm.name);
+                            return (
+                              <td key={role.id} className="text-center p-4">
+                                <button
+                                  type="button"
+                                  disabled={isAdmin}
+                                  onClick={() => handleMatrixToggle(role.id, perm.name)}
+                                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none disabled:cursor-default ${
+                                    isGranted ? 'bg-stone-900' : 'bg-stone-200'
+                                  }`}
+                                  title={isAdmin ? 'ผู้ดูแลระบบมีสิทธิ์ทุกอย่าง' : ''}
+                                >
+                                  <span
+                                    className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transform transition-transform ${
+                                      isGranted ? 'translate-x-6' : 'translate-x-1'
+                                    }`}
+                                  />
+                                </button>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

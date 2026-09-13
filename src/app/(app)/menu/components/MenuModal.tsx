@@ -26,6 +26,10 @@ interface MenuModalProps {
   onAddRecipeRow: () => void;
   onRemoveRecipeRow: (index: number) => void;
   onUpdateRecipeRow: (index: number, field: string, value: any) => void;
+  optionIngredients?: any[];
+  onAddOptionRow?: () => void;
+  onRemoveOptionRow?: (index: number) => void;
+  onUpdateOptionRow?: (index: number, field: string, value: any) => void;
 }
 
 export const MenuModal: React.FC<MenuModalProps> = ({
@@ -48,6 +52,10 @@ export const MenuModal: React.FC<MenuModalProps> = ({
   onAddRecipeRow,
   onRemoveRecipeRow,
   onUpdateRecipeRow,
+  optionIngredients,
+  onAddOptionRow,
+  onRemoveOptionRow,
+  onUpdateOptionRow,
 }) => {
   if (!isOpen) return null;
 
@@ -65,7 +73,9 @@ export const MenuModal: React.FC<MenuModalProps> = ({
     } else if (['ลิตร', 'l', 'liter', 'litre'].includes(unitLower) && qty >= 1) {
       unitFactor = 0.001;
     }
-    return sum + (ing.cost_per_unit * qty * unitFactor);
+    const wastePercent = typeof r.waste_percent === 'number' ? r.waste_percent : parseFloat(r.waste_percent as any) || 0;
+    const wasteMult = 1.0 + (wastePercent / 100);
+    return sum + (ing.cost_per_unit * qty * unitFactor * wasteMult);
   }, 0);
 
   const calculatedProfit = numPrice - calculatedCost;
@@ -169,6 +179,10 @@ export const MenuModal: React.FC<MenuModalProps> = ({
             onAddRow={onAddRecipeRow}
             onRemoveRow={onRemoveRecipeRow}
             onUpdateRow={onUpdateRecipeRow}
+            optionIngredients={optionIngredients}
+            onAddOptionRow={onAddOptionRow}
+            onRemoveOptionRow={onRemoveOptionRow}
+            onUpdateOptionRow={onUpdateOptionRow}
           />
 
           {/* Live BOM Margin Summary Box */}

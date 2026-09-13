@@ -208,54 +208,87 @@
 
 ---
 
+### [2026-09-12 - 2026-09-13] ระบบสต็อก 2 คลังสำหรับร้านกาแฟ (Two-Tier Backstock & Front Bar), ตรวจนับสต็อกสิ้นวัน (Stock Audit), ระบบโปรไฟล์ & สิทธิ์ผู้ใช้
+
+1. **ระบบสต็อก 2 คลังสำหรับคาเฟ่ (Two-Tier Inventory System: คลังหลังร้าน & คลังหน้าบาร์)**:
+   - **แก้โจทย์จริงของธุรกิจร้านกาแฟ**:
+     - หน้าร้าน/หน้าบาร์ ตัดวัตถุดิบเป็นกรัมหรือ มล. ต่อแก้ว (Base Unit) จากขวดหรือถุงที่เปิดใช้
+     - หลังร้านเก็บสต็อกเป็นแพ็ค/ลัง/ถุง/ขวด (Package Unit) เพื่อให้นับง่าย สั่งของง่าย และไม่สับสน
+   - **Backend (Laravel)**:
+     - Migration เพิ่มฟิลด์ `is_two_tier` (boolean), `bar_quantity` (float), `backstock_quantity` (float), `package_unit` (string), `package_size` (float) ในตาราง `ingredients`
+     - API `POST /api/ingredients/{id}/open-package`: เบิก/จ่ายวัตถุดิบจากหลังร้าน 1 แพ็คเข้าหน้าบาร์ (หลังร้านลด 1 แพ็ค, หน้าบาร์เพิ่มตามขนาดบรรจุ `package_size`, สต็อกรวมทั้งร้านคงที่, บันทึก Movement เป็น `transfer`)
+     - API `POST /api/ingredients/{id}/add-backstock`: รับของใหม่เข้าคลังหลังร้านแบบยืดหยุ่น (Flexible Inbound Sizing) รองรับกรณีซัพพลายเออร์ส่งขนาดถุง/ขวดต่างจากเดิม คำนวณเนื้อวัตถุดิบเข้าสต็อกรวมอย่างแม่นยำ และมีตัวเลือกบันทึกเป็นขนาดมาตรฐานใหม่
+     - POS Sales (`OrderController`): ตัดสต็อกหน้าบาร์ (`bar_quantity`) และสต็อกรวม (`quantity`) ตามสูตรชง BOM
+   - **Frontend (Next.js)**:
+     - **แท็บ "สต็อกหลังร้าน" ([BackstockTab.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/components/BackstockTab.tsx))**:
+       - 4 การ์ดสรุป KPI: รายการสินค้าในหลังร้าน, สต็อกคงเหลือในห้องสต็อก (ถุง/ขวด/ลัง), รายการหลังร้านเหลือน้อย/หมด, มูลค่าสต็อกในคลังหลังร้าน
+       - ตารางคลังหลังร้าน:
+         - แสดงคงเหลือหลังร้าน (แพ็ค/ถุง/ขวด) เด่นชัด เช่น `4 ถุง (= 4,000 กรัม)`
+         - แสดงพร้อมใช้ที่หน้าบาร์ เช่น `☕ 1,000 กรัม (เปิด 1 ถุง)` พร้อมแจ้งเตือนสีแดงทันทีเมื่อหน้าบาร์หมด
+         - แสดงสต็อกรวมทั้งร้าน พร้อมเปอร์เซ็นต์และหลอดสถานะรวมทั้งร้านจริง ({totalRatio}%) เทียบความจุคลังสูงสุด
+         - ปุ่มด่วนในแต่ละแถว: **"☕ จ่ายไปบาร์"** และ **"+ รับเข้า"**
+       - Modal รับของเข้าหลังร้าน: ปรับขนาดบรรจุภัณฑ์ของล็อตนี้ได้อิสระ (`receivePackSize`), มีพรีวิวคำนวณสด เช่น `+2,000 กรัม`, และ Checkbox เปลี่ยนขนาดมาตรฐานถาวร
+     - **แท็บ "สต็อกหน้าบาร์" ([stock/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/page.tsx))**:
+       - แสดงสถานะหน้าบาร์ `☕ {barQty} {unit} (เปิด {openPacks} {package_unit})` พร้อมปุ่มดึงของจากหลังร้าน **"📦 ดึง 1 ถุง"** และยอดคงเหลือหลังร้าน
+       - คอลัมน์ "รวมทั้งร้าน" แสดงหลอดสถานะและเปอร์เซ็นต์ของสต็อกทั้งหมด ({ratio}%) สอดคล้องกันทั้งระบบ
+     - **คลีนหน้าต่างเพิ่มวัตถุดิบ ([AddIngredientModal.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/components/AddIngredientModal.tsx))**:
+       - ตัดปุ่มเลือกลักษณะการตัดสต็อก (`tracking_type`) ที่ซ้ำซ้อนออก ให้ฟอร์มกว้าง สะอาด สบายตา และตัดตามแก้ว/คลังบาร์อย่างเป็นเอกภาพ
+
+2. **ระบบตรวจนับและรีเช็คสต็อกสิ้นวัน / ปิดกะ ([StockAuditTab.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/components/StockAuditTab.tsx))**:
+   - แท็บ "รีเช็คสต็อก" ในหน้า `/stock`
+   - ตรวจนับแยก 2 คลัง: นับหลังร้าน (นับเป็นแพ็ค/ถุง) + นับหน้าบาร์ (นับเป็นกรัม/มล.)
+   - คำนวณผลต่าง (Variance) แบบ Real-time ทันทีที่กรอกตัวเลข
+   - ปุ่ม **"ดึงยอดปัจจุบันเป็นค่าเริ่มต้น"** ช่วยให้ตรวจนับเฉพาะตัวที่มีผลต่างได้รวดเร็ว
+   - ปุ่ม **"ยืนยันและปรับยอดสต็อกจริง"** เรียก API `POST /api/ingredients/audit-reconcile` บันทึกผลต่างและ Audit Log อัตโนมัติ
+
+3. **ระบบสิทธิ์ผู้ใช้งาน & ป้องกันความปลอดภัยระดับบัญชี (User Roles & Super Admin Guard)**:
+   - Migration เพิ่มคอลัมน์ `username`, `role` (`'superadmin'`, `'owner'`, `'admin'`, `'manager'`, `'staff'`) ในตาราง `users`
+   - Security Guard: ป้องกันบัญชีระดับ Owner / Admin ไม่ให้แก้ไขหรือลบบัญชี Super Admin ได้
+
+4. **ระบบโปรไฟล์ผู้ใช้งาน & เปลี่ยนรหัสผ่านใน Topbar ([ProfileModal.tsx](file:///c:/meeting/smartStock/src/components/ProfileModal.tsx))**:
+   - เมนู Dropdown ที่รูปโปรไฟล์มุมซ้ายล่างและ Topbar
+   - Modal แก้ไขข้อมูลส่วนตัว: ชื่อ, อีเมล, ชื่อผู้ใช้ (username), อัปโหลดรูปภาพโปรไฟล์ (Profile Avatar)
+   - ช่องเปลี่ยนรหัสผ่านแบบไม่บังคับ (Optional Password Change) หากไม่ต้องการเปลี่ยนรหัสผ่าน สามารถกดบันทึกข้อมูลส่วนตัวได้ทันที
+
+5. **ระบบการคืนเงิน / ยกเลิกบิล POS (Refund & Void Orders)**:
+   - Migration เพิ่มฟิลด์ `refund_amount`, `refund_reason`, `refunded_at`, `refunded_by` ในตาราง `orders`
+   - โครงสร้างและฟังก์ชันการคืนเงินในหน้าประวัติบิล พร้อมดึงสต็อกวัตถุดิบคืนคลังอย่างถูกต้อง
+
+---
+
 ## 📌 สรุปสถานะโครงการปัจจุบัน (Current System Status)
-- ✅ UI Theme: สะอาดตา มินิมอล โมโนโครม (Slate/Neutral) ผสานโทนอบอุ่นคาเฟ่ 60-30-10 ระดับ Enterprise
-- ✅ Component Standards: `Button.tsx`, `Badge.tsx`, `Table.tsx`, `Dropdown.tsx`, `Skeleton.tsx` และ shadcn `components/ui/` ใช้งานเป็นมาตรฐานหลัก 100%
-- ✅ Frontend Next.js 16 (Turbopack) & TypeScript ผ่านการทดสอบ `npm run build` สำเร็จ 100%
-- ✅ Backend Laravel 11 API อัปเกรด Query Optimization พร้อม Eager Loading
+- ✅ **UI Theme & Design System**: มินิมอล โมโนโครม (Slate/Neutral) ผสานโทนอบอุ่นคาเฟ่ 60-30-10 สไตล์ Enterprise
+- ✅ **Component Standards**: `Button.tsx`, `Badge.tsx`, `Table.tsx`, `Dropdown.tsx`, `Skeleton.tsx` และ shadcn `components/ui/` ใช้งานเป็นมาตรฐานหลัก 100%
+- ✅ **ระบบสต็อก 2 คลัง (Two-Tier Stock)**: ทำงานสมบูรณ์แบบทั้งการตัดแก้วหน้าบาร์, เบิกขวด/ถุงเข้าบาร์ใน 1 คลิก, และรับของเข้าหลังร้านแบบยืดหยุ่น
+- ✅ **ระบบตรวจนับสต็อกสิ้นวัน (Stock Audit & Reconcile)**: ตรวจนับแยก 2 คลังและปรับยอดพร้อม Audit Logs สมบูรณ์
+- ✅ **ระบบผู้ใช้งาน & โปรไฟล์ (User & Profile Management)**: แก้ไขข้อมูลส่วนตัว, รูปโปรไฟล์, จัดระดับสิทธิ์บทบาทพร้อม Super Admin Guard
+- ✅ **Frontend Next.js 16 (Turbopack) & TypeScript**: ผ่านการตรวจสอบ Typecheck `npx tsc --noEmit` และ `npm run build` สำเร็จ 100% ปราศจาก error
+- ✅ **Backend Laravel 11 API**: ฐานข้อมูล Migration สมบูรณ์ พร้อม Database Transactions และ Eager Loading
 
 ---
 
 ## 🚀 แผนการพัฒนารอบถัดไป (Upcoming Detailed Roadmap & Implementation Plan)
 
 ### 🎯 ภาพรวมและเป้าหมายหลัก (Core Objectives)
-รอบการพัฒนานี้มี 5 แกนงานสำคัญที่ต้องดำเนินการตามลำดับเพื่อความต่อเนื่องและป้องกันการลืม:
-
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────┐
 │                             SmartStock Upcoming Roadmap                          │
 ├──────────────────────────────────────────────────────────────────────────────────┤
-│ 1. 📦 ตรวจนับสต็อกสิ้นวัน (End-of-Day Stock Audit / Re-check & Reconcile)       │
-│ 2. 🧾 หน้ารายงานยอดขาย: แสดงยอด Refund / บิลคืนเงิน & หักลบสุทธิ                 │
-│ 3. 🛡️ ปรับระบบจัดการสิทธิ์ (Role & Permission Separation) & Layout ใหม่          │
-│ 4. 🛒 ปรับ Layout หน้าซื้อของเข้าร้าน / ใบสั่งซื้อ (Purchase Orders UX Polish)    │
-│ 5. 🤖 AI ผสานข้อมูลแผนที่ (Map Competitors) + ข้อมูลการขายจริงในร้าน (Internal POS) │
+│ 1. ✅ 📦 ตรวจนับสต็อกสิ้นวัน (End-of-Day Stock Audit & Reconcile) - สำเร็จแล้ว     │
+│ 2. ✅ 📦 ระบบสต็อก 2 คลัง (Two-Tier Backstock & Front Bar) - สำเร็จแล้ว          │
+│ 3. 🧾 หน้ารายงานยอดขาย: แสดง KPI ยอด Refund / บิลคืนเงิน & หักลบสุทธิบนชาร์ต     │
+│ 4. 🛡️ ปรับ Layout หน้าจัดการสิทธิ์ (Role Matrix UI Polish)                       │
+│ 5. 🛒 ปรับ Layout หน้าซื้อของเข้าร้าน / ใบสั่งซื้อ (Purchase Orders UX Polish)    │
+│ 6. 🤖 AI ผสานข้อมูลแผนที่ (Map Competitors) + ข้อมูลการขายจริงในร้าน (Internal POS) │
 └──────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### 📋 รายละเอียดแผนปฏิบัติการทั้ง 5 ส่วน (Detailed Action Items)
+### 📋 รายละเอียดแผนปฏิบัติการต่อเนื่อง (Detailed Action Items)
 
-#### 1. 📦 แท็บรีเช็คสต็อกสิ้นวัน / ปิดกะ (End-of-Day Physical Stock Audit & Reconcile)
-> **เป้าหมาย**: ให้พนักงาน/เจ้าของร้านเดินนับวัตถุดิบจริงหลังปิดร้าน (หรือหลังจบคอร์ส) เพื่อเทียบกับตัวเลขในระบบ และบันทึกผลต่าง (Divergence / Loss / Variance) ได้อย่างรวดเร็ว
-
-* **Frontend ([src/app/(app)/stock/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/page.tsx))**:
-  - เพิ่มแท็บใหม่ในหน้า Stock: `audit` ("รีเช็คสต็อกสิ้นวัน / ตรวจนับ")
-  - ตารางตรวจนับวัตถุดิบ (Stock Audit Sheet):
-    - คอลัมน์: รหัส & ชื่อวัตถุดิบ | หมวดหมู่ | ยอดคงเหลือในระบบ (System Qty) | **ยอดนับจริง (Counted Qty - Input)** | ผลต่าง (Variance: + / -) | หมายเหตุสาเหตุ (เช่น ของเสีย, ทำหก, ลืมคีย์)
-    - รองรับการฟิลเตอร์เฉพาะหมวดหมู่ หรือเฉพาะวัตถุดิบหลัก (Strict BOM) ที่เน้นตรวจทุกวัน
-    - ปุ่ม **"⚡ ดึงยอดระบบเป็นค่าเริ่มต้น"** เพื่อให้คีย์เฉพาะตัวที่มีผลต่างได้เร็วขึ้น
-    - ปุ่ม **"ยืนยันและปรับยอดสต็อกจริง (Reconcile & Apply)"**: คำนวณส่วนต่างแล้วยิงปรับสต็อกอัตโนมัติ พร้อมลงบันทึก Movement Type เป็น `audit_adjustment`
-* **Backend ([smartsotck-backend](file:///c:/meeting/smartsotck-backend))**:
-  - เพิ่ม Endpoint `POST /api/ingredients/audit-reconcile` (รับ array ของ `{ ingredient_id, system_qty, counted_qty, note }`)
-  - บันทึกประวัติการกระทบยอดลงตาราง audit logs / stock movements พร้อมระบุ user_id ผู้ตรวจนับ
-
----
-
-#### 2. 🧾 หน้ารายงานยอดขาย: แสดงยอด Refund & รายละเอียดการคืนเงิน
-> **เป้าหมาย**: เพิ่มความโปร่งใสทางบัญชี ให้เห็นยอดขายรวม (Gross Sales), ยอดเงินที่ Refund/ยกเลิกบิล, และยอดขายสุทธิ (Net Sales)
-
+#### 1. 🧾 หน้ารายงานยอดขาย: แสดงยอด Refund & รายละเอียดการคืนเงินบนแดชบอร์ด
+> **เป้าหมาย**: เพิ่มความโปร่งใสทางบัญชี ให้เห็นยอดขายรวม (Gross Sales), ยอดเงินที่ Refund/ยกเลิกบิล, และยอดขายสุทธิ (Net Sales) บนชาร์ต
 * **Frontend ([src/app/(app)/reports/sales/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/reports/sales/page.tsx))**:
   - เพิ่ม KPI Card:
     - **ยอดขายรวม (Gross Sales)**
@@ -263,20 +296,13 @@
     - **ยอดขายสุทธิ (Net Revenue)** = Gross - Refund
   - ตารางรายการบิลที่ถูก Refund / Void:
     - แสดงเลขที่ใบเสร็จ, เวลาที่ยกเลิก, พนักงานที่กดยกเลิก, เหตุผลในการคืนเงิน (เช่น ลูกค้าเปลี่ยนใจ, ออเดอร์ทำผิด)
-    - แสดงวัตถุดิบที่ถูกดึงกลับเข้าสต็อก หรือทิ้งเป็นของเสีย
 * **Backend ([DashboardController.php](file:///c:/meeting/smartsotck-backend/app/Http/Controllers/Api/DashboardController.php) / Order API)**:
   - เพิ่มฟิลด์ `refund_total`, `refund_count`, `net_sales` ใน API response ของ `/api/reports/sales` และ `/api/dashboard`
 
 ---
 
-#### 3. 🛡️ แยกระบบสิทธิ์พนักงานชัดเจน (Strict Role-Based Permissions) & ปรับ Layout หน้าจัดการสิทธิ์
-> **เป้าหมาย**: จัดหมวดหมู่สิทธิ์ (Permissions) ให้เป็นระบบ ไม่ปะปน และปรับหน้าจอ Role & Permission Management ให้สวยงาม เข้าใจง่าย
-
-* **การแยกสิทธิ์แบบละเอียด (Granular Permissions)**:
-  - **POS & Sales**: ขายหน้าร้าน, ให้ส่วนลดพิเศษ, ยกเลิกบิล/Refund (สิทธิ์เฉพาะ Manager/Owner), ดูประวัติบิล
-  - **Stock & Inventory**: ดูสต็อก, ตรวจนับสต็อกสิ้นวัน, รับของเข้าจากบิล, แก้ไขสูตรต้นทุน (BOM), ลบวัตถุดิบ
-  - **Reports & Finance**: ดูยอดขายรายวัน, ดูรายงานกำไร-ขาดทุน, Export ข้อมูลบัญชี
-  - **Settings & AI**: จัดการพนักงาน, จัดการสาขา, ใช้งานฟีเจอร์ AI ขั้นสูง
+#### 2. 🛡️ ปรับ Layout หน้าจัดการสิทธิ์ (Role & Permission Management UI Polish)
+> **เป้าหมาย**: จัดหมวดหมู่สิทธิ์ให้สวยงาม เข้าใจง่าย สไตล์ Role Matrix Grid
 * **ปรับ Layout หน้า ([src/app/(app)/roles/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/roles/page.tsx) & [src/app/(app)/staff/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/staff/page.tsx))**:
   - ออกแบบเป็น **Role Matrix Grid** หรือ Accordion แยกตามหมวดหมู่ฟังก์ชัน (POS / Stock / Finance / Admin)
   - มี Checkbox / Switch ที่เปิด-ปิดสิทธิ์ได้เป็นกลุ่ม หรือรายข้อ
@@ -284,9 +310,8 @@
 
 ---
 
-#### 4. 🛒 ปรับปรุง Layout หน้าซื้อของเข้าร้าน / ใบสั่งซื้อ (Purchase Orders UX Polish)
+#### 3. 🛒 ปรับปรุง Layout หน้าซื้อของเข้าร้าน / ใบสั่งซื้อ (Purchase Orders UX Polish)
 > **เป้าหมาย**: ปรับโฉมหน้าซื้อของเข้าร้าน ([src/app/(app)/stock/purchase-orders/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/purchase-orders/page.tsx)) ให้กระชับ สบายตา ใช้งานง่ายสไตล์ Minimal Cafe
-
 * **การปรับ Layout & Flow**:
   - จัดการแสดงผลส่วนหัว: ปรับปุ่มสร้างใบสั่งซื้อ, ตัวกรองสถานะ (ฉบับร่าง, รอดำเนินการ, ซื้อแล้ว, รับเข้าสต็อกแล้ว) ให้อยู่ในระนาบที่สบายตา
   - ปรับการ์ดสรุปยอดการจัดซื้อรายเดือน / สัปดาห์ (PO Spending Summary)
@@ -295,28 +320,100 @@
 
 ---
 
-#### 5. 🤖 AI Insights ผสานข้อมูลแผนที่คู่แข่ง (Map Location) + ข้อมูลการขายจริงในร้าน (Internal POS Sales)
-> **เป้าหมาย**: ให้ระบบ AI (Gemini) ไม่เพียงแค่วิเคราะห์แยกส่วนแผนที่ หรือแยกส่วนยอดขาย แต่ดึงข้อมูลทั้งสองด้านมา **Cross-Analyze** ร่วมกันเพื่อสร้างคำแนะนำทางธุรกิจที่แม่นยำสูง
-
-* **ข้อมูลนำเข้าที่จะส่งให้ AI (Input Contexts)**:
-  - **ข้อมูลภายนอก (External Location Context)**: พิกัดร้าน, ประเภทคู่แข่งโดยรอบในระยะ 1-3 กม., กลุ่มลูกค้าในพื้นที่ (ออฟฟิศ, มหาวิทยาลัย, คอนโด), ช่องว่างทางการตลาด (Market Gap) จากการสแกนแผนที่
-  - **ข้อมูลภายใน (Internal POS Sales Context)**: เมนูที่ขายดี/ขายไม่ออกของร้าน, สัดส่วนยอดขายตามหมวดหมู่, อัตรากำไร (Margin %), ปริมาณสต็อกคงเหลือที่มีมากเกินไป (Excess Stock)
+#### 4. 🤖 AI Insights ผสานข้อมูลแผนที่คู่แข่ง (Map Location) + ข้อมูลการขายจริงในร้าน (Internal POS Sales)
+> **เป้าหมาย**: ให้ระบบ AI (Gemini) ดึงข้อมูลแผนที่ภายนอก + ยอดขายภายในร้านมา Cross-Analyze สร้างกลยุทธ์เมนูและโปรโมชั่นเจาะตลาด
 * **ผลลัพธ์การวิเคราะห์ที่ชาญฉลาด (AI Strategic Output)**:
-  - **การปรับราคา & ชูจุดขายเทียบกับคู่แข่ง**: เช่น "ร้านกาแฟแบรนด์ใหญ่รอบข้างขายกาแฟ Specialty อยู่ที่ 120-140 บาท แต่ร้านเรามีเมล็ดเกรดดีในสต็อก สามารถชูเมนู Dirty หรือ Drip ในราคา 85-95 บาท เพื่อเจาะกลุ่มคนทำงานได้"
-  - **การระบายสต็อกด้วยเมนูตอบโจทย์พื้นที่**: แนะนำการนำวัตถุดิบที่นอนนิ่งในคลังมาทำเป็นเมนู Seasonal ตามพฤติกรรมลูกค้าในละแวกนั้น
-  - **ปรับ UI หน้า [menu/ai-insights/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/menu/ai-insights/page.tsx)**:
-    - เพิ่มแท็บ/ส่วนแสดงผล **"ผสานอินไซต์แผนที่ + ยอดขายจริง (Cross-Channel Store Strategy)"**
-    - มีตัวเลือกให้กด "ดึงข้อมูลจากแผนที่ล่าสุด" และ "ดึงข้อมูลยอดขาย 30 วันล่าสุด" มารวมเป็น Prompt เดียวกัน
-    - แสดงข้อเสนอแนะเป็น Actionable Cards พร้อมปุ่มกด "นำไปสร้างเป็นโปรโมชั่น / เมนูใหม่" ได้ทันที
+  - การปรับราคา & ชูจุดขายเทียบกับคู่แข่งรอบข้างในระยะ 1-3 กม.
+  - การระบายสต็อกด้วยเมนูตอบโจทย์กลุ่มลูกค้าในพื้นที่
+  - หน้า [menu/ai-insights/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/menu/ai-insights/page.tsx) มีปุ่มกดนำผลวิเคราะห์ไปสร้างเป็นโปรโมชั่นหรือเมนูใหม่ได้ทันที
 
 ---
 
-### 📌 ขั้นตอนการเริ่มทำงานในครั้งถัดไป (Quick Start Checklist)
-1. ตรวจสอบสถานะ Server: Frontend (`npm run dev`) และ Backend (`php artisan serve`)
-2. เริ่มจาก **Task 1 (Stock Audit / ปิดกะตรวจสต็อก)** เพื่อให้ Flow ของคลังสมบูรณ์ก่อน
-3. ต่อด้วย **Task 2 (ยอด Refund ในรายงานยอดขาย)**
-4. ตามด้วย **Task 3 & 4 (จัดการสิทธิ์ และ หน้าซื้อของเข้าร้าน)**
-5. ปิดท้ายด้วย **Task 5 (AI Cross-Analysis: แผนที่ + ยอดขายจริง)**
+### [2026-09-13] เสริมความแม่นยำระบบสต็อก 2 คลัง (Two-Tier Inventory Precision) & การจัดการของเสีย & Dynamic Recipe Modifier BOM
+
+#### 1. ⚡ Partial Open Package Tracking (ขวด/ถุงที่เปิดแล้วแต่ใช้ไม่หมด)
+- **Database & Architecture**:
+  - เพิ่มคอลัมน์ `opened_unit_remaining` (decimal 10,2 nullable) ในตาราง `ingredients`
+  - สร้าง helper `$ingredient->recalculateOpenedRemaining()` ในโมเดล `Ingredient` คำนวณจาก `bar_quantity % package_size` แบบแม่นยำทุกครั้งที่มีการเปิดแพ็ค, ตัดขาย POS, หรือปรับยอด
+- **Business Logic & Movement Auditing**:
+  - แยกประเภทความเคลื่อนไหว `StockMovement.type`:
+    - `'open'`: บันทึกเมื่อมีการเปิดแพ็คจากหลังร้านเข้าหน้าบาร์ (`bar_quantity + package_size`, `backstock_quantity - 1`)
+    - `'consume'`: บันทึกเมื่อตัดสต็อกตามสูตรอาหาร POS หรือสูตรตัวเลือกเสริม
+  - คำนวณและเก็บบันทึก `unit_cost` ตามต้นทุนจริง ณ ช่วงเวลานั้นลงในบันทึกความเคลื่อนไหวทุกรายการ
+- **Frontend UI / UX**:
+  - ในตารางสต็อกหน้าบาร์ ([stock/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/page.tsx)) และคลังหลังร้าน ([BackstockTab.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/components/BackstockTab.tsx)) แสดงสถานะ `⚡ เปิดค้าง {opened_unit_remaining} {unit} จากแพ็คที่แล้ว` ในลักษณะ Badge ชัดเจน ช่วยให้เช็คยอดก่อนเปิดขวดใหม่ได้ทันที
+  - หน้าประวัติความเคลื่อนไหวสต็อก มี Badge เฉพาะสำหรับ `เปิดแพ็ค (Open)` และ `ตัดสต็อก POS (Consume)` โทน Slate คมชัด
+
+#### 2. 🗑️ บันทึกของเสีย / ตกหล่น (Waste & Spillage Adjustment)
+- **API & Backend**:
+  - Endpoint `POST /api/ingredients/{id}/waste-adjust`:
+    - รับค่า `quantity`, `reason` (`'หก/เลอะ'`, `'เสีย/บูด'`, `'หมดอายุ'`, `'ชงผิด'`, `'อื่นๆ'`), `tier` (`'bar'` | `'backstock'`), `notes`
+    - ลดสต็อกตามคลังที่ระบุ พร้อมคำนวณมูลค่าความเสียหายตาม `unit_cost`
+    - สร้าง `StockMovement` บันทึก `type = 'waste'`, `unit_cost`, และหมายเหตุรายละเอียดเหตุผล
+  - Endpoint `GET /api/reports/waste-stats`: สรุปมูลค่าของเสียรวม, จำนวนครั้ง, การแยกตามสาเหตุ และประวัติ 10 รายการล่าสุด
+- **Frontend Quick Waste Modal (`QuickWasteModal.tsx`)**:
+  - ดีไซน์ Minimal สไตล์คีย์ลัด ไม่ต้องอ่านเยอะ ("กรอกๆ แบบไม่ต้องอ่านเยอะ")
+  - Chip เลือกสาเหตุคลิกเดียว (`หก/เลอะ`, `เสีย/บูด`, `หมดอายุ`, `ชงผิด`, `อื่นๆ`)
+  - คำนวณมูลค่าความเสียหายแบบ Real-time ตามปริมาณที่กรอก
+  - ปุ่ม `[🗑️ ของเสีย]` ด่วนในตารางสต็อกทั้งหน้าบาร์และหลังร้าน
+- **Sales Reports Dashboard Integration ([reports/sales/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/reports/sales/page.tsx))**:
+  - เพิ่ม KPI Card: **"มูลค่าของเสีย (Waste Cost)"** แสดงยอดรวมความเสียหายและจำนวนครั้งที่บันทึก
+
+#### 3. ☕ Dynamic Recipe Modifier BOM Mapping (ตัวเลือกเสริมตัดสต็อกตามจริง)
+- **Database & Architecture**:
+  - ตาราง `menu_option_ingredients` เชื่อมโยง `menu_item_id`, `option_name` (เช่น "เพิ่มช็อตกาแฟ (+18g)", "เปลี่ยนนมโอ๊ต Oatly (+150ml)"), `ingredient_id`, `quantity`, `unit`, `extra_cost`, `extra_price`
+  - Eager-loading ใน `MenuItem` ผ่านความสัมพันธ์ `optionIngredients`
+- **POS & Order Deduction**:
+  - ปรับ `OrderController@store`: อ่าน `selectedModifiers` จากออเดอร์ POS และตัดสต็อกวัตถุดิบเสริมเพิ่มเติมจากสูตรหลัก (Base Recipe) ทันที
+  - หากสต็อกหน้าบาร์ไม่พอ ระบบจะเปิดแพ็คใหม่จากหลังร้านเข้าบาร์อัตโนมัติ (`type = 'open'`) แล้วจึงตัดสต็อก (`type = 'consume'`)
+- **Frontend UI**:
+  - **Recipe Builder ([RecipeBuilder.tsx](file:///c:/meeting/smartStock/src/app/(app)/menu/components/RecipeBuilder.tsx))**: ตารางกำหนดตัวเลือกเสริมและปริมาณตัดสต็อกพร้อมพรีวิว
+  - **POS Modal ([ItemOptionModal.tsx](file:///c:/meeting/smartStock/src/app/(app)/sales/pos/components/ItemOptionModal.tsx))**: แสดงชิปตัวเลือกเสริมแบบไดนามิก คำนวณราคาเพิ่ม และแสดง Real-time BOM Preview สต็อกคงเหลือแบบเรียลไทม์
+  - **POS Cart & Checkout ([sales/pos/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/sales/pos/page.tsx))**: แสดงรายการตัวเลือกเสริม ราคาที่เพิ่มขึ้น และตัดสต็อกอัตโนมัติเมื่อกดชำระเงิน
+
+---
+
+### [2026-09-13] การแยกร้านค้าและข้อมูลยอดขายให้แยกขาดจากกัน (Strict Multi-Store Isolation & Data Consistency)
+
+#### 1. 🔍 แก้ไขปัญหาตัวเลขยอดขายในหน้าประวัติบิล (`sales/orders`) ไม่ตรงกับหน้า Dashboard
+- **ต้นตอของปัญหา (Root Cause)**:
+  - ในตาราง `orders` มีออเดอร์เก่า `ORD-20260913-4CD8` (ยอด ฿450) บันทึกไว้โดยไม่มีค่าร้านค้า (`store_id = null`)
+  - หน้า Dashboard (`/dashboard`) ดึงข้อมูลโดยส่ง `X-Store-ID: 1` จึงคำนวณเฉพาะบิลที่มี `store_id = 1` เท่านั้น (ได้ ฿85 + ฿50 = ฿135) และคัดบิล ฿450 ออก
+  - หน้าประวัติบิล (`/sales/orders`) ยิง API `/pos/orders` โดยไม่ได้ส่ง `X-Store-ID` และไม่ได้ส่ง `store_id` ในพารามิเตอร์ จึงดึงทุกบิลของทุกร้านมารวมกัน (ได้ 50 + 85 + 450 = ฿585)
+- **การแก้ไข (Solution)**:
+  - อัปเดตฐานข้อมูลผูกบิลทั้งหมดที่ไม่มี store_id ให้เชื่อมกับ Store 1 (Cafe) อย่างสมบูรณ์
+  - ปรับปรุง [OrderController.php](file:///c:/meeting/smartsotck-backend/app/Http/Controllers/Api/OrderController.php):
+    - `getStoreId()` ตรวจสอบทั้ง Header `X-Store-ID`, Query parameter `store_id`, Body input `store_id`, และ Fallback จากร้านของผู้ใช้
+    - ใน `store()`: หากไม่มี store_id ส่งมา ให้ดึงจาก MenuItem แรกของออเดอร์อัตโนมัติ ป้องกันไม่ให้เกิด Order ที่มี `store_id = null`
+  - ปรับปรุง [MenuController.php](file:///c:/meeting/smartsotck-backend/app/Http/Controllers/Api/MenuController.php), [DashboardController.php](file:///c:/meeting/smartsotck-backend/app/Http/Controllers/Api/DashboardController.php), [IngredientController.php](file:///c:/meeting/smartsotck-backend/app/Http/Controllers/Api/IngredientController.php) ให้รองรับ Query parameter `store_id` ควบคู่กับ Header เสมอ
+  - **ผลลัพธ์**: หน้ารายการคำสั่งซื้อและ Dashboard ของ Cafe แสดงยอด **฿585.00 (3 บิล)** ตรงกันเป๊ะ 100%
+
+#### 2. 🛡️ การแยกร้านค้าเด็ดขาด ไม่ให้ข้อมูลร้านหนึ่งรั่วไหลไปอีกร้าน (Multi-Store Data Leak Prevention)
+- **Frontend State & Context**:
+  - [AuthContext.tsx](file:///c:/meeting/smartStock/src/lib/AuthContext.tsx): อัปเดต `setActiveStore` และ `initAuth` ให้บันทึกทั้ง `smartstock_active_store` และ `active_store_id` ลงใน `localStorage` ทุกครั้งที่สลับร้าน
+  - [StockContext.tsx](file:///c:/meeting/smartStock/src/lib/StockContext.tsx):
+    - เมื่อ `activeStore?.id` เปลี่ยนแปลง ให้รีเซ็ต State ของคำสั่งซื้อ, วัตถุดิบ, เมนู, และ Dashboard ทันที ป้องกัน Flash of Stale Store Data
+    - สร้างและส่งออกฟังก์ชันรวมศูนย์ `fetchRefundStats` ที่แนบ `X-Store-ID` เสมอ
+  - [types/index.ts](file:///c:/meeting/smartStock/src/types/index.ts): เพิ่มฟิลด์ `store_id?: number | null` ใน Types `Ingredient`, `MenuItem`, `MenuOptionIngredient`, และ `Order`
+- **Frontend Pages Integration**:
+  - [sales/orders/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/sales/orders/page.tsx):
+    - เรียกใช้ `activeStore` จาก `useAuth()`
+    - ใน `fetchOrdersByFilter` ส่งทั้ง Header `X-Store-ID: activeStore.id` และ Query param `&store_id=${activeStore.id}`
+    - ผูก `activeStore?.id` ใน `useEffect` เพื่อให้ Refresh ทันทีที่สลับร้าน
+    - เพิ่ม Client-side filtering กรองซ้ำเฉพาะบิลของร้านที่เลือก
+  - [reports/sales/page.tsx](file:///c:/meeting/smartStock/src/app/(app)/reports/sales/page.tsx):
+    - สลับมาใช้ `fetchRefundStats()` จาก `useStock()` ที่ผูกกับร้านค้าแบบเรียลไทม์
+    - ผูก `activeStore?.id` ใน `useEffect` และกรอง Order count ตาม `activeStore.id`
+- **ผลการทดสอบการสลับร้าน (Switching Verification)**:
+  - เมื่อเลือกร้าน **"ร้านอาหาร" (Store 3)**:
+    - หน้า `sales/orders`: แสดง 0 บิล (ไม่มีบิลของคาเฟ่หลุดมาเลย)
+    - หน้า `dashboard`: ยอดขายวันนี้แสดง ฿0.00
+    - หน้า `reports/sales`: ยอด Gross Sales, Refund, และ Net Revenue แสดง ฿0.00 ทั้งหมด
+  - เมื่อสลับกลับมาที่ **"Cafe แมวดำ" (Store 1)**:
+    - หน้า `sales/orders`: แสดง 3 บิล ยอด ฿585.00 ครบถ้วน
+    - หน้า `dashboard`: แสดง 3 บิล ยอด ฿585.00 ครบถ้วนตรงกัน
+
+
 
 
 
