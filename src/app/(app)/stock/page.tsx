@@ -163,50 +163,43 @@ function SortableIngredientRow({
         </span>
       </TableCell>
 
-      {/* Front Bar Level & Quick Refill Button */}
-      <TableCell className="text-left w-56">
+      {/* Front Bar Level */}
+      <TableCell className="text-left w-52">
         {item.is_two_tier ? (
           <div className="flex flex-col gap-1 w-44 py-0.5">
-            {/* Front Bar Amount */}
-            <div className="flex items-center gap-1.5 text-xs font-mono font-semibold tabular-nums text-stone-900">
-              <Coffee className="w-3.5 h-3.5 text-stone-400 shrink-0" />
-              <span>{barQty.toLocaleString()}</span>
-              <span className="text-stone-500 font-normal font-sans">{item.unit}</span>
-              <span className="text-[10px] text-stone-400 font-sans font-normal ml-0.5">
-                (เปิด {Math.ceil(barQty / packSize)} {item.package_unit || 'แพ็ค'})
+            {/* Front Bar Amount & Ratio */}
+            <div className="flex items-center justify-between text-xs font-mono tabular-nums">
+              <div className="flex items-center gap-1.5 font-semibold text-stone-900">
+                <Coffee className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                <span>{barQty.toLocaleString()}</span>
+                <span className="text-stone-500 font-normal font-sans">{item.unit}</span>
+              </div>
+              <span className={`text-[11px] font-semibold ${barQty <= 0 ? 'text-rose-500' : barRatio <= 25 ? 'text-amber-600' : 'text-stone-500'}`}>
+                ({barRatio}%)
               </span>
             </div>
 
+            {/* Front Bar Capacity Progress Bar */}
+            <div className="w-full bg-stone-100 border border-stone-200/90 h-1.5 rounded-full overflow-hidden relative">
+              <div
+                className={`h-full rounded-full transition-all duration-300 ${
+                  barQty <= 0 ? 'bg-transparent' : barRatio <= 25 ? 'bg-amber-500' : 'bg-stone-800'
+                }`}
+                style={{ width: `${Math.max(barQty <= 0 ? 0 : 4, barRatio)}%` }}
+              />
+            </div>
+
             {/* Opened package remainder pill */}
-            {item.opened_unit_remaining !== undefined && item.opened_unit_remaining !== null && item.opened_unit_remaining > 0 && (
+            {item.opened_unit_remaining !== undefined && item.opened_unit_remaining !== null && item.opened_unit_remaining > 0 ? (
               <div className="flex items-center gap-1 text-[10px] text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 font-sans font-medium w-fit">
                 <span>⚡</span>
                 <span>เปิดค้าง <strong className="font-mono font-semibold">{item.opened_unit_remaining.toLocaleString()}</strong> {item.unit}</span>
               </div>
-            )}
-
-            {/* Quick Refill Button & Backstock count */}
-            <div className="flex items-center justify-between gap-1.5 pt-0.5">
-              <span className="text-[11px] text-stone-500 font-sans truncate" title={`หลังร้านคงเหลือ ${backstockQty} ${item.package_unit || 'แพ็ค'}`}>
-                หลังร้าน: <strong className="text-stone-900 font-mono font-semibold">{backstockQty.toLocaleString()}</strong> {item.package_unit || 'แพ็ค'}
+            ) : (
+              <span className="text-[10px] text-stone-400 font-sans">
+                พร้อมใช้หน้าบาร์ (เปิด {Math.ceil(barQty / packSize)} {item.package_unit || 'แพ็ค'})
               </span>
-
-              {backstockQty > 0 && onOpenPackage ? (
-                <button
-                  type="button"
-                  onClick={() => onOpenPackage(item.id)}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold bg-amber-50 hover:bg-amber-100 active:bg-amber-200 text-amber-900 border border-amber-300 rounded-lg transition-all active:scale-95 cursor-pointer shadow-2xs hover:shadow-xs shrink-0"
-                  title={`ดึง 1 ${item.package_unit || 'แพ็ค'} (${packSize.toLocaleString()} ${item.unit}) จากหลังร้านเข้าหน้าบาร์`}
-                >
-                  <Package className="w-3 h-3 text-amber-800" />
-                  <span>ดึง 1 {item.package_unit || 'ถุง'}</span>
-                </button>
-              ) : (
-                <span className="text-[10px] text-stone-400 font-medium bg-stone-100 px-1.5 py-0.5 rounded border border-stone-200 shrink-0">
-                  หลังร้านหมด
-                </span>
-              )}
-            </div>
+            )}
           </div>
         ) : (
           <div className="flex flex-col gap-1 w-40 py-0.5">
@@ -754,8 +747,8 @@ export default function StockPage() {
                       <TableHead className="whitespace-nowrap text-stone-900 font-semibold">หมวดหมู่</TableHead>
                       <TableHead className="text-center whitespace-nowrap text-stone-900 font-semibold">การตัดสต็อก</TableHead>
                       <TableHead className="text-right whitespace-nowrap text-stone-900 font-semibold">ต้นทุน/หน่วย</TableHead>
-                      <TableHead className="text-left whitespace-nowrap text-stone-900 font-semibold min-w-[210px]">
-                        หน้าบาร์ &amp; เติมด่วน
+                      <TableHead className="text-left whitespace-nowrap text-stone-900 font-semibold min-w-[180px]">
+                        ระดับหน้าบาร์
                       </TableHead>
                       <TableHead className="text-right whitespace-nowrap text-stone-900 font-semibold">รวมทั้งร้าน</TableHead>
                       <TableHead className="text-right whitespace-nowrap text-stone-900 font-semibold">จุดสั่งซื้อ</TableHead>
