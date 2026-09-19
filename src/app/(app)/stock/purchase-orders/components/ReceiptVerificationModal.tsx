@@ -5,32 +5,19 @@ import {
   X,
   Sparkles,
   CheckCircle2,
-  AlertCircle,
   AlertTriangle,
-  Plus,
-  Trash2,
-  Eye,
-  Store,
-  Calendar,
-  Check,
-  RotateCw,
-  RefreshCw,
-  Key,
-  Camera,
-  Upload,
-  ChevronLeft,
-  ChevronRight,
-  Calculator,
-  ArrowRight,
-  Layers,
   FileText,
-  Info,
+  Layers,
+  Key,
+  Check,
+  ChevronRight,
 } from 'lucide-react';
 import { PurchaseOrder, VerifiedReceiptItem } from '../types';
 import { Ingredient } from '@/types';
-import { Dropdown } from '@/components/Dropdown';
 import { Button } from '@/components/Button';
 import { Badge } from '@/components/Badge';
+import { ReceiptImageViewer } from './ReceiptImageViewer';
+import { ReceiptItemsTable } from './ReceiptItemsTable';
 
 export type { VerifiedReceiptItem };
 
@@ -49,22 +36,7 @@ interface ReceiptVerificationModalProps {
   isManagerOrAdmin: boolean;
 }
 
-// Common units used in cafe operations
-const COMMON_UNITS = [
-  { value: 'มล.', label: 'มล. (มิลลิลิตร)' },
-  { value: 'กรัม', label: 'กรัม (g)' },
-  { value: 'กก.', label: 'กก. (กิโลกรัม)' },
-  { value: 'ลิตร', label: 'ลิตร (L)' },
-  { value: 'ชิ้น', label: 'ชิ้น' },
-  { value: 'ขวด', label: 'ขวด' },
-  { value: 'กระป๋อง', label: 'กระป๋อง' },
-  { value: 'กล่อง', label: 'กล่อง' },
-  { value: 'ลัง', label: 'ลัง' },
-  { value: 'ถุง', label: 'ถุง' },
-  { value: 'แพ็ค', label: 'แพ็ค' },
-  { value: 'ซอง', label: 'ซอง' },
-  { value: 'ใบ', label: 'ใบ' },
-];
+
 
 export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> = ({
   isOpen,
@@ -173,11 +145,31 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
       // Check if it's the realistic demo SVG receipt
       const isSampleDemoSvg = imageTarget.startsWith('data:image/svg+xml');
       if (isSampleDemoSvg) {
+        const isEthiopiaReceipt = decodeURIComponent(imageTarget).includes('INV-ETHIOPIA') ||
+                                 decodeURIComponent(imageTarget).includes('6 ชิ้น');
+
         setTimeout(() => {
           clearInterval(progressTimer);
           setScanProgress(100);
           setScanStage('ตรวจสอบเสร็จสมบูรณ์ 100%');
-          const sampleItems: VerifiedReceiptItem[] = [
+
+          const sampleItems: VerifiedReceiptItem[] = isEthiopiaReceipt
+            ? [
+                {
+                  ingredient_id: ingredients.find((i) => i.name.includes('Single') || i.name.includes('Ethiopia'))?.id,
+                  name: 'เมล็ดกาแฟ Single Origin Ethiopia (คั่วอ่อน)',
+                  purchase_quantity: 6,
+                  purchase_unit: 'ชิ้น',
+                  pack_size: 500, // 1 ชิ้น (ถุง) = 500 กรัม = รวม 3,000 กรัม (3 กก.)
+                  quantity: 6,
+                  unit: ingredients.find((i) => i.name.includes('Single') || i.name.includes('Ethiopia'))?.unit || 'กก.',
+                  cost_per_unit: 650,
+                  inventory_cost_per_unit: 650,
+                  total_price: 3900,
+                  source_image_index: imgIndex,
+                },
+              ]
+            : [
             {
               ingredient_id: ingredients.find((i) => i.name.includes('House'))?.id,
               name: 'เมล็ดกาแฟ House Blend คั่วกลาง',
@@ -595,7 +587,7 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
         onChange={handleFileInputChange}
       />
 
-      <div className="bg-white rounded-2xl max-w-7xl w-full shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[95vh] animate-scale-in">
+      <div className="bg-white rounded-2xl w-full shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[95vh] animate-scale-in">
         {/* Header Bar */}
         <div className="px-6 py-3.5 bg-stone-50 border-b border-stone-200 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -670,193 +662,29 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
         {/* Modal Body: Split Screen */}
         <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-0 text-xs text-stone-700">
           {/* Left Column: Image Viewer & Multi-image Stepper (5 cols) */}
-          <div className="lg:col-span-5 bg-stone-950 p-4 flex flex-col justify-between overflow-y-auto border-b lg:border-b-0 lg:border-r border-stone-800 relative select-none">
-            {/* Image Header Controls */}
-            <div className="flex items-center justify-between text-stone-300 pb-2 mb-2 border-b border-stone-800">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-xs text-stone-200 flex items-center gap-1.5">
-                  <Eye className="w-4 h-4 text-stone-400" />
-                  ใบเสร็จที่ {currentImageIndex + 1} / {totalImagesCount}
-                </span>
-                {verifiedImagesSet.has(currentImageIndex) ? (
-                  <span className="px-2 py-0.5 rounded-md bg-emerald-950 text-emerald-400 border border-emerald-800/80 text-[10px] font-semibold">
-                    ตรวจแล้ว
-                  </span>
-                ) : isScanning ? (
-                  <span className="px-2 py-0.5 rounded-md bg-amber-950/80 text-amber-300 border border-amber-800/80 text-[10px] font-semibold flex items-center gap-1 font-mono">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
-                    กำลังตรวจสอบ {scanProgress}%
-                  </span>
-                ) : (
-                  <span className="px-2 py-0.5 rounded-md bg-stone-800 text-stone-300 border border-stone-700 text-[10px] font-semibold">
-                    รอการตรวจสอบ
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="px-2.5 py-1 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 font-semibold transition-colors cursor-pointer flex items-center gap-1 text-xs"
-                  title="เปลี่ยนรูปภาพหรือถ่ายใหม่"
-                >
-                  <Camera className="w-3.5 h-3.5 text-stone-400" />
-                  <span>เปลี่ยน</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => runAiScanForImage(currentImage, currentImageIndex)}
-                  disabled={isScanning}
-                  className="p-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-300 transition-colors cursor-pointer"
-                  title="สแกนซ้ำ"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isScanning ? 'animate-spin text-stone-100' : ''}`} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRotation((prev) => (prev + 90) % 360)}
-                  className="p-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-300 transition-colors cursor-pointer"
-                  title="หมุนภาพ 90 องศา"
-                >
-                  <RotateCw className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Main Image Display */}
-            <div
-              onDragOver={(e) => {
-                e.preventDefault();
-                setIsDragging(true);
-              }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={handleDrop}
-              className={`flex-1 flex items-center justify-center overflow-hidden rounded-xl bg-black/50 relative min-h-[260px] p-2 transition-all ${
-                isDragging ? 'ring-2 ring-stone-400 bg-stone-900' : ''
-              }`}
-            >
-              {currentImage ? (
-                <div className="relative w-full h-full flex items-center justify-center">
-                  <img
-                    src={currentImage}
-                    alt={`Receipt ${currentImageIndex + 1}`}
-                    style={{ transform: `rotate(${rotation}deg)` }}
-                    className="max-h-[420px] w-auto max-w-full object-contain rounded transition-transform duration-200 shadow-md"
-                  />
-
-                  {/* Scanning banner with real-time percentage progress */}
-                  {isScanning && (
-                    <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-xs flex flex-col items-center justify-center text-white p-6 z-10 animate-fade-in">
-                      <div className="relative mb-3 flex items-center justify-center">
-                        <RefreshCw className="w-9 h-9 animate-spin text-stone-300" />
-                        <span className="absolute font-mono font-bold text-[10px] text-white tabular-nums">
-                          {scanProgress}%
-                        </span>
-                      </div>
-
-                      <div className="font-semibold text-sm text-stone-100 flex items-center gap-1.5">
-                        <span>กำลังตรวจสอบใบเสร็จ...</span>
-                        <span className="font-mono font-bold text-amber-300 tabular-nums">
-                          {scanProgress}%
-                        </span>
-                      </div>
-
-                      {/* Percentage Progress Bar */}
-                      <div className="w-56 h-2 bg-stone-800 rounded-full overflow-hidden my-2.5 border border-stone-700">
-                        <div
-                          className="h-full bg-gradient-to-r from-stone-400 via-amber-300 to-emerald-400 transition-all duration-300 rounded-full"
-                          style={{ width: `${scanProgress}%` }}
-                        />
-                      </div>
-
-                      <div className="text-xs text-stone-400 text-center max-w-xs transition-all">
-                        {scanStage}
-                      </div>
-                      <div className="text-[11px] text-stone-500 mt-1">
-                        (ใบที่ {currentImageIndex + 1} จาก {totalImagesCount} ใบ)
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center text-stone-500 p-6 space-y-3">
-                  <AlertCircle className="w-8 h-8 mx-auto opacity-40 text-stone-400" />
-                  <p className="text-xs">ยังไม่มีภาพถ่ายใบเสร็จในลิสต์นี้</p>
-                  <button
-                    type="button"
-                    onClick={handleAddNewImage}
-                    className="px-3.5 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-white font-semibold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-sm"
-                  >
-                    <Upload className="w-3.5 h-3.5" /> อัปโหลดรูปใบเสร็จ
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Multiple Images Selector & Stepper */}
-            {images.length > 1 && (
-              <div className="pt-3 space-y-2 border-t border-stone-800 mt-3">
-                <div className="flex items-center justify-between text-xs text-stone-400">
-                  <span>เลือกใบเสร็จที่ต้องการตรวจ:</span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      disabled={currentImageIndex === 0}
-                      onClick={() => handleSelectImageIndex(currentImageIndex - 1)}
-                      className="p-1 rounded bg-stone-800 hover:bg-stone-700 disabled:opacity-30 cursor-pointer text-stone-200"
-                    >
-                      <ChevronLeft className="w-3.5 h-3.5" />
-                    </button>
-                    <span className="font-mono text-stone-300 text-[11px] px-1">
-                      {currentImageIndex + 1}/{images.length}
-                    </span>
-                    <button
-                      type="button"
-                      disabled={currentImageIndex === images.length - 1}
-                      onClick={() => handleSelectImageIndex(currentImageIndex + 1)}
-                      className="p-1 rounded bg-stone-800 hover:bg-stone-700 disabled:opacity-30 cursor-pointer text-stone-200"
-                    >
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                  {images.map((img, idx) => (
-                    <div
-                      key={idx}
-                      onClick={() => handleSelectImageIndex(idx)}
-                      className={`relative w-14 h-14 rounded-lg overflow-hidden border-2 shrink-0 cursor-pointer transition-all ${
-                        currentImageIndex === idx
-                          ? 'border-stone-300 ring-2 ring-stone-500/50'
-                          : 'border-stone-700 hover:border-stone-500 opacity-60 hover:opacity-100'
-                      }`}
-                    >
-                      <img src={img} alt={`Receipt ${idx + 1}`} className="w-full h-full object-cover" />
-                      {verifiedImagesSet.has(idx) && (
-                        <div className="absolute top-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 flex items-center justify-center text-white text-[9px] shadow-sm">
-                          ✓
-                        </div>
-                      )}
-                      <span className="absolute bottom-0 left-0 right-0 bg-stone-900/80 text-white text-[9px] text-center font-mono">
-                        #{idx + 1}
-                      </span>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={handleAddNewImage}
-                    className="w-14 h-14 rounded-lg border-2 border-dashed border-stone-700 hover:border-stone-400 bg-stone-900/60 flex flex-col items-center justify-center shrink-0 text-stone-400 hover:text-stone-200 transition-colors cursor-pointer"
-                    title="เพิ่มรูปภาพใบเสร็จอีกใบ"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span className="text-[9px]">เพิ่ม</span>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          <ReceiptImageViewer
+            currentImage={currentImage}
+            currentImageIndex={currentImageIndex}
+            totalImagesCount={totalImagesCount}
+            images={images}
+            rotation={rotation}
+            isScanning={isScanning}
+            scanProgress={scanProgress}
+            scanStage={scanStage}
+            isDragging={isDragging}
+            verifiedImagesSet={verifiedImagesSet}
+            onFileInputClick={() => fileInputRef.current?.click()}
+            onRescan={() => runAiScanForImage(currentImage, currentImageIndex)}
+            onRotate={() => setRotation((prev) => (prev + 90) % 360)}
+            onSelectImageIndex={handleSelectImageIndex}
+            onAddNewImage={handleAddNewImage}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDragging(true);
+            }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleDrop}
+          />
 
           {/* Right Column: AI Extraction, Unit Conversion & Verification Table (7 cols) */}
           <div className="lg:col-span-7 p-4 sm:p-6 overflow-y-auto space-y-4 flex flex-col justify-between">
@@ -955,268 +783,19 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
               </div>
 
               {/* Items Verification Table */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-bold text-stone-900 text-xs">
-                      รายการสินค้าที่ตรวจพบ ({verifiedItems.length} รายการ)
-                    </h4>
-                    {images.length > 1 && (
-                      <span className="text-[11px] text-stone-500 font-mono">
-                        (ใบเสร็จปัจจุบัน: #{currentImageIndex + 1})
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleAddNewItem}
-                    className="text-xs text-stone-800 hover:text-stone-950 font-semibold flex items-center gap-1 cursor-pointer transition-colors"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> เพิ่มรายการสินค้า
-                  </button>
-                </div>
-
-                {/* Table Container */}
-                <div className="border border-stone-200 rounded-xl overflow-hidden shadow-2xs">
-                  <table className="w-full text-left text-xs">
-                    <thead>
-                      <tr className="bg-stone-100 text-stone-800 font-semibold border-b border-stone-200 uppercase text-[11px]">
-                        <th className="py-2.5 px-3">จับคู่วัตถุดิบในคลัง</th>
-                        <th className="py-2.5 px-2 text-center w-20">จำนวนซื้อ</th>
-                        <th className="py-2.5 px-2 text-center w-24">หน่วยซื้อ</th>
-                        <th className="py-2.5 px-2 text-center w-36">แปลงเข้าสต็อก</th>
-                        <th className="py-2.5 px-2 text-right w-24">ราคา/หน่วย</th>
-                        <th className="py-2.5 px-3 text-right w-24">รวม (฿)</th>
-                        <th className="py-2.5 px-1 text-center w-8"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-stone-100">
-                      {verifiedItems.length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="text-center py-8 text-stone-400 font-medium">
-                            {isScanning
-                              ? 'กำลังตรวจสอบข้อมูลจากใบเสร็จ...'
-                              : 'ยังไม่มีรายการสินค้า กดปุ่ม "+ เพิ่มรายการสินค้า" เพื่อเริ่มต้น'}
-                          </td>
-                        </tr>
-                      ) : (
-                        verifiedItems.map((item, idx) => {
-                          const isUnitMismatch =
-                            item.ingredient_id &&
-                            item.unit &&
-                            item.purchase_unit &&
-                            item.unit !== item.purchase_unit;
-
-                          return (
-                            <React.Fragment key={idx}>
-                              <tr className="hover:bg-stone-50 transition-colors">
-                                {/* Stock Ingredient Dropdown */}
-                                <td className="py-2 px-3">
-                                  <Dropdown
-                                    options={[
-                                      { value: '', label: `-- ไม่จับคู่ (${item.name}) --` },
-                                      ...ingredients.map((ing) => ({
-                                        value: ing.id,
-                                        label: `${ing.name} (${ing.unit})`,
-                                        badge: `${ing.quantity} ${ing.unit}`,
-                                      })),
-                                    ]}
-                                    value={item.ingredient_id ?? ''}
-                                    onChange={(val) => handleSelectIngredient(idx, String(val))}
-                                    size="sm"
-                                    className="w-full"
-                                    buttonClassName="bg-white border-stone-200 text-xs font-semibold text-stone-900 py-1.5 px-2 rounded-lg"
-                                  />
-                                </td>
-
-                                {/* Purchase Qty */}
-                                <td className="py-2 px-2 text-center">
-                                  <input
-                                    type="number"
-                                    min="0.01"
-                                    step="any"
-                                    value={item.purchase_quantity}
-                                    onChange={(e) =>
-                                      handleUpdateItem(
-                                        idx,
-                                        'purchase_quantity',
-                                        parseFloat(e.target.value) || 0
-                                      )
-                                    }
-                                    className="w-full p-1.5 text-center font-bold text-stone-900 bg-white border border-stone-200 rounded-lg text-xs font-mono tabular-nums focus:outline-none focus:border-stone-400"
-                                  />
-                                </td>
-
-                                {/* Purchase Unit Dropdown */}
-                                <td className="py-2 px-2 text-center">
-                                  <Dropdown
-                                    options={COMMON_UNITS}
-                                    value={item.purchase_unit}
-                                    onChange={(val) => handleUpdateItem(idx, 'purchase_unit', String(val))}
-                                    size="sm"
-                                    className="w-full"
-                                    buttonClassName="bg-white border-stone-200 text-xs font-medium text-stone-800 py-1 px-1.5 rounded-lg text-center"
-                                  />
-                                </td>
-
-                                {/* Stock Conversion Multiplier & Target Unit */}
-                                <td className="py-2 px-2">
-                                  <div className="flex items-center justify-center gap-1.5">
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        setExpandedUnitConversionIdx(
-                                          expandedUnitConversionIdx === idx ? null : idx
-                                        )
-                                      }
-                                      className={`px-2 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 border transition-all cursor-pointer ${
-                                        isUnitMismatch || item.pack_size !== 1
-                                          ? 'bg-amber-50 text-amber-900 border-amber-300'
-                                          : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
-                                      }`}
-                                      title="คลิกเพื่อตั้งค่าอัตราส่วนแปลงหน่วย เช่น 1 ขวด = 1000 มล."
-                                    >
-                                      <Calculator className="w-3 h-3 text-stone-500" />
-                                      <span className="font-mono tabular-nums font-bold">
-                                        ={item.quantity}
-                                      </span>
-                                      <span className="text-[11px] font-medium">{item.unit}</span>
-                                    </button>
-                                  </div>
-                                </td>
-
-                                {/* Cost per unit (bought) */}
-                                <td className="py-2 px-2 text-right">
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    step="any"
-                                    value={item.cost_per_unit}
-                                    onChange={(e) =>
-                                      handleUpdateItem(
-                                        idx,
-                                        'cost_per_unit',
-                                        parseFloat(e.target.value) || 0
-                                      )
-                                    }
-                                    className="w-full p-1.5 text-right font-medium text-stone-900 bg-white border border-stone-200 rounded-lg text-xs font-mono tabular-nums focus:outline-none focus:border-stone-400"
-                                  />
-                                </td>
-
-                                {/* Total Price */}
-                                <td className="py-2 px-3 text-right font-bold text-stone-900 font-mono tabular-nums">
-                                  ฿{item.total_price.toLocaleString(undefined, {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  })}
-                                </td>
-
-                                {/* Delete Item */}
-                                <td className="py-2 px-1 text-center">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoveItem(idx)}
-                                    className="p-1 text-stone-400 hover:text-rose-600 rounded hover:bg-stone-100 transition-colors cursor-pointer"
-                                    title="ลบรายการนี้"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                </td>
-                              </tr>
-
-                              {/* Inline Unit Conversion Adjustment Drawer */}
-                              {expandedUnitConversionIdx === idx && (
-                                <tr className="bg-stone-50/80 border-y border-stone-200">
-                                  <td colSpan={7} className="p-3">
-                                    <div className="max-w-2xl bg-white p-3 rounded-xl border border-stone-200 shadow-2xs space-y-2">
-                                      <div className="flex items-center justify-between text-xs">
-                                        <div className="flex items-center gap-1.5 font-bold text-stone-900">
-                                          <Calculator className="w-3.5 h-3.5 text-stone-700" />
-                                          <span>
-                                            ตั้งค่าการแปลงหน่วยสำหรับ: {item.name}
-                                          </span>
-                                        </div>
-                                        <button
-                                          type="button"
-                                          onClick={() => setExpandedUnitConversionIdx(null)}
-                                          className="text-stone-400 hover:text-stone-700 font-bold px-1"
-                                        >
-                                          ✕
-                                        </button>
-                                      </div>
-
-                                      <div className="flex flex-wrap items-center gap-2 text-xs text-stone-700">
-                                        <span>ซื้อมา 1 {item.purchase_unit} บรรจุขนาด</span>
-                                        <input
-                                          type="number"
-                                          min="0.001"
-                                          step="any"
-                                          value={item.pack_size}
-                                          onChange={(e) =>
-                                            handleUpdateItem(
-                                              idx,
-                                              'pack_size',
-                                              parseFloat(e.target.value) || 1
-                                            )
-                                          }
-                                          className="w-24 p-1.5 text-center font-bold text-stone-900 bg-stone-50 border border-stone-300 rounded-lg text-xs font-mono tabular-nums focus:bg-white focus:outline-none"
-                                        />
-                                        <div className="w-32">
-                                          <Dropdown
-                                            options={COMMON_UNITS}
-                                            value={item.unit}
-                                            onChange={(val) => handleUpdateItem(idx, 'unit', String(val))}
-                                            size="sm"
-                                            className="w-full"
-                                            buttonClassName="bg-stone-50 border-stone-300 text-xs py-1 px-2 rounded-lg"
-                                          />
-                                        </div>
-
-                                        <div className="text-stone-500 font-mono text-[11px] pl-2 border-l border-stone-200">
-                                          → รวมเข้าสต็อกจริง:{' '}
-                                          <strong className="text-stone-900 font-bold font-mono">
-                                            {item.quantity} {item.unit}
-                                          </strong>{' '}
-                                          (เฉลี่ย ฿
-                                          {(item.inventory_cost_per_unit ?? 0).toFixed(4)}/{item.unit})
-                                        </div>
-                                      </div>
-
-                                      {/* Preset Shortcuts */}
-                                      <div className="flex items-center gap-1.5 pt-1 text-[11px] text-stone-500">
-                                        <span>ขนาดพบบ่อย:</span>
-                                        {[
-                                          { label: '1 ลัง = 24 กระป๋อง', pack: 24, unit: 'กระป๋อง' },
-                                          { label: '1 ขวด = 1000 มล.', pack: 1000, unit: 'มล.' },
-                                          { label: '1 แกลลอน = 2000 มล.', pack: 2000, unit: 'มล.' },
-                                          { label: '1 กก. = 1000 กรัม', pack: 1000, unit: 'กรัม' },
-                                          { label: '1 ลัง = 12 กล่อง', pack: 12, unit: 'กล่อง' },
-                                        ].map((preset, pIdx) => (
-                                          <button
-                                            key={pIdx}
-                                            type="button"
-                                            onClick={() => {
-                                              handleUpdateItem(idx, 'pack_size', preset.pack);
-                                              handleUpdateItem(idx, 'unit', preset.unit);
-                                            }}
-                                            className="px-2 py-0.5 rounded bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium transition-colors cursor-pointer"
-                                          >
-                                            {preset.label}
-                                          </button>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  </td>
-                                </tr>
-                              )}
-                            </React.Fragment>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <ReceiptItemsTable
+                verifiedItems={verifiedItems}
+                ingredients={ingredients}
+                isScanning={isScanning}
+                currentImageIndex={currentImageIndex}
+                totalImagesCount={totalImagesCount}
+                expandedUnitConversionIdx={expandedUnitConversionIdx}
+                onSetExpandedUnitConversionIdx={setExpandedUnitConversionIdx}
+                onAddNewItem={handleAddNewItem}
+                onRemoveItem={handleRemoveItem}
+                onUpdateItem={handleUpdateItem}
+                onSelectIngredient={handleSelectIngredient}
+              />
             </div>
 
             {/* Bottom Summary & Approve Action */}

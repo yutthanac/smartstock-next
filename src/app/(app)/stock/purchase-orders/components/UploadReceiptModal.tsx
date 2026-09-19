@@ -179,21 +179,6 @@ export const UploadReceiptModal: React.FC<UploadReceiptModalProps> = ({
               รอส่งใบเสร็จ
             </span>
           </div>
-
-          {/* Actual Store Name Input */}
-          <div>
-            <label className="font-semibold text-stone-700 block mb-1">
-              สถานที่ซื้อจริง (หากต่างจากลิสต์เดิม หรือต้องการระบุสาขา):
-            </label>
-            <input
-              type="text"
-              placeholder={`เช่น ${po.store_name || 'แม็คโคร สาขาบางชัน, ตลาดสด...'}`}
-              value={actualStore}
-              onChange={(e) => setActualStore(e.target.value)}
-              className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:outline-none focus:border-stone-400 text-stone-900 text-xs transition-colors"
-            />
-          </div>
-
           {/* Multi-file Hidden Input */}
           <input
             ref={fileInputRef}
@@ -246,9 +231,41 @@ export const UploadReceiptModal: React.FC<UploadReceiptModalProps> = ({
                 <p className="text-xs font-semibold text-stone-800 mb-1">
                   คลิกเพื่อถ่ายรูปใบเสร็จ หรือลากรูปมาวางที่นี่
                 </p>
-                <p className="text-xs text-stone-500">
+                <p className="text-xs text-stone-500 mb-3">
                   เลือกได้พร้อมกันหลายรูป (JPG, PNG, WEBP) ตัวหนังสือคมชัด
                 </p>
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const sampleSvg = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 540" width="420" height="540" style="background:#ffffff;font-family:monospace;">
+  <rect width="420" height="540" fill="#fffdfa" stroke="#e2e8f0" stroke-width="2" rx="8"/>
+  <text x="210" y="45" font-size="18" font-weight="900" text-anchor="middle" fill="#0f172a">AROMA SPECIALTY COFFEE</text>
+  <text x="210" y="68" font-size="11" text-anchor="middle" fill="#64748b">บิลเงินสด / ใบเสร็จรับเงิน</text>
+  <line x1="20" y1="90" x2="400" y2="90" stroke="#cbd5e1" stroke-dasharray="4"/>
+  <text x="20" y="115" font-size="12" fill="#334155">วันที่: ${new Date().toISOString().split('T')[0]}</text>
+  <text x="400" y="115" font-size="12" text-anchor="end" fill="#334155">บิลเลขที่: #INV-ETHIOPIA</text>
+  <line x1="20" y1="135" x2="400" y2="135" stroke="#cbd5e1" stroke-dasharray="4"/>
+  <text x="20" y="175" font-size="13" font-weight="bold" fill="#0f172a">เมล็ดกาแฟ Single Origin Ethiopia (คั่วอ่อน)</text>
+  <text x="30" y="195" font-size="11" fill="#64748b">6 ชิ้น (ถุงละ 500g = 3 กก.) x @650.00</text>
+  <text x="400" y="175" font-size="14" font-weight="bold" text-anchor="end" fill="#0f172a">3,900.00</text>
+  <line x1="20" y1="240" x2="400" y2="240" stroke="#cbd5e1" stroke-dasharray="4"/>
+  <text x="20" y="275" font-size="13" fill="#475569">จำนวนรวม</text>
+  <text x="400" y="275" font-size="13" text-anchor="end" fill="#475569">6 ชิ้น (3 กก.)</text>
+  <text x="20" y="315" font-size="15" font-weight="900" fill="#0f172a">ยอดสุทธิ (TOTAL)</text>
+  <text x="400" y="315" font-size="18" font-weight="900" text-anchor="end" fill="#047857">฿ 3,900.00</text>
+  <line x1="20" y1="350" x2="400" y2="350" stroke="#0f172a" stroke-width="1.5"/>
+  <text x="210" y="390" font-size="12" text-anchor="middle" fill="#64748b">ชำระแล้ว: โอนเงิน PromptPay</text>
+  <rect x="145" y="430" width="130" height="38" rx="8" fill="none" stroke="#10b981" stroke-width="2" stroke-dasharray="3"/>
+  <text x="210" y="455" font-size="13" font-weight="bold" text-anchor="middle" fill="#059669">PAID / ชำระแล้ว</text>
+</svg>`);
+                    setReceiptImages([sampleSvg]);
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer border border-stone-200"
+                >
+                  <Camera className="w-3.5 h-3.5 text-stone-600" />
+                  <span>ใช้รูปบิลทดสอบ (Ethiopia 6 ชิ้น ฿3,900)</span>
+                </div>
               </div>
             ) : (
               <div className="space-y-3">
@@ -308,17 +325,6 @@ export const UploadReceiptModal: React.FC<UploadReceiptModalProps> = ({
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Informational Guidance Note */}
-          <div className="p-3 bg-stone-50 border border-stone-200 rounded-xl flex items-start gap-2.5 text-xs text-stone-600">
-            <CheckCircle2 className="w-4 h-4 text-stone-700 shrink-0 mt-0.5" />
-            <div>
-              <span className="font-semibold text-stone-800">ขั้นตอนการตรวจสอบ:</span>
-              <p className="text-stone-500 mt-0.5 leading-relaxed">
-                ระบบจะให้ผู้จัดการตรวจสอบทีละใบเสร็จ พร้อมแสดงเปอร์เซ็นต์ความคืบหน้า และสามารถแปลงหน่วยสินค้า (เช่น นับเป็นขวดหรือลัง ไปเป็น มล./กรัม ในสต็อก) ได้อย่างแม่นยำ
-              </p>
-            </div>
           </div>
 
           {/* Footer Actions */}

@@ -178,7 +178,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
       ],
     },
     {
-      title: 'การขาย (Sales)',
+      title: 'การขาย',
       items: [
         {
           label: 'ขายหน้าร้าน',
@@ -198,7 +198,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
       ],
     },
     {
-      title: 'คลังสินค้า (Stock)',
+      title: 'คลังสินค้า',
       items: [
         {
           label: 'จัดการสต็อกวัตถุดิบ',
@@ -218,7 +218,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
       ],
     },
     {
-      title: 'เมนู & สูตรอาหาร',
+      title: 'เมนู & สูตร',
       items: [
         {
           label: 'จัดการเมนู',
@@ -238,7 +238,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
       ],
     },
     {
-      title: 'วิเคราะห์รายงาน',
+      title: 'รายงาน',
       items: [
         {
           label: 'รายงานยอดขาย',
@@ -257,7 +257,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
       ],
     },
     {
-      title: 'ระบบ & สิทธิ์ผู้ใช้',
+      title: 'จัดการระบบ',
       items: [
         {
           label: 'รายชื่อพนักงาน',
@@ -284,28 +284,38 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
     },
   ];
 
+  // Store switching is restricted to admin only
+  const canSwitchStore = Boolean(
+    hasRole('admin') ||
+    user?.role === 'admin' ||
+    effectiveRole === 'admin'
+  );
+
   return (
     <>
       <aside
         className={`${
           isCollapsed ? 'w-20' : 'w-64'
-        } hidden lg:flex bg-white text-slate-700 flex-col h-screen sticky top-0 border-r border-slate-200 select-none z-30 transition-all duration-300 relative group/sidebar`}
+        } shrink-0 hidden md:flex flex-col bg-slate-50 border-r border-slate-200/80 transition-[width] duration-300 ease-in-out sticky top-0 h-screen z-30 select-none`}
       >
-      {/* Brand Header with Store Switcher Trigger */}
+      {/* Top brand header & Store Switcher */}
       <div
         ref={dropdownRef}
-        className={`p-3.5 border-b border-slate-100 flex items-center relative ${
-          isCollapsed ? 'justify-center' : 'justify-between'
-        }`}
+        className="h-16 flex items-center justify-between px-3 border-b border-slate-200/80 relative"
       >
         {!isCollapsed ? (
           <button
-            onClick={() => setIsStoreDropdownOpen(!isStoreDropdownOpen)}
-            className="flex items-center gap-2.5 overflow-hidden text-left p-1.5 rounded-2xl hover:bg-slate-200/50 transition-all cursor-pointer group/switcher flex-1 min-w-0"
-            title="คลิกเพื่อสลับร้านค้า / เลือกระบบ"
+            onClick={() => canSwitchStore && setIsStoreDropdownOpen(!isStoreDropdownOpen)}
+            disabled={!canSwitchStore}
+            className={`flex items-center gap-2.5 overflow-hidden text-left p-1.5 rounded-2xl transition-all flex-1 min-w-0 ${
+              canSwitchStore
+                ? 'hover:bg-slate-200/50 cursor-pointer group/switcher'
+                : 'cursor-default'
+            }`}
+            title={canSwitchStore ? 'คลิกเพื่อสลับร้านค้า / เลือกระบบ' : (activeStore?.name || 'ร้านค้า')}
           >
             {/* Store Logo or Default Circular Logo */}
-            <div className="w-8 h-8 rounded-full items-center justify-center shrink-0 overflow-hidden bg-white text-slate-900 border border-slate-200 p-0.5 flex shadow-2xs">
+            <div className="w-9 h-9 rounded-full items-center justify-center shrink-0 overflow-hidden bg-white text-slate-900 border border-slate-200 p-0.5 flex shadow-2xs">
               {activeStore?.logo_url ? (
                 <img
                   src={activeStore.logo_url}
@@ -326,32 +336,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
 
             <div className="min-w-0 flex-1">
               <div className="font-semibold text-slate-900 tracking-tight text-sm flex items-center gap-1.5 whitespace-nowrap">
-                <span>SmartStock</span>
-                <ChevronDown
-                  className={`w-3.5 h-3.5 text-slate-400 group-hover/switcher:text-slate-700 transition-transform duration-200 ${
-                    isStoreDropdownOpen ? 'rotate-180' : ''
-                  }`}
-                />
-              </div>
-              <div className="text-xs text-stone-500 font-medium whitespace-nowrap truncate flex items-center gap-1">
-                {activeStore ? (
-                  <>
-                    {(activeStore.type as string) === 'multibranch' && (
-                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    )}
-                    <span className="truncate">{activeStore.name}</span>
-                  </>
-                ) : (
-                  <span>Enterprise</span>
+                <span className="truncate">{activeStore?.name || 'SmartStock'}</span>
+                {canSwitchStore && (
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 text-slate-400 group-hover/switcher:text-slate-700 transition-transform duration-200 shrink-0 ${
+                      isStoreDropdownOpen ? 'rotate-180' : ''
+                    }`}
+                  />
                 )}
               </div>
             </div>
           </button>
         ) : (
           <button
-            onClick={() => setIsStoreDropdownOpen(!isStoreDropdownOpen)}
-            title={activeStore ? `สลับร้าน: ${activeStore.name}` : 'สลับร้าน'}
-            className="w-9 h-9 rounded-full items-center justify-center shrink-0 hover:scale-105 transition-transform overflow-hidden bg-white text-slate-900 border border-slate-200 p-0.5 flex cursor-pointer shadow-2xs"
+            onClick={() => canSwitchStore && setIsStoreDropdownOpen(!isStoreDropdownOpen)}
+            disabled={!canSwitchStore}
+            title={canSwitchStore ? (activeStore ? `สลับร้าน: ${activeStore.name}` : 'สลับร้าน') : (activeStore?.name || 'ร้านค้า')}
+            className={`w-9 h-9 rounded-full items-center justify-center shrink-0 overflow-hidden bg-white text-slate-900 border border-slate-200 p-0.5 flex shadow-2xs ${
+              canSwitchStore ? 'hover:scale-105 transition-transform cursor-pointer' : 'cursor-default'
+            }`}
           >
             {activeStore?.logo_url ? (
               <img
@@ -379,7 +382,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
         </button>
 
         {/* Store Quick Switcher Dropdown Modal / Popover */}
-        {isStoreDropdownOpen && (
+        {isStoreDropdownOpen && canSwitchStore && (
           <div
             className={`absolute top-full z-50 mt-1 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 animate-scale-in ${
               isCollapsed ? 'left-2 w-64' : 'left-3 right-3'
@@ -429,18 +432,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
                       <div className="text-xs font-medium text-stone-800 truncate flex items-center gap-1.5">
                         <span className="truncate">{s.name}</span>
                         {isCurrent && (
-                          <span className="text-xs font-medium px-1.5 py-0.2 rounded bg-stone-200 text-stone-700">
-                            ปัจจุบัน
-                          </span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                         )}
                       </div>
-                      <div className="text-xs text-stone-500 truncate font-normal">
+                      <div className="text-[10px] text-stone-600 truncate">
                         {getStoreTypeName(s.type)}
                       </div>
                     </div>
 
                     {isCurrent && (
-                      <Check className="w-3.5 h-3.5 text-slate-900 shrink-0" />
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
                     )}
                   </button>
                 );
@@ -664,10 +665,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
               )}
             </div>
             <div className="min-w-0">
-              <div className="font-semibold text-slate-900 text-sm truncate">SmartStock</div>
-              <div className="text-xs text-stone-500 truncate font-medium">
-                {activeStore ? activeStore.name : 'Enterprise'}
+              <div className="font-semibold text-slate-900 text-sm truncate">
+                {activeStore?.name || 'SmartStock'}
               </div>
+              {activeStore?.type && (
+                <div className="text-xs text-stone-500 truncate font-medium">
+                  {getStoreTypeName(activeStore.type)}
+                </div>
+              )}
             </div>
           </div>
 

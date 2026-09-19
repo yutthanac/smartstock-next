@@ -44,10 +44,13 @@ export default function SalesReportPage() {
   const [wasteStats, setWasteStats] = useState<WasteStatsResponse | null>(null);
 
   // Refund stats state
+  // Refund stats state
   const [refundStats, setRefundStats] = useState<{
     gross_sales: number;
     refund_total: number;
     refund_count: number;
+    mistake_total?: number;
+    mistake_count?: number;
     net_sales: number;
     refunded_orders: Array<{
       id: number;
@@ -61,10 +64,25 @@ export default function SalesReportPage() {
     }>;
   } | null>(null);
 
+  // Mistake & Spoilage loss breakdown (ชงผิด / ทำหก / ยอดสูญเสีย)
+  const mistakeStats = useMemo(() => {
+    if (!refundStats?.refunded_orders) return { total: 0, count: 0, orders: [] };
+    const orders = refundStats.refunded_orders.filter((o) => {
+      const r = (o.refund_reason || '').toLowerCase();
+      return r.includes('ชงผิด') || r.includes('หก') || r.includes('สูญเสีย') || r.includes('เสีย');
+    });
+    const total = refundStats.mistake_total ?? orders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+    const count = refundStats.mistake_count ?? orders.length;
+    return { total, count, orders };
+  }, [refundStats]);
+
+  const prevStoreIdRef = React.useRef<number | undefined>(activeStore?.id);
   useEffect(() => {
-    // Reset stats on store change to avoid showing previous store's data
-    setRefundStats(null);
-    setWasteStats(null);
+    if (prevStoreIdRef.current !== activeStore?.id) {
+      setRefundStats(null);
+      setWasteStats(null);
+      prevStoreIdRef.current = activeStore?.id;
+    }
 
     fetchRefundStats().then((data) => {
       if (data) setRefundStats(data);
@@ -129,11 +147,20 @@ export default function SalesReportPage() {
   const handleGenerateSummary = () => {
     setAiAnalyzing(true);
     setTimeout(() => {
+      const mistakeNote =
+        mistakeStats.count > 0
+          ? ` มียอดสูญเสียจากการชงผิด/หก ${mistakeStats.count} รายการ รวมมูลค่า -฿${mistakeStats.total.toLocaleString()} ซึ่งระบบได้นำวัตถุดิบคืนเข้าสต็อกและตัดเป็นยอดสูญเสียเรียบร้อย`
+          : '';
+
       if (totalSales === 0) {
-        setExecutiveSummary('ยังไม่มีคำสั่งซื้อและยอดขายในช่วงเวลานี้ เมื่อเริ่มมีรายการขายในระบบ ระบบ AI จะประมวลผลอินไซต์และช่วงเวลาขายดีให้อัตโนมัติ');
+        setExecutiveSummary(
+          mistakeStats.count > 0
+            ? `ยังไม่มีคำสั่งซื้อที่ปิดยอดขายสำเร็จในช่วงเวลานี้${mistakeNote}`
+            : 'ยังไม่มีคำสั่งซื้อและยอดขายในช่วงเวลานี้ เมื่อเริ่มมีรายการขายในระบบ ระบบ AI จะประมวลผลอินไซต์และช่วงเวลาขายดีให้อัตโนมัติ'
+        );
       } else {
         setExecutiveSummary(
-          `ภาพรวมยอดขายช่วงเวลาที่เลือกมียอดขายรวม ฿${totalSales.toLocaleString()} และกำไรสุทธิ ฿${totalProfit.toLocaleString()} (มาร์จิ้น ${profitMargin}%) โดยมีคำสั่งซื้อทั้งหมด ${totalOrderCount} บิล ค่าเฉลี่ยต่อบิล (Basket Size) อยู่ที่ ฿${avgBasketSize}`
+          `ภาพรวมยอดขายช่วงเวลาที่เลือกมียอดขายรวม ฿${totalSales.toLocaleString()} และกำไรสุทธิ ฿${totalProfit.toLocaleString()} (มาร์จิ้น ${profitMargin}%) โดยมีคำสั่งซื้อทั้งหมด ${totalOrderCount} บิล ค่าเฉลี่ยต่อบิล (Basket Size) อยู่ที่ ฿${avgBasketSize}.${mistakeNote}`
         );
       }
       setAiAnalyzing(false);
@@ -142,17 +169,14 @@ export default function SalesReportPage() {
 
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
-      <Topbar
-        title="รายงานการเงิน & ยอดขายเชิงลึก"
-        subtitle="วิเคราะห์แนวโน้มรายได้ สถิติช่วงเวลาขายดี และขนาดตะกร้าเฉลี่ยต่อบิล"
-      />
+      <Topbar title="รายงานยอดขาย" />
 
-      <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
+      <main className="p-4 sm:p-6 lg:p-8 space-y-5 max-w-7xl mx-auto w-full">
         {/* Filter Period Toolbar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200/90 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200/90 shadow-2xs">
           <div className="flex items-center gap-2 text-xs text-stone-600 font-medium">
             <Filter className="w-4 h-4 text-stone-500" />
-            <span>ช่วงเวลาวิเคราะห์:</span>
+            <span>ช่วงเวลา:</span>
           </div>
 
           <div className="inline-flex rounded-xl border border-stone-200/80 p-1 bg-stone-100 overflow-x-auto no-scrollbar max-w-full">
@@ -189,192 +213,89 @@ export default function SalesReportPage() {
           </div>
         </div>
 
-        {/* 4 Core Financial KPIs */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-2xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-stone-500 font-normal">ยอดขายรวม</span>
-              <span className="p-1.5 rounded-xl bg-stone-100 border border-stone-200/80 text-stone-700">
-                <BarChart3 className="w-4 h-4" />
-              </span>
+        {/* KPI Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white p-4 rounded-2xl border border-stone-200/80 shadow-2xs">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-stone-500">ยอดขายรวม</span>
+              <BarChart3 className="w-4 h-4 text-stone-400" />
             </div>
-            <div className="text-2xl font-bold text-stone-900 mt-2 font-mono tabular-nums">
-              ฿{totalSales.toLocaleString()}
-            </div>
-            <div className="text-xs text-stone-400 mt-1 font-normal">
-              จากฐานข้อมูลคำสั่งซื้อจริง
-            </div>
+            <div className="text-2xl font-bold text-stone-900 font-mono tabular-nums">฿{(refundStats?.gross_sales ?? totalSales).toLocaleString()}</div>
+            <div className="text-xs text-stone-400 mt-1 font-mono">{totalOrderCount} บิล</div>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-2xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-stone-500 font-normal">กำไรสุทธิรวม</span>
-              <span className="p-1.5 rounded-xl bg-stone-100 border border-stone-200/80 text-stone-700">
-                <TrendingUp className="w-4 h-4" />
-              </span>
+          <div className="bg-white p-4 rounded-2xl border border-stone-200/80 shadow-2xs">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-stone-500">กำไรสุทธิ</span>
+              <TrendingUp className="w-4 h-4 text-stone-400" />
             </div>
-            <div className="text-2xl font-bold text-stone-900 mt-2 font-mono tabular-nums">
-              ฿{totalProfit.toLocaleString()}
-            </div>
-            <div className="text-xs text-[#78350f] mt-1 font-semibold">
-              มาร์จิ้นเฉลี่ย {profitMargin}%
-            </div>
+            <div className="text-2xl font-bold text-stone-900 font-mono tabular-nums">฿{totalProfit.toLocaleString()}</div>
+            <div className="text-xs text-stone-500 mt-1 font-semibold">Margin {profitMargin}%</div>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-2xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-stone-500 font-normal">ยอดต่อบิลเฉลี่ย (Basket Size)</span>
-              <span className="p-1.5 rounded-xl bg-stone-100 border border-stone-200/80 text-stone-700">
-                <ShoppingBag className="w-4 h-4" />
-              </span>
+          <div className="bg-white p-4 rounded-2xl border border-rose-200/80 shadow-2xs">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-rose-500">ยอดคืนเงิน</span>
+              <ArrowDownLeft className="w-4 h-4 text-rose-400" />
             </div>
-            <div className="text-2xl font-bold text-stone-900 mt-2 font-mono tabular-nums">
-              ฿{avgBasketSize.toLocaleString()}
-            </div>
-            <div className="text-xs text-stone-400 mt-1 font-normal">
-              {totalOrderCount > 0 ? `${totalOrderCount} บิล` : 'ยังไม่มีบิล'}
-            </div>
+            <div className="text-2xl font-bold text-rose-600 font-mono tabular-nums">-฿{Math.max(0, (refundStats?.refund_total ?? 0) - mistakeStats.total).toLocaleString()}</div>
+            <div className="text-xs text-rose-400 mt-1 font-mono">{Math.max(0, (refundStats?.refund_count ?? 0) - mistakeStats.count)} บิล</div>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-2xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-stone-500 font-normal">ช่วงเวลาขายดีที่สุด</span>
-              <span className="p-1.5 rounded-xl bg-stone-100 border border-stone-200/80 text-stone-700">
-                <Clock className="w-4 h-4" />
-              </span>
+          <div className="bg-white p-4 rounded-2xl border border-stone-200/80 shadow-2xs">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-stone-500">ยอดขายสุทธิ</span>
+              <Receipt className="w-4 h-4 text-stone-400" />
             </div>
-            <div className="text-xl font-bold text-stone-900 mt-2 font-mono tabular-nums">
-              {totalSales > 0 ? '12:00 - 13:00' : '-'}
-            </div>
-            <div className="text-xs text-stone-400 mt-1 font-normal">
-              {totalSales > 0 ? 'คิดเป็น 28% ของยอดออเดอร์วัน' : 'รอข้อมูลการขาย'}
-            </div>
+            <div className="text-2xl font-bold text-stone-900 font-mono tabular-nums">฿{(refundStats?.net_sales ?? totalSales).toLocaleString()}</div>
+            <div className="text-xs text-stone-400 mt-1">หลังหักยอดคืน</div>
           </div>
         </div>
 
-        {/* Refund / Cancellation & Waste KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Gross Sales */}
-          <div className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-2xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-stone-500 font-normal">ยอดขายรวม (Gross Sales)</span>
-              <span className="p-1.5 rounded-xl bg-stone-100 border border-stone-200/80 text-stone-700">
-                <BarChart3 className="w-4 h-4" />
-              </span>
+        {/* AI Executive Summary */}
+        <div className="bg-white p-5 rounded-2xl border border-stone-200/90 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#78350f]" />
+              <h4 className="font-semibold text-stone-900 text-sm">AI สรุปยอดขาย</h4>
             </div>
-            <div className="text-2xl font-bold text-stone-900 mt-2 font-mono tabular-nums">
-              ฿{(refundStats?.gross_sales ?? totalSales).toLocaleString()}
-            </div>
-            <div className="text-xs text-stone-400 mt-1 font-normal">ก่อนหักยอดคืนเงิน</div>
-          </div>
-
-          {/* Refund Total */}
-          <div className="bg-white p-5 rounded-2xl border border-rose-200/80 shadow-2xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-rose-500 font-normal">ยอดเงินคืน/ยกเลิกบิล (Refund)</span>
-              <span className="p-1.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-600">
-                <ArrowDownLeft className="w-4 h-4" />
-              </span>
-            </div>
-            <div className="text-2xl font-bold text-rose-600 mt-2 font-mono tabular-nums">
-              -฿{(refundStats?.refund_total ?? 0).toLocaleString()}
-            </div>
-            <div className="text-xs text-rose-400 mt-1 font-normal">
-              {refundStats?.refund_count ?? 0} บิลที่ถูกยกเลิก/คืนเงิน
-            </div>
-          </div>
-
-          {/* Net Sales */}
-          <div className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-2xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-stone-500 font-normal">ยอดขายสุทธิ (Net Revenue)</span>
-              <span className="p-1.5 rounded-xl bg-stone-100 border border-stone-200/80 text-stone-700">
-                <TrendingUp className="w-4 h-4" />
-              </span>
-            </div>
-            <div className="text-2xl font-bold text-stone-900 mt-2 font-mono tabular-nums">
-              ฿{(refundStats?.net_sales ?? totalSales).toLocaleString()}
-            </div>
-            <div className="text-xs text-stone-400 mt-1 font-normal">หลังหักยอดคืนเงินแล้ว</div>
-          </div>
-
-          {/* Waste Cost */}
-          <div className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-2xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-stone-500 font-normal">มูลค่าของเสีย (Waste Cost)</span>
-              <span className="p-1.5 rounded-xl bg-stone-100 border border-stone-200/80 text-stone-700">
-                <Trash2 className="w-4 h-4 text-stone-600" />
-              </span>
-            </div>
-            <div className="text-2xl font-bold text-stone-900 mt-2 font-mono tabular-nums">
-              ฿{(wasteStats?.total_waste_value ?? 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </div>
-            <div className="text-xs text-stone-400 mt-1 font-normal">
-              {wasteStats?.total_waste_count ?? 0} ครั้งที่มีการบันทึกทิ้ง/หก
-            </div>
-          </div>
-        </div>
-
-        {/* AI Executive Summary Card */}
-        <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200/90 shadow-2xs space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-stone-100 border border-stone-200/80 flex items-center justify-center text-[#78350f] shrink-0">
-                <Sparkles className="w-4 h-4" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-stone-900 text-sm">
-                  บทสรุปอินไซต์ผู้บริหาร (Executive Sales AI Analysis)
-                </h4>
-                <p className="text-xs text-stone-400 font-normal">
-                  ประมวลผลสรุปเทรนด์รายรับ พฤติกรรมการสั่งซื้อ และโอกาสขยายยอดขาย
-                </p>
-              </div>
-            </div>
-
             <Button
               variant="outline"
-              size="md"
+              size="sm"
               isLoading={aiAnalyzing}
               onClick={handleGenerateSummary}
-              icon={<Sparkles className="w-4 h-4 text-[#78350f]" />}
-              className="shrink-0 w-full sm:w-auto shadow-2xs rounded-xl border-stone-200 text-stone-800 hover:bg-stone-50"
+              icon={<Sparkles className="w-3.5 h-3.5 text-[#78350f]" />}
+              className="shrink-0 shadow-2xs rounded-xl border-stone-200 text-stone-800 hover:bg-stone-50 text-xs"
             >
-              {executiveSummary ? 'วิเคราะห์สรุปใหม่' : 'สร้างบทวิเคราะห์ AI'}
+              {executiveSummary ? 'วิเคราะห์ใหม่' : 'สร้างสรุป'}
             </Button>
           </div>
 
           {executiveSummary ? (
-            <div className="p-4 rounded-2xl bg-[#faf9f5] border border-stone-200 text-xs md:text-sm text-stone-800 leading-relaxed font-normal">
+            <div className="p-4 rounded-xl bg-[#faf9f5] border border-stone-200 text-xs text-stone-800 leading-relaxed">
               {executiveSummary}
             </div>
           ) : (
-            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 text-xs text-stone-500 font-normal flex items-center justify-between">
-              <span>กดปุ่ม &ldquo;สร้างบทวิเคราะห์ AI&rdquo; เพื่อให้ระบบประมวลผลไฮไลต์ยอดขายช่วงนี้อัตโนมัติ</span>
+            <div className="p-4 rounded-xl bg-stone-50 border border-stone-200 text-xs text-stone-400">
+              กดปุ่ม &ldquo;สร้างสรุป&rdquo; เพื่อให้ระบบประมวลผลไฮไลต์ยอดขาย
             </div>
           )}
         </div>
 
-        {/* Charts Row: Sales Trend & Category Distribution */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Main Sales & Cost Chart (8 Cols) */}
-          <div className="lg:col-span-8 bg-white p-6 rounded-2xl border border-stone-200/90 shadow-2xs space-y-4">
+        {/* Charts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-stone-200/90 shadow-2xs space-y-4">
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-stone-900 text-base flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-stone-700" />
-                  แนวโน้มยอดขาย &amp; กำไรสุทธิ ({period === '7days' ? '7 วันล่าสุด' : period === '30days' ? 'รายสัปดาห์' : 'รายเดือน'})
-                </h3>
-                <p className="text-xs text-stone-400 font-normal mt-0.5">
-                  เปรียบเทียบสัดส่วนยอดขายรวมกับต้นทุนวัตถุดิบจริง
-                </p>
-              </div>
-              <div className="flex items-center gap-4 text-xs">
-                <span className="flex items-center gap-1.5 text-stone-600">
-                  <span className="w-3 h-3 rounded-full bg-stone-900 inline-block"></span> ยอดขาย
+              <h3 className="font-semibold text-stone-900 text-sm flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-stone-600" />
+                ยอดขาย & กำไร ({period === '7days' ? '7 วัน' : period === '30days' ? 'รายสัปดาห์' : 'รายเดือน'})
+              </h3>
+              <div className="flex items-center gap-3 text-xs">
+                <span className="flex items-center gap-1.5 text-stone-500">
+                  <span className="w-2.5 h-2.5 rounded-full bg-stone-900 inline-block"></span> ยอดขาย
                 </span>
-                <span className="flex items-center gap-1.5 text-stone-600">
-                  <span className="w-3 h-3 rounded-full bg-[#78350f] inline-block"></span> กำไรสุทธิ
+                <span className="flex items-center gap-1.5 text-stone-500">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#78350f] inline-block"></span> กำไร
                 </span>
               </div>
             </div>
@@ -416,22 +337,15 @@ export default function SalesReportPage() {
           </div>
         </div>
 
-        {/* Peak Hours Hourly Heatmap / Distribution */}
-        <div className="bg-white p-6 rounded-2xl border border-stone-200/90 shadow-2xs space-y-4">
+        {/* Hourly Order Distribution */}
+        <div className="bg-white p-5 rounded-2xl border border-stone-200/90 shadow-2xs space-y-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-stone-900 text-base flex items-center gap-2">
-                <Clock className="w-5 h-5 text-stone-700" />
-                สถิติคำสั่งซื้อรายชั่วโมง (Hourly Order Distribution)
-              </h3>
-              <p className="text-xs text-stone-400 font-normal mt-0.5">
-                ช่วยในการจัดตารางเข้ากะพนักงานและการเตรียมวัตถุดิบสดล่วงหน้า
-              </p>
-            </div>
+            <h3 className="font-semibold text-stone-900 text-sm flex items-center gap-2">
+              <Clock className="w-4 h-4 text-stone-600" />
+              การขายรายชั่วโมง
+            </h3>
             {totalOrderCount > 0 && (
-              <Badge variant="neutral" size="sm" className="border-stone-200 bg-stone-100 text-stone-700 font-medium">
-                คำสั่งซื้อทั้งหมด: {totalOrderCount} บิล
-              </Badge>
+              <span className="text-xs text-stone-500 font-mono">{totalOrderCount} บิล</span>
             )}
           </div>
 
@@ -465,15 +379,31 @@ export default function SalesReportPage() {
         {/* Refunded Orders Table */}
         {refundStats && refundStats.refund_count > 0 && (
           <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200/90 shadow-2xs space-y-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center shrink-0">
-                <ArrowDownLeft className="w-4 h-4 text-rose-600" />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center shrink-0">
+                  <ArrowDownLeft className="w-4 h-4 text-rose-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-stone-900 text-sm">รายการบิลที่ถูกคืนเงิน / ยกเลิก</h3>
+                  <p className="text-xs text-stone-400 font-normal mt-0.5">
+                    {refundStats.refund_count} บิล — รวม -฿{refundStats.refund_total.toLocaleString()}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-stone-900 text-sm">รายการบิลที่ถูกคืนเงิน / ยกเลิก</h3>
-                <p className="text-xs text-stone-400 font-normal mt-0.5">
-                  {refundStats.refund_count} บิล — รวม ฿{refundStats.refund_total.toLocaleString()}
-                </p>
+
+              {/* Loss / Refund summary pills */}
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                {mistakeStats.count > 0 && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-900 border border-amber-200/80 font-medium">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                    <span>ชงผิด/สูญเสีย {mistakeStats.count} รายการ (-฿{mistakeStats.total.toLocaleString()})</span>
+                  </span>
+                )}
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-stone-100 text-stone-700 border border-stone-200/80 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-stone-400"></span>
+                  <span>คืนเงินลูกค้า {Math.max(0, refundStats.refund_count - mistakeStats.count)} รายการ</span>
+                </span>
               </div>
             </div>
 
@@ -484,33 +414,53 @@ export default function SalesReportPage() {
                     <th className="text-left pb-2 text-xs text-stone-500 font-normal">เลขที่บิล</th>
                     <th className="text-left pb-2 text-xs text-stone-500 font-normal">เวลา</th>
                     <th className="text-right pb-2 text-xs text-stone-500 font-normal">มูลค่าบิล</th>
-                    <th className="text-left pb-2 text-xs text-stone-500 font-normal">เหตุผลการคืน</th>
+                    <th className="text-left pb-2 text-xs text-stone-500 font-normal pl-3">เหตุผล / ประเภท</th>
                     <th className="text-left pb-2 text-xs text-stone-500 font-normal">ผู้ดำเนินการ</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {refundStats.refunded_orders.map((order) => (
-                    <tr key={order.id} className="border-b border-stone-100 hover:bg-rose-50/40 transition-colors">
-                      <td className="py-2.5 font-mono text-xs text-stone-700">{order.order_number}</td>
-                      <td className="py-2.5 text-xs text-stone-500 font-normal">
-                        {new Date(order.refunded_at || order.created_at).toLocaleString('th-TH', {
-                          day: '2-digit',
-                          month: 'short',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </td>
-                      <td className="py-2.5 text-right font-mono text-xs text-rose-600 font-semibold tabular-nums">
-                        -฿{Number(order.total).toLocaleString()}
-                      </td>
-                      <td className="py-2.5 text-xs text-stone-500 font-normal">
-                        {order.refund_reason || '—'}
-                      </td>
-                      <td className="py-2.5 text-xs text-stone-400 font-normal">
-                        {order.refunded_by || '—'}
-                      </td>
-                    </tr>
-                  ))}
+                  {refundStats.refunded_orders.map((order) => {
+                    const reason = order.refund_reason || '';
+                    const isMistake =
+                      reason.includes('ชงผิด') ||
+                      reason.includes('หก') ||
+                      reason.includes('สูญเสีย') ||
+                      reason.includes('เสีย');
+
+                    return (
+                      <tr key={order.id} className="border-b border-stone-100 hover:bg-stone-50/60 transition-colors">
+                        <td className="py-2.5 font-mono text-xs text-stone-700 font-medium">{order.order_number}</td>
+                        <td className="py-2.5 text-xs text-stone-500 font-normal">
+                          {new Date(order.refunded_at || order.created_at).toLocaleString('th-TH', {
+                            day: '2-digit',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </td>
+                        <td className="py-2.5 text-right font-mono text-xs text-rose-600 font-semibold tabular-nums">
+                          -฿{Number(order.total).toLocaleString()}
+                        </td>
+                        <td className="py-2.5 text-xs pl-3">
+                          <div className="flex items-center gap-2">
+                            {isMistake ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-50 text-amber-900 border border-amber-200">
+                                ชงผิด (ยอดสูญเสีย)
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-stone-100 text-stone-700 border border-stone-200">
+                                คืนเงินลูกค้า
+                              </span>
+                            )}
+                            <span className="text-stone-600">{reason || '—'}</span>
+                          </div>
+                        </td>
+                        <td className="py-2.5 text-xs text-stone-400 font-normal">
+                          {order.refunded_by || '—'}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

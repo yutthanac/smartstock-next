@@ -26,6 +26,7 @@ export interface StaffUser {
   name: string;
   email: string;
   username?: string;
+  avatar?: string | null;
   role?: string;
   roles: { id: string; name: string; display_name: string }[];
   stores?: { id: number; name: string; type: string; role?: string; logo_url?: string | null }[];

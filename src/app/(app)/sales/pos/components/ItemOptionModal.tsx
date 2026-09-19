@@ -60,7 +60,7 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
     }
   }, [isOpen, item]);
 
-  const quickTags = ['แยกน้ำแข็ง', 'วิปครีม', 'ไม่ใส่ไซรัป'];
+  const quickTags = ['แยกน้ำแข็ง', 'วิปครีม'];
 
   const handleToggleTag = (tag: string) => {
     const currentTags = customNote
@@ -128,9 +128,9 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
       badgeText = `+${extraShots} ช็อต`;
     } else if (isSweetener) {
       mult = sweetnessMultiplier;
-      if (sweetnessMultiplier === 0) badgeText = 'ไม่หวาน (0%)';
-      else if (sweetnessMultiplier < 1) badgeText = `ลดหวาน (${Math.round(sweetnessMultiplier * 100)}%)`;
-      else if (sweetnessMultiplier > 1) badgeText = `เพิ่มหวาน (${Math.round(sweetnessMultiplier * 100)}%)`;
+      if (sweetnessMultiplier === 0) badgeText = 'ไม่หวาน';
+      else if (sweetnessMultiplier < 1) badgeText = 'หวานน้อย';
+      else if (sweetnessMultiplier > 1) badgeText = 'หวานมาก';
     }
 
     const ingUnitLower = (ingUnit || '').toLowerCase().trim();
@@ -259,20 +259,28 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
           <div>
             <label className="font-semibold text-stone-700 block mb-1">ระดับความหวาน</label>
             <div className="grid grid-cols-4 gap-1.5">
-              {['ไม่หวาน (0%)', 'หวานน้อย (50%)', 'หวาน 100%', 'หวานมาก'].map((sw) => (
-                <button
-                  key={sw}
-                  type="button"
-                  onClick={() => setSweetness(sw)}
-                  className={`py-2 px-1 rounded-xl font-medium text-xs transition-all border text-center cursor-pointer ${
-                    sweetness === sw
-                      ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
-                      : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
-                  }`}
-                >
-                  {sw}
-                </button>
-              ))}
+              {[
+                { label: 'ไม่หวาน', val: 'ไม่หวาน' },
+                { label: 'หวานน้อย', val: 'หวานน้อย' },
+                { label: 'ปกติ', val: 'หวาน' },
+                { label: 'หวานมาก', val: 'หวานมาก' },
+              ].map(({ label, val }) => {
+                const isSelected = sweetness === val || (val === 'หวาน' && (sweetness === 'หวาน 100%' || sweetness === 'หวาน'));
+                return (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setSweetness(val === 'หวาน' ? 'หวาน' : val)}
+                    className={`py-2 px-1 rounded-xl font-medium text-xs transition-all border text-center cursor-pointer ${
+                      isSelected
+                        ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
+                        : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -418,7 +426,7 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
             <div className="flex items-center justify-between">
               <span className="font-semibold text-stone-800 text-xs flex items-center gap-1.5">
                 <Layers className="w-3.5 h-3.5 text-stone-600" />
-                <span>ตัดสต็อกแก้วนี้ (Preview)</span>
+                <span>Preview</span>
               </span>
               <span className="text-xs text-stone-500 font-medium">
                 {allPreviewDeductions.length + (takeawayCup ? 1 : 0)} รายการ

@@ -186,7 +186,7 @@ export default function POSPage() {
   cartItems.forEach(({ item, quantity, options }) => {
     const shots = options.extraShots ?? (options.isSpecial ? 1 : 0);
     const customNote = options.customNote || '';
-    const sweetness = options.sweetness || 'หวาน 100%';
+    const sweetness = options.sweetness || 'หวาน';
 
     // Sweetness multiplier: check 100% before 0%
     let sweetnessMultiplier = 1.0;
@@ -194,7 +194,7 @@ export default function POSPage() {
       sweetnessMultiplier = 0.0;
     } else if (sweetness.includes('125%') || sweetness.includes('หวานมาก')) {
       sweetnessMultiplier = 1.25;
-    } else if (sweetness.includes('100%')) {
+    } else if (sweetness.includes('100%') || sweetness === 'หวาน') {
       sweetnessMultiplier = 1.0;
     } else if (sweetness.includes('75%')) {
       sweetnessMultiplier = 0.75;
@@ -222,10 +222,33 @@ export default function POSPage() {
       const isSweetener =
         ingNameLower.includes('ไซรัป') ||
         ingNameLower.includes('syrup') ||
-        ingNameLower.includes('นมข้นหวาน') ||
-        ingNameLower.includes('น้ำผึ้ง') ||
+        ingNameLower.includes('นมข้น') ||
+        ingNameLower.includes('ข้นหวาน') ||
+        ingNameLower.includes('น้ำตาล') ||
         ingNameLower.includes('น้ำเชื่อม') ||
-        ingCatLower.includes('ไซรัป');
+        ingNameLower.includes('น้ำผึ้ง') ||
+        ingNameLower.includes('honey') ||
+        ingNameLower.includes('คาราเมล') ||
+        ingNameLower.includes('caramel') ||
+        ingNameLower.includes('วานิลลา') ||
+        ingNameLower.includes('vanilla') ||
+        ingNameLower.includes('มะลิ') ||
+        ingNameLower.includes('mali') ||
+        ingNameLower.includes('คาร์เนชัน') ||
+        ingNameLower.includes('carnation') ||
+        ingNameLower.includes('ทีพอท') ||
+        ingNameLower.includes('teapot') ||
+        ingNameLower.includes('falcon') ||
+        ingNameLower.includes('นกเหยี่ยว') ||
+        ingNameLower.includes('condensed') ||
+        ingNameLower.includes('sweetener') ||
+        ingNameLower.includes('stevia') ||
+        ingNameLower.includes('หญ้าหวาน') ||
+        ingNameLower.includes('หล่อฮังก๊วย') ||
+        ingCatLower.includes('ไซรัป') ||
+        ingCatLower.includes('syrup') ||
+        ingCatLower.includes('สารให้ความหวาน') ||
+        ingCatLower.includes('ความหวาน');
 
       let mult = 1.0;
       if (isCoffee) {
@@ -285,10 +308,7 @@ export default function POSPage() {
 
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
-      <Topbar
-        title="ขายหน้าร้าน"
-        subtitle="ขายหน้าร้าน พร้อมตัดสต็อกอัตโนมัติตามสูตร"
-      />
+      <Topbar title="ขายหน้าร้าน" />
 
       <main className="p-4 sm:p-6 lg:p-8 flex-1 flex flex-col lg:flex-row gap-6 w-full items-start">
         {/* Left Area: Menu Selector & Category Filters */}
@@ -326,7 +346,7 @@ export default function POSPage() {
                       ? 'bg-stone-900 text-white shadow-2xs font-semibold'
                       : 'text-stone-500 hover:text-stone-800'
                   }`}
-                  title="มุมมองการ์ด (Card View)"
+                  title="มุมมองการ์ด"
                 >
                   <LayoutGrid className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">การ์ด</span>
@@ -339,7 +359,7 @@ export default function POSPage() {
                       ? 'bg-stone-900 text-white shadow-2xs font-semibold'
                       : 'text-stone-500 hover:text-stone-800'
                   }`}
-                  title="มุมมองรายการ (List View)"
+                  title="มุมมองรายการ"
                 >
                   <ListIcon className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">รายการ</span>

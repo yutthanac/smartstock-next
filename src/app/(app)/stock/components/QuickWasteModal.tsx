@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, AlertTriangle, DollarSign, Trash2 } from 'lucide-react';
+import { X, DollarSign, Trash2, Package } from 'lucide-react';
 import { Ingredient } from '@/types';
 import { Button } from '@/components/Button';
 import { useStock } from '@/lib/StockContext';
+import { formatStockUnits, formatInteger } from '@/lib/cafePresets';
 
 interface QuickWasteModalProps {
   ingredient: Ingredient | null;
@@ -19,44 +20,36 @@ export const QuickWasteModal: React.FC<QuickWasteModalProps> = ({
   ingredient,
   isOpen,
   onClose,
-  defaultTier = 'bar',
 }) => {
   const { wasteAdjust } = useStock();
 
-  const [tier, setTier] = useState<'bar' | 'backstock'>(defaultTier);
   const [reason, setReason] = useState<string>('หก/เลอะ');
   const [quantity, setQuantity] = useState<string>('1');
   const [notes, setNotes] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Reset or update tier on open
   React.useEffect(() => {
     if (isOpen) {
-      setTier(defaultTier);
       setQuantity('1');
       setReason('หก/เลอะ');
       setNotes('');
     }
-  }, [isOpen, defaultTier]);
+  }, [isOpen]);
 
   if (!isOpen || !ingredient) return null;
 
   const costPerUnit = Number(ingredient.cost_per_unit || 0);
-  const packageSize = Number(ingredient.package_size || 1);
-  const isTwoTier = Boolean(ingredient.is_two_tier);
-  const numQty = parseFloat(quantity) || 0;
+  const packSize = Number(ingredient.package_size || 0);
+  const packUnit = ingredient.package_unit || '';
+  const numQty = Math.round(parseFloat(quantity) || 0);
+  const totalCost = numQty * costPerUnit;
 
-  // Calculate waste cost
-  const baseQty = tier === 'backstock' ? numQty * packageSize : numQty;
-  const totalCost = baseQty * costPerUnit;
-
-  const currentAvailable = tier === 'backstock'
-    ? Number(ingredient.backstock_quantity || 0)
-    : Number(ingredient.bar_quantity || (isTwoTier ? 0 : ingredient.quantity));
-
-  const displayUnit = tier === 'backstock'
-    ? (ingredient.package_unit || 'แพ็ค')
-    : ingredient.unit;
+  const formattedStock = formatStockUnits(
+    ingredient.quantity,
+    ingredient.package_size,
+    ingredient.package_unit,
+    ingredient.unit
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,7 +63,6 @@ export const QuickWasteModal: React.FC<QuickWasteModalProps> = ({
       const ok = await wasteAdjust(ingredient.id, {
         quantity: numQty,
         reason,
-        tier,
         notes: notes.trim() || undefined,
       });
 
@@ -82,19 +74,17 @@ export const QuickWasteModal: React.FC<QuickWasteModalProps> = ({
     }
   };
 
-  const quickPills = tier === 'backstock'
-    ? [1, 2, 5]
-    : ingredient.unit === 'กรัม' || ingredient.unit === 'มล.'
-    ? [10, 50, 100, 250]
+  const quickPills = ingredient.unit === 'กรัม' || ingredient.unit === 'มล.'
+    ? [20, 50, 100, 250, 500]
     : [1, 2, 5];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs">
-      <div className="bg-white border border-stone-200 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-white border border-stone-200 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150 text-xs">
         {/* Header */}
         <div className="px-5 py-4 border-b border-stone-200 flex items-center justify-between bg-stone-50/50">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-stone-900 text-white flex items-center justify-center shadow-xs">
+            <div className="w-8 h-8 rounded-lg bg-rose-700 text-white flex items-center justify-center shadow-xs">
               <Trash2 className="w-4 h-4 text-stone-200" />
             </div>
             <div>
@@ -105,54 +95,25 @@ export const QuickWasteModal: React.FC<QuickWasteModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
+            className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          {/* Tier Switch (Only for Two-Tier items) */}
-          {isTwoTier && (
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-stone-600">ตัดจากคลังไหน?</label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setTier('bar')}
-                  className={`py-2 px-3 rounded-xl border text-xs font-semibold flex flex-col items-center gap-0.5 transition-all ${
-                    tier === 'bar'
-                      ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
-                      : 'bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100'
-                  }`}
-                >
-                  <span>☕ หน้าบาร์</span>
-                  <span className={`text-[10px] font-mono ${tier === 'bar' ? 'text-stone-300' : 'text-stone-400'}`}>
-                    เหลือ {Number(ingredient.bar_quantity || 0).toLocaleString()} {ingredient.unit}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setTier('backstock')}
-                  className={`py-2 px-3 rounded-xl border text-xs font-semibold flex flex-col items-center gap-0.5 transition-all ${
-                    tier === 'backstock'
-                      ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
-                      : 'bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100'
-                  }`}
-                >
-                  <span>📦 หลังร้าน</span>
-                  <span className={`text-[10px] font-mono ${tier === 'backstock' ? 'text-stone-300' : 'text-stone-400'}`}>
-                    เหลือ {Number(ingredient.backstock_quantity || 0).toLocaleString()} {ingredient.package_unit || 'แพ็ค'}
-                  </span>
-                </button>
-              </div>
+          {/* Current Stock Banner */}
+          <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 flex items-center justify-between">
+            <span className="text-stone-600 font-medium">สต็อกคงเหลือปัจจุบัน:</span>
+            <div className="text-right font-mono">
+              <span className="font-bold text-stone-900 text-xs">{formattedStock.packText}</span>{' '}
+              <span className="text-stone-500 text-[11px]">({formattedStock.baseText})</span>
             </div>
-          )}
+          </div>
 
           {/* Reason Chips */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-stone-600">สาเหตุของเสีย</label>
+            <label className="text-xs font-semibold text-stone-700">สาเหตุของเสีย</label>
             <div className="flex flex-wrap gap-1.5">
               {REASON_CHIPS.map((r) => {
                 const active = reason === r;
@@ -161,10 +122,10 @@ export const QuickWasteModal: React.FC<QuickWasteModalProps> = ({
                     key={r}
                     type="button"
                     onClick={() => setReason(r)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                       active
-                        ? 'bg-stone-800 text-white shadow-xs'
-                        : 'bg-stone-100 text-stone-600 hover:bg-stone-200/80 border border-stone-200/60'
+                        ? 'bg-stone-900 text-white shadow-xs'
+                        : 'bg-stone-100 text-stone-600 hover:bg-stone-200 border border-stone-200/60'
                     }`}
                   >
                     {r}
@@ -174,27 +135,50 @@ export const QuickWasteModal: React.FC<QuickWasteModalProps> = ({
             </div>
           </div>
 
+          {/* Quick Package pills if available */}
+          {Boolean(packSize > 0 && packUnit) && (
+            <div className="space-y-1">
+              <label className="text-[11px] text-stone-600 font-medium flex items-center gap-1">
+                <Package className="w-3.5 h-3.5 text-stone-400" />
+                ตัดทิ้งเป็น {packUnit} เต็ม:
+              </label>
+              <div className="flex items-center gap-1.5">
+                {[1, 2].map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setQuantity(String(p * packSize))}
+                    className="px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-800 text-[11px] font-mono font-medium border border-stone-200 transition-colors cursor-pointer"
+                  >
+                    {p} {packUnit} ({formatInteger(p * packSize)} {ingredient.unit})
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Quantity Input */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-medium text-stone-600">จำนวนที่เสีย / ทิ้ง</label>
-              <span className="text-[11px] text-stone-400">
-                พร้อมใช้: {currentAvailable.toLocaleString()} {displayUnit}
-              </span>
+              <label className="text-xs font-semibold text-stone-700">จำนวนที่เสีย / ทิ้ง ({ingredient.unit})</label>
             </div>
             <div className="relative">
               <input
-                type="number"
-                step="any"
-                min="0.001"
+                type="text"
+                inputMode="numeric"
                 required
                 value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                placeholder="ระบุจำนวน"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '' || /^\d*$/.test(val)) {
+                    setQuantity(val);
+                  }
+                }}
+                placeholder="ระบุจำนวนเต็ม"
                 className="w-full pl-3.5 pr-14 py-2 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 font-mono text-base font-semibold focus:outline-none focus:ring-1 focus:ring-stone-400 focus:bg-white"
               />
               <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-medium text-stone-400 pointer-events-none">
-                {displayUnit}
+                {ingredient.unit}
               </span>
             </div>
 
@@ -205,7 +189,7 @@ export const QuickWasteModal: React.FC<QuickWasteModalProps> = ({
                   key={val}
                   type="button"
                   onClick={() => setQuantity(String(val))}
-                  className="px-2 py-0.5 rounded-md bg-stone-100 hover:bg-stone-200 text-stone-600 text-[11px] font-mono border border-stone-200 transition-colors"
+                  className="px-2 py-0.5 rounded-md bg-stone-100 hover:bg-stone-200 text-stone-600 text-[11px] font-mono border border-stone-200 transition-colors cursor-pointer"
                 >
                   +{val}
                 </button>
@@ -223,9 +207,9 @@ export const QuickWasteModal: React.FC<QuickWasteModalProps> = ({
             </div>
             <div className="text-right font-mono">
               <span className="text-sm font-bold text-stone-900">
-                ฿{totalCost.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ฿{Math.round(totalCost).toLocaleString()}
               </span>
-              <p className="text-[10px] text-stone-400">@ ฿{costPerUnit}/{ingredient.unit}</p>
+              <p className="text-[10px] text-stone-400">@ ฿{ingredient.cost_per_unit}/{ingredient.unit}</p>
             </div>
           </div>
 

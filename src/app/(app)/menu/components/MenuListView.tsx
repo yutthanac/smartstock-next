@@ -109,7 +109,7 @@ function SortableMenuRow({ item, onEdit, onDelete }: SortableMenuRowProps) {
       </TableCell>
 
       <TableCell className="text-center whitespace-nowrap">
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#f5efe6] text-[#78350f] border border-[#e8ded0]">
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-stone-100 text-stone-800 border border-stone-200 font-mono tabular-nums">
           {item.margin_percent}%
         </span>
       </TableCell>
@@ -194,16 +194,16 @@ export const MenuListView: React.FC<MenuListViewProps> = ({ items, onEdit, onDel
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-10 px-2 text-center whitespace-nowrap text-stone-400 font-medium text-xs" title="ลากเพื่อสลับลำดับ">
-                  ย้าย
+                <TableHead className="w-10 px-2 text-center whitespace-nowrap text-stone-400 font-medium text-xs">
+                  #
                 </TableHead>
-                <TableHead className="whitespace-nowrap">รูปภาพ & เมนู</TableHead>
+                <TableHead className="whitespace-nowrap">ชื่อเมนู</TableHead>
                 <TableHead className="whitespace-nowrap">หมวดหมู่</TableHead>
                 <TableHead className="text-right whitespace-nowrap">ราคาขาย</TableHead>
                 <TableHead className="text-right whitespace-nowrap">ต้นทุน</TableHead>
-                <TableHead className="text-right whitespace-nowrap">กำไร/จาน</TableHead>
+                <TableHead className="text-right whitespace-nowrap">กำไร</TableHead>
                 <TableHead className="text-center whitespace-nowrap">มาร์จิ้น</TableHead>
-                <TableHead className="whitespace-nowrap">สูตรวัตถุดิบ</TableHead>
+                <TableHead className="whitespace-nowrap">วัตถุดิบ</TableHead>
                 <TableHead className="text-center whitespace-nowrap w-24">จัดการ</TableHead>
               </TableRow>
             </TableHeader>

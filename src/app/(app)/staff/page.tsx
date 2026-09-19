@@ -60,20 +60,35 @@ export default function StaffPage() {
     name: '',
     email: '',
     password: '',
+    avatar: null as string | null,
     roles: [] as string[],
     storeId: null as number | null,
   });
+
+  // Check if current user is system admin
+  const isSystemAdmin = Boolean(
+    currentUser?.role === 'admin' ||
+    currentUser?.roles?.some((r) => r === 'admin' || r === 'superadmin') ||
+    currentUser?.username === 'admin'
+  );
 
   const fetchUsers = async () => {
     setLoading(true);
     setError(null);
     try {
       const activeToken = token || (typeof window !== 'undefined' ? localStorage.getItem('smartstock_auth_token') : null);
-      const res = await fetch(`${API_BASE_URL}/users`, {
-        headers: {
-          ...(activeToken ? { Authorization: `Bearer ${activeToken}` } : {}),
-          Accept: 'application/json',
-        },
+      const headers: Record<string, string> = {
+        Accept: 'application/json',
+      };
+      if (activeToken) {
+        headers['Authorization'] = `Bearer ${activeToken}`;
+      }
+      if (activeStore?.id) {
+        headers['X-Store-ID'] = String(activeStore.id);
+      }
+
+      const res = await fetch(`${API_BASE_URL}/users${!isSystemAdmin && activeStore?.id ? `?store_id=${activeStore.id}` : ''}`, {
+        headers,
       });
 
       if (!res.ok) {
@@ -83,7 +98,9 @@ export default function StaffPage() {
 
       const data = await res.json();
       setStaffList(data.users || []);
-      setRoles(data.roles || []);
+      // Non-admin cannot create or assign admin role
+      const fetchedRoles = data.roles || [];
+      setRoles(isSystemAdmin ? fetchedRoles : fetchedRoles.filter((r: RoleOption) => r.name !== 'admin'));
       setPermissions(data.permissions || []);
       if (data.available_stores) {
         setAvailableStores(data.available_stores);
@@ -100,13 +117,14 @@ export default function StaffPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, [token]);
+  }, [token, activeStore?.id]);
 
   const handleOpenEdit = (staff: StaffUser) => {
     setFormData({
       name: staff.name,
       email: staff.email,
       password: '',
+      avatar: staff.avatar || null,
       roles: staff.roles.map((r) => r.name),
       storeId: staff.stores?.[0]?.id ?? null,
     });
@@ -122,6 +140,7 @@ export default function StaffPage() {
       name: '',
       email: '',
       password: '',
+      avatar: null,
       roles: ['cashier'],
       storeId: activeStore?.id ?? (stores[0]?.id ?? null),
     });
@@ -158,23 +177,33 @@ export default function StaffPage() {
         : `${API_BASE_URL}/users`;
 
       const method = isEdit ? 'PUT' : 'POST';
+      const resolvedStoreId = formData.storeId || activeStore?.id || (stores[0]?.id ?? null);
 
       const payload = {
         name: formData.name,
         email: formData.email,
+        avatar: formData.avatar,
         roles: formData.roles,
         role: formData.roles[0] || 'staff',
-        store_id: formData.storeId,
+        store_id: resolvedStoreId,
         password: formData.password || undefined,
       };
 
+      const activeToken = token || (typeof window !== 'undefined' ? localStorage.getItem('smartstock_auth_token') : null);
+      const reqHeaders: Record<string, string> = {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      };
+      if (activeToken) {
+        reqHeaders['Authorization'] = `Bearer ${activeToken}`;
+      }
+      if (activeStore?.id) {
+        reqHeaders['X-Store-ID'] = String(activeStore.id);
+      }
+
       const res = await fetch(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/json',
-        },
+        headers: reqHeaders,
         body: JSON.stringify(payload),
       });
 
@@ -185,7 +214,7 @@ export default function StaffPage() {
 
       setSuccessMsg(isEdit ? 'อัปเดตสิทธิ์พนักงานเรียบร้อยแล้ว' : 'เพิ่มพนักงานใหม่สำเร็จ');
       setModalState((prev) => ({ ...prev, isOpen: false }));
-      fetchUsers();
+      await fetchUsers();
     } catch (err: any) {
       setError(err.message);
     }
@@ -214,6 +243,20 @@ export default function StaffPage() {
 
   // Filtered List
   const filteredStaff = staffList.filter((staff) => {
+    // Non-admin can never see system admin accounts
+    const isAdminAccount = staff.username === 'admin' || staff.roles.some((r) => r.name === 'admin');
+    if (!isSystemAdmin && isAdminAccount) {
+      return false;
+    }
+
+    // Non-admin can only see members belonging to their current activeStore
+    if (!isSystemAdmin && activeStore?.id) {
+      const belongsToStore = staff.stores && staff.stores.some((s) => s.id === activeStore.id);
+      if (!belongsToStore) {
+        return false;
+      }
+    }
+
     const matchesSearch =
       staff.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       staff.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -243,10 +286,7 @@ export default function StaffPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#faf9f5]">
-      <Topbar
-        title="รายชื่อพนักงาน & กำหนดสิทธิ์"
-        subtitle="จัดการบัญชีพนักงาน, มอบหมายร้านค้าที่สังกัด, และควบคุมสิทธิ์การใช้งาน"
-      />
+      <Topbar title="รายชื่อพนักงาน" />
 
       <main className="flex-1 p-6 space-y-6 max-w-7xl mx-auto w-full">
         {/* Alerts */}
@@ -290,8 +330,8 @@ export default function StaffPage() {
 
           {/* Filters & Actions */}
           <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap shrink-0">
-            {/* Store Filter */}
-            {availableStores.length > 1 && (
+            {/* Store Filter - Only for System Admin */}
+            {isSystemAdmin && availableStores.length > 1 && (
               <div className="w-40 shrink-0">
                 <Dropdown
                   value={selectedStoreFilter}
@@ -378,6 +418,8 @@ export default function StaffPage() {
         <StaffModal
           isOpen={modalState.isOpen}
           mode={modalState.mode}
+          isSystemAdmin={isSystemAdmin}
+          activeStoreName={activeStore?.name}
           formData={formData}
           roles={roles}
           stores={availableStores.length > 0 ? availableStores : stores.map(s => ({ id: s.id, name: s.name, type: s.type, logo_url: s.logo_url }))}

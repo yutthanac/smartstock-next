@@ -244,11 +244,11 @@ export default function StoresSettingsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+          <h1 className="text-xl font-extrabold text-stone-900 flex items-center gap-2">
             <Store className="w-5 h-5 text-emerald-600" />
             จัดการระบบร้านค้า & สิทธิ์เมนู
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="text-sm text-stone-500 mt-0.5">
             สร้างร้านใหม่, ปรับแต่งหน้ากาก/โลโก้, กำหนดสิทธิ์เมนู และจัดการสมาชิก
           </p>
         </div>
@@ -389,15 +389,15 @@ export default function StoresSettingsPage() {
 
                 {/* Expanded Details: Tabs for Menu Config & Members */}
                 {isExpanded && (
-                  <div className="px-5 pb-5 border-t border-slate-100 pt-4 space-y-4 bg-slate-50/50 rounded-b-3xl">
+                  <div className="px-5 pb-5 border-t border-stone-100 pt-4 space-y-4 bg-stone-50/50 rounded-b-3xl">
                     {/* Tab Buttons */}
-                    <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+                    <div className="flex items-center gap-2 border-b border-stone-200 pb-2">
                       <button
                         onClick={() => setActiveTab('menu_config')}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-normal transition-all cursor-pointer ${
                           activeTab === 'menu_config'
-                            ? 'bg-slate-900 text-white shadow-xs'
-                            : 'text-slate-600 hover:bg-white'
+                            ? 'bg-stone-900 text-white shadow-xs'
+                            : 'text-stone-600 hover:bg-white'
                         }`}
                       >
                         <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -407,8 +407,8 @@ export default function StoresSettingsPage() {
                         onClick={() => setActiveTab('members')}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-normal transition-all cursor-pointer ${
                           activeTab === 'members'
-                            ? 'bg-slate-900 text-white shadow-xs'
-                            : 'text-slate-600 hover:bg-white'
+                            ? 'bg-stone-900 text-white shadow-xs'
+                            : 'text-stone-600 hover:bg-white'
                         }`}
                       >
                         <Users className="w-3.5 h-3.5" />
@@ -420,7 +420,7 @@ export default function StoresSettingsPage() {
                     {activeTab === 'menu_config' && (
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-stone-500">
                             กำหนดว่าบัญชีที่สังกัดหรือเข้าใช้งานร้านนี้ จะมองเห็นเมนูใดในแถบเมนูด้านซ้ายบ้าง
                           </p>
                           <Button
@@ -442,8 +442,8 @@ export default function StoresSettingsPage() {
                                 key={mod.key}
                                 className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-xs font-normal cursor-pointer transition-all ${
                                   isEnabled
-                                    ? 'bg-white border-slate-400 shadow-2xs text-slate-800'
-                                    : 'bg-slate-100/70 border-slate-200 text-slate-400 line-through'
+                                    ? 'bg-white border-stone-400 shadow-2xs text-stone-800'
+                                    : 'bg-stone-100/70 border-stone-200 text-stone-400 line-through'
                                 }`}
                               >
                                 <input
@@ -469,7 +469,7 @@ export default function StoresSettingsPage() {
                     {activeTab === 'members' && (
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-slate-700">รายชื่อผู้มีสิทธิ์ใช้งานร้านนี้</span>
+                          <span className="text-xs font-bold text-stone-700">รายชื่อผู้มีสิทธิ์ใช้งานร้านนี้</span>
                           <button
                             onClick={() => setAddMemberStoreId(store.id)}
                             className="flex items-center gap-1 text-xs text-emerald-700 hover:text-emerald-900 font-bold cursor-pointer"
@@ -480,13 +480,13 @@ export default function StoresSettingsPage() {
 
                         {/* Add member form */}
                         {addMemberStoreId === store.id && (
-                          <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                          <div className="flex items-center gap-2 p-3 bg-stone-50 rounded-2xl border border-stone-200">
                             <input
                               type="email"
                               placeholder="อีเมลผู้ใช้ (เช่น staff@smartstock.local)"
                               value={memberEmail}
                               onChange={(e) => setMemberEmail(e.target.value)}
-                              className="flex-1 text-xs border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 bg-white"
+                              className="flex-1 text-xs border border-stone-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 bg-white"
                             />
                             <Dropdown
                               value={memberRole}
@@ -497,7 +497,7 @@ export default function StoresSettingsPage() {
                                 { value: 'staff', label: 'พนักงาน (Staff)' },
                               ]}
                               size="sm"
-                              buttonClassName="bg-white border-slate-200 text-slate-800 rounded-xl font-normal"
+                              buttonClassName="bg-white border-stone-200 text-stone-800 rounded-xl font-normal"
                             />
                             <Button
                               onClick={handleAddMember}
@@ -508,7 +508,7 @@ export default function StoresSettingsPage() {
                             </Button>
                             <button
                               onClick={() => setAddMemberStoreId(null)}
-                              className="p-2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                              className="p-2 text-stone-400 hover:text-stone-600 cursor-pointer"
                             >
                               <X className="w-4 h-4" />
                             </button>
@@ -556,9 +556,9 @@ export default function StoresSettingsPage() {
           })}
 
           {stores.length === 0 && (
-            <div className="text-center py-16 text-slate-400">
+            <div className="text-center py-16 text-stone-400">
               <Store className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p className="text-sm font-bold text-slate-600">ยังไม่มีร้านในระบบ</p>
+              <p className="text-sm font-bold text-stone-600">ยังไม่มีร้านในระบบ</p>
               <p className="text-xs mt-1">กดปุ่ม "เพิ่มร้านใหม่" เพื่อเริ่มต้นสร้างร้านค้าแรก</p>
             </div>
           )}
@@ -639,14 +639,14 @@ function StoreFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg max-h-[90vh] overflow-y-auto no-scrollbar">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 sticky top-0 bg-white z-10">
-          <h2 className="font-extrabold text-slate-900 text-base">
+      <div className="bg-white rounded-3xl shadow-2xl border border-stone-200 w-full max-w-lg max-h-[90vh] overflow-y-auto no-scrollbar">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 sticky top-0 bg-white z-10">
+          <h2 className="font-extrabold text-stone-900 text-base">
             {store ? 'แก้ไขข้อมูลร้านค้า & หน้ากากระบบ' : 'เพิ่มร้านค้าใหม่ / สร้างระบบ'}
           </h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+            className="p-1.5 rounded-xl text-stone-400 hover:text-stone-600 hover:bg-stone-100 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -655,18 +655,18 @@ function StoreFormModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Store Logo Upload with Live Preview */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5">
+            <label className="block text-xs font-bold text-stone-700 mb-1.5">
               โลโก้ร้านค้า (เก็บใน Media / Laravel Storage)
             </label>
-            <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-200/90">
+            <div className="flex items-center gap-4 p-3 bg-stone-50 rounded-2xl border border-stone-200/90">
               <div
-                className="w-16 h-16 rounded-2xl border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden bg-white shrink-0"
+                className="w-16 h-16 rounded-2xl border-2 border-dashed border-stone-300 flex items-center justify-center overflow-hidden bg-white shrink-0"
                 style={{ borderColor: themeColor }}
               >
                 {logoPreview ? (
                   <img src={logoPreview} alt="Preview" className="w-full h-full object-cover" />
                 ) : (
-                  <ImageIcon className="w-6 h-6 text-slate-300" />
+                  <ImageIcon className="w-6 h-6 text-stone-300" />
                 )}
               </div>
 

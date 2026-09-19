@@ -13,8 +13,6 @@ import {
   Calendar,
   GripVertical,
   ClipboardCheck,
-  Warehouse,
-  Package,
   Coffee,
   CheckCircle2,
   X,
@@ -51,12 +49,11 @@ import {
   TableRow,
   TableCell,
 } from '@/components/Table';
-import { AddIngredientModal } from './components/AddIngredientModal';
+import { AddIngredientModal, IngredientFormData } from './components/AddIngredientModal';
 import { AdjustStockModal } from './components/AdjustStockModal';
 import { StockAuditTab } from './components/StockAuditTab';
-import { BackstockTab } from './components/BackstockTab';
-import { QuickWasteModal } from './components/QuickWasteModal';
 import { TableSkeleton } from '@/components/Skeleton';
+import { formatStockUnits, formatInteger } from '@/lib/cafePresets';
 
 interface SortableIngredientRowProps {
   item: Ingredient;
@@ -65,8 +62,6 @@ interface SortableIngredientRowProps {
   onOpenEdit: (item: Ingredient) => void;
   onAdjust: (item: Ingredient) => void;
   onDelete: (id: number, name: string) => void;
-  onOpenPackage?: (id: number) => void;
-  onWaste: (item: Ingredient) => void;
 }
 
 function SortableIngredientRow({
@@ -76,8 +71,6 @@ function SortableIngredientRow({
   onOpenEdit,
   onAdjust,
   onDelete,
-  onOpenPackage,
-  onWaste,
 }: SortableIngredientRowProps) {
   const {
     attributes,
@@ -88,18 +81,25 @@ function SortableIngredientRow({
     isDragging,
   } = useSortable({ id: item.id });
 
-  const totalQty = Number(item.quantity);
-  const reorderPt = Number(item.reorder_point);
+  const totalQty = Math.round(Number(item.quantity) || 0);
+  const reorderPt = Math.round(Number(item.reorder_point) || 0);
   const isOut = totalQty <= 0;
   const isLow = !isOut && totalQty <= reorderPt;
   const isNormal = !isOut && !isLow;
 
-  // Front Bar calculations for 2-tier items
-  const barQty = Number(item.bar_quantity ?? 0);
-  const packSize = Number(item.package_size || 1);
-  const barCapacity = Math.max(packSize, barQty);
-  const barRatio = Math.min(100, Math.round((barQty / (barCapacity || 1)) * 100));
-  const backstockQty = Number(item.backstock_quantity ?? 0);
+  const formattedStock = formatStockUnits(
+    item.quantity,
+    item.package_size,
+    item.package_unit,
+    item.unit
+  );
+
+  const formattedReorder = formatStockUnits(
+    item.reorder_point,
+    item.package_size,
+    item.package_unit,
+    item.unit
+  );
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -116,167 +116,88 @@ function SortableIngredientRow({
       className={isDragging ? 'bg-stone-100 shadow-md ring-1 ring-stone-300' : 'hover:bg-stone-50/80 transition-colors'}
     >
       {/* Drag Handle */}
-      <TableCell className="w-10 px-2 text-center whitespace-nowrap">
+      <TableCell className="w-9 px-2 text-center whitespace-nowrap py-3">
         <button
           type="button"
-          className="cursor-grab touch-none p-1.5 rounded-lg text-stone-400 hover:text-stone-800 hover:bg-stone-100 active:cursor-grabbing transition-colors inline-flex items-center justify-center"
+          className="cursor-grab touch-none p-1 rounded-md text-stone-400 hover:text-stone-800 hover:bg-stone-100 active:cursor-grabbing transition-colors inline-flex items-center justify-center"
           title="คลิกค้างเพื่อลากสลับลำดับ"
           {...attributes}
           {...listeners}
         >
-          <GripVertical className="w-4 h-4" />
+          <GripVertical className="w-3.5 h-3.5" />
         </button>
       </TableCell>
 
-      <TableCell className="font-normal text-stone-800">
+      {/* Ingredient Name & Supplier */}
+      <TableCell className="font-normal text-stone-800 py-3">
         <div>
-          <div className="font-medium text-stone-900">{item.name}</div>
+          <div className="font-semibold text-stone-900 text-xs">{item.name}</div>
           {item.supplier && (
-            <div className="text-xs text-stone-400">{item.supplier}</div>
+            <div className="text-[11px] text-stone-400 mt-0.5">{item.supplier}</div>
           )}
         </div>
       </TableCell>
 
-      <TableCell>
-        <span className="text-stone-600 text-xs font-normal">{item.category}</span>
+      {/* Category */}
+      <TableCell className="py-3 whitespace-nowrap">
+        <span className="text-stone-500 text-xs font-normal">{item.category || '-'}</span>
       </TableCell>
 
-      <TableCell className="text-center">
-        {item.is_two_tier ? (
-          <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-900 border border-amber-200">
-            ระบบ 2 คลัง
-          </span>
-        ) : item.tracking_type === 'bulk_expense' ? (
-          <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-[#f5efe6] text-[#78350f] border border-[#e8ded0]">
-            เปิดใช้ทั้งแพ็ค
-          </span>
-        ) : (
-          <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-700 border border-stone-200/80">
-            ตัดตามแก้ว
-          </span>
-        )}
-      </TableCell>
-
-      <TableCell className="text-right">
-        <span className="px-2 py-0.5 rounded-full border border-stone-200 bg-stone-50 text-stone-600 text-xs font-mono tabular-nums inline-block font-normal">
+      {/* Unit Cost */}
+      <TableCell className="text-right whitespace-nowrap py-3">
+        <span className="font-mono text-xs text-stone-700 font-medium">
           ฿{item.cost_per_unit}/{item.unit}
         </span>
       </TableCell>
 
-      {/* Front Bar Level */}
-      <TableCell className="text-left w-52">
-        {item.is_two_tier ? (
-          <div className="flex flex-col gap-1 w-44 py-0.5">
-            {/* Front Bar Amount & Ratio */}
-            <div className="flex items-center justify-between text-xs font-mono tabular-nums">
-              <div className="flex items-center gap-1.5 font-semibold text-stone-900">
-                <Coffee className="w-3.5 h-3.5 text-stone-400 shrink-0" />
-                <span>{barQty.toLocaleString()}</span>
-                <span className="text-stone-500 font-normal font-sans">{item.unit}</span>
-              </div>
-              <span className={`text-[11px] font-semibold ${barQty <= 0 ? 'text-rose-500' : barRatio <= 25 ? 'text-amber-600' : 'text-stone-500'}`}>
-                ({barRatio}%)
-              </span>
+      {/* Unified Total Stock Column: Base unit first, package in parentheses */}
+      <TableCell className="text-left py-3">
+        <div className="flex flex-col gap-1 w-44">
+          <div className="flex items-baseline justify-between text-xs font-mono tabular-nums">
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-bold text-stone-900 text-xs sm:text-sm">{formattedStock.baseText}</span>
+              {formattedStock.packText && (
+                <span className="text-stone-500 font-sans text-xs">
+                  {formattedStock.packText}
+                </span>
+              )}
             </div>
-
-            {/* Front Bar Capacity Progress Bar */}
-            <div className="w-full bg-stone-100 border border-stone-200/90 h-1.5 rounded-full overflow-hidden relative">
-              <div
-                className={`h-full rounded-full transition-all duration-300 ${
-                  barQty <= 0 ? 'bg-transparent' : barRatio <= 25 ? 'bg-amber-500' : 'bg-stone-800'
-                }`}
-                style={{ width: `${Math.max(barQty <= 0 ? 0 : 4, barRatio)}%` }}
-              />
-            </div>
-
-            {/* Opened package remainder pill */}
-            {item.opened_unit_remaining !== undefined && item.opened_unit_remaining !== null && item.opened_unit_remaining > 0 ? (
-              <div className="flex items-center gap-1 text-[10px] text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 font-sans font-medium w-fit">
-                <span>⚡</span>
-                <span>เปิดค้าง <strong className="font-mono font-semibold">{item.opened_unit_remaining.toLocaleString()}</strong> {item.unit}</span>
-              </div>
-            ) : (
-              <span className="text-[10px] text-stone-400 font-sans">
-                พร้อมใช้หน้าบาร์ (เปิด {Math.ceil(barQty / packSize)} {item.package_unit || 'แพ็ค'})
-              </span>
-            )}
+            <span className={`text-[11px] font-semibold ${isOut ? 'text-rose-600' : isLow ? 'text-amber-700' : 'text-stone-400'}`}>
+              {ratio}%
+            </span>
           </div>
-        ) : (
-          <div className="flex flex-col gap-1 w-40 py-0.5">
-            <div className="flex items-center justify-between text-xs text-stone-500 font-mono tabular-nums">
-              <span className="font-medium text-stone-800">{Number(item.quantity).toLocaleString()} {item.unit}</span>
-              <span className="text-stone-400 font-sans">({ratio}%)</span>
-            </div>
-            <div className="w-full bg-stone-100 border border-stone-200/90 h-1.5 rounded-full overflow-hidden relative">
-              <div
-                className={`h-full rounded-full transition-all duration-300 ${
-                  isOut ? 'bg-transparent' : isLow ? 'bg-amber-500' : 'bg-stone-800'
-                }`}
-                style={{ width: `${Math.max(isOut ? 0 : 4, ratio)}%` }}
-              />
-            </div>
-            <span className="text-[10px] text-stone-400 font-sans">ตัดสต็อกตรง (ไม่มีคลังบาร์)</span>
+
+          {/* Progress Bar */}
+          <div className="w-full bg-stone-100 border border-stone-200/80 h-1.5 rounded-full overflow-hidden relative">
+            <div
+              className={`h-full rounded-full transition-all duration-300 ${
+                isOut ? 'bg-transparent' : isLow ? 'bg-amber-500' : 'bg-stone-900'
+              }`}
+              style={{ width: `${Math.max(isOut ? 0 : 4, ratio)}%` }}
+            />
           </div>
+        </div>
+      </TableCell>
+
+      {/* Reorder Point Column: Single clean line */}
+      <TableCell className="text-right text-xs font-mono tabular-nums whitespace-nowrap py-3">
+        <span className="font-medium text-stone-800">{formattedReorder.baseText}</span>{' '}
+        {formattedReorder.packText && (
+          <span className="text-stone-500 font-sans text-[11px]">{formattedReorder.packText}</span>
         )}
       </TableCell>
 
-      {/* Total Store Stock Column */}
-      <TableCell className="text-right font-normal text-stone-700 text-xs font-mono tabular-nums whitespace-nowrap">
-        <div className="flex flex-col items-end gap-0.5">
-          <div className="flex items-center gap-1.5">
-            <span className="font-bold text-stone-900 text-sm">{Number(item.quantity).toLocaleString()}</span>{' '}
-            <span className="text-stone-600">{item.unit}</span>
-            {Boolean(item.is_two_tier) && (
-              <span className={`text-[11px] font-semibold ${isOut ? 'text-rose-500' : isLow ? 'text-amber-600' : 'text-stone-500'}`}>
-                ({ratio}%)
-              </span>
-            )}
-          </div>
-          {Boolean(item.is_two_tier) && (
-            <div className="w-24 bg-stone-100 border border-stone-200/90 h-1.5 rounded-full overflow-hidden relative mt-0.5">
-              <div
-                className={`h-full rounded-full transition-all duration-300 ${
-                  isOut ? 'bg-transparent' : isLow ? 'bg-amber-500' : 'bg-stone-800'
-                }`}
-                style={{ width: `${Math.max(isOut ? 0 : 4, ratio)}%` }}
-              />
-            </div>
-          )}
-          {Boolean(item.package_unit && item.package_size && item.package_size > 0 && item.is_two_tier) && (
-            <span className="block text-[10px] text-stone-500 font-sans font-medium">
-              ≈ {(item.quantity / item.package_size!).toFixed(1)} {item.package_unit}
-            </span>
-          )}
-        </div>
-      </TableCell>
-
-      {/* Reorder Point Column */}
-      <TableCell className="text-right text-stone-400 font-normal text-xs font-mono tabular-nums whitespace-nowrap">
-        <div>
-          <span className="font-medium text-stone-700">{Number(item.reorder_point).toLocaleString()}</span>{' '}
-          <span>{item.unit}</span>
-          {Boolean(item.package_unit && item.package_size && item.package_size > 0 && item.is_two_tier) && (
-            <span className="block text-[10px] text-stone-400 font-sans">
-              ({(item.reorder_point / item.package_size!).toFixed(1)} {item.package_unit})
-            </span>
-          )}
-        </div>
-      </TableCell>
-
-      {/* Status Column - Strictly based on total store stock vs reorder_point */}
-      <TableCell className="text-center whitespace-nowrap">
+      {/* Status Column */}
+      <TableCell className="text-center whitespace-nowrap py-3">
         {isNormal && (
-          <Badge variant="outline" size="sm" className="border-stone-200 text-stone-700 font-medium">
+          <Badge variant="outline" size="sm" className="border-emerald-200 bg-emerald-50 text-emerald-800 font-medium">
             ปกติ
           </Badge>
         )}
         {isLow && (
-          <div className="flex flex-col items-center gap-0.5">
-            <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#fef3c7] text-[#92400e] border border-[#fde68a] shadow-2xs">
-              ใกล้หมด
-            </span>
-            <span className="text-[9px] text-amber-700 font-sans font-medium">สต็อกรวมต่ำกว่าจุดเตือน</span>
-          </div>
+          <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-200 shadow-2xs">
+            ใกล้หมด
+          </span>
         )}
         {isOut && (
           <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 shadow-2xs">
@@ -285,36 +206,28 @@ function SortableIngredientRow({
         )}
       </TableCell>
 
-      <TableCell className="text-center">
-        <div className="flex items-center justify-center gap-1.5">
-          <button
-            onClick={() => onOpenEdit(item)}
-            className="p-1.5 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-100 transition-colors cursor-pointer"
-            title="แก้ไขข้อมูลวัตถุดิบ"
-          >
-            <Edit2 className="w-3.5 h-3.5" />
-          </button>
+      {/* Actions */}
+      <TableCell className="text-center whitespace-nowrap py-3">
+        <div className="flex items-center justify-center gap-1">
           <Button
             variant="outline"
             size="sm"
             onClick={() => onAdjust(item)}
-            className="h-7 px-2 text-xs font-normal border-stone-200 text-stone-700 hover:bg-stone-50"
+            className="h-7 px-2.5 text-xs font-medium border-stone-200 text-stone-800 hover:bg-stone-100 cursor-pointer shadow-2xs rounded-lg"
           >
             ปรับสต็อก
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onWaste(item)}
-            className="h-7 px-2 text-xs font-normal border-stone-200 text-stone-700 hover:bg-stone-50"
-            title="บันทึกของเสีย / ทำหก / เสีย"
+          <button
+            onClick={() => onOpenEdit(item)}
+            className="p-1.5 text-stone-400 hover:text-stone-800 rounded-lg hover:bg-stone-100 transition-colors cursor-pointer"
+            title="แก้ไขข้อมูล"
           >
-            🗑️ ของเสีย
-          </Button>
+            <Edit2 className="w-3.5 h-3.5" />
+          </button>
           <button
             onClick={() => onDelete(item.id, item.name)}
             className="p-1.5 text-stone-400 hover:text-rose-600 rounded-lg hover:bg-stone-100 transition-colors cursor-pointer"
-            title="ลบรายการ"
+            title="ลบ"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -325,16 +238,22 @@ function SortableIngredientRow({
 }
 
 export default function StockPage() {
-  const { ingredients, movements, addIngredient, updateIngredient, deleteIngredient, adjustStock, reorderIngredients, openPackage, isLoading } = useStock();
+  const {
+    ingredients,
+    movements,
+    addIngredient,
+    updateIngredient,
+    deleteIngredient,
+    adjustStock,
+    reorderIngredients,
+    isLoading,
+  } = useStock();
+
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState<'inventory' | 'backstock' | 'movements' | 'audit'>('inventory');
+  const [activeTab, setActiveTab] = useState<'inventory' | 'movements' | 'audit'>('inventory');
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 8;
-
-  // Waste Modal State
-  const [wasteModalItem, setWasteModalItem] = useState<Ingredient | null>(null);
-  const [wasteDefaultTier, setWasteDefaultTier] = useState<'bar' | 'backstock'>('bar');
 
   // Feedback Toast state
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -345,67 +264,58 @@ export default function StockPage() {
     }, 4000);
   };
 
-  // Backstock count (2-tier or packaged items)
-  const backstockCount = React.useMemo(() => {
-    return ingredients.filter(
-      (i) => i.is_two_tier || (i.package_unit && (i.package_size || 0) > 0)
-    ).length;
-  }, [ingredients]);
-
-  // Modal States
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [editingTarget, setEditingTarget] = useState<Ingredient | null>(null);
+  // Adjust modal state
   const [adjustTarget, setAdjustTarget] = useState<Ingredient | null>(null);
   const [adjustType, setAdjustType] = useState<'in' | 'waste' | 'adjust'>('in');
   const [adjustAmount, setAdjustAmount] = useState<number | string>(1);
-  const [adjustNote, setAdjustNote] = useState<string>('');
+  const [adjustNote, setAdjustNote] = useState('');
 
-  // Form State for Add Ingredient
-  const [formData, setFormData] = useState<{
-    name: string;
-    unit: string;
-    quantity: number | string;
-    max_stock?: number | string;
-    reorder_point: number | string;
-    cost_per_unit: number | string;
-    category: string;
-    supplier: string;
-    tracking_type: 'strict' | 'bulk_expense';
-    package_unit?: string;
-    package_size?: number | string;
-    is_two_tier?: boolean;
-    backstock_quantity?: number | string;
-    bar_quantity?: number | string;
-  }>({
+  // Add/Edit modal state
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingTarget, setEditingTarget] = useState<Ingredient | null>(null);
+  const [formData, setFormData] = useState<IngredientFormData>({
     name: '',
     unit: 'กรัม',
     quantity: '',
     max_stock: '',
-    reorder_point: '200',
-    cost_per_unit: '0.5',
+    reorder_point: '1000',
+    cost_per_unit: '0.70',
     category: 'เมล็ดกาแฟ & ชา',
     supplier: '',
     tracking_type: 'strict',
-    package_unit: '',
-    package_size: '',
+    package_unit: 'ถุง',
+    package_size: '500',
     is_two_tier: false,
     backstock_quantity: '',
     bar_quantity: '',
   });
 
-  const filteredIngredients = ingredients.filter((ing) => {
-    const matchSearch = ing.name.toLowerCase().includes(search.toLowerCase());
-    const totalQty = Number(ing.quantity);
-    const reorderPt = Number(ing.reorder_point);
-    const calculatedStatus = totalQty <= 0 ? 'out' : totalQty <= reorderPt ? 'low' : 'normal';
-    const matchStatus = filterStatus === 'all' || calculatedStatus === filterStatus;
-    return matchSearch && matchStatus;
-  });
+  const filteredIngredients = React.useMemo(() => {
+    return ingredients.filter((item) => {
+      const matchSearch =
+        item.name.toLowerCase().includes(search.toLowerCase()) ||
+        (item.supplier && item.supplier.toLowerCase().includes(search.toLowerCase())) ||
+        (item.category && item.category.toLowerCase().includes(search.toLowerCase()));
 
-  const paginatedIngredients = filteredIngredients.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+      const totalQty = Math.round(Number(item.quantity) || 0);
+      const reorderPt = Math.round(Number(item.reorder_point) || 0);
+      const isOut = totalQty <= 0;
+      const isLow = !isOut && totalQty <= reorderPt;
+
+      if (filterStatus === 'normal') return matchSearch && !isOut && !isLow;
+      if (filterStatus === 'low') return matchSearch && isLow;
+      if (filterStatus === 'out') return matchSearch && isOut;
+      return matchSearch;
+    });
+  }, [ingredients, search, filterStatus]);
+
+  const paginatedIngredients = React.useMemo(() => {
+    if (filteredIngredients.length <= pageSize) {
+      return filteredIngredients;
+    }
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredIngredients.slice(startIndex, startIndex + pageSize);
+  }, [filteredIngredients, currentPage, pageSize]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -444,13 +354,13 @@ export default function StockPage() {
       unit: 'กรัม',
       quantity: '',
       max_stock: '',
-      reorder_point: '200',
-      cost_per_unit: '0.5',
+      reorder_point: '1000',
+      cost_per_unit: '0.70',
       category: 'เมล็ดกาแฟ & ชา',
       supplier: '',
       tracking_type: 'strict',
-      package_unit: '',
-      package_size: '',
+      package_unit: 'ถุง',
+      package_size: '500',
       is_two_tier: false,
       backstock_quantity: '',
       bar_quantity: '',
@@ -463,30 +373,20 @@ export default function StockPage() {
     setFormData({
       name: ing.name,
       unit: ing.unit,
-      quantity: ing.quantity,
-      max_stock: ing.max_stock ?? ing.quantity,
-      reorder_point: ing.reorder_point,
+      quantity: Math.round(Number(ing.quantity) || 0),
+      max_stock: Math.round(Number(ing.max_stock ?? ing.quantity)),
+      reorder_point: Math.round(Number(ing.reorder_point) || 0),
       cost_per_unit: ing.cost_per_unit,
       category: ing.category || 'เมล็ดกาแฟ & ชา',
       supplier: ing.supplier || '',
       tracking_type: ing.tracking_type || 'strict',
       package_unit: ing.package_unit || '',
-      package_size: ing.package_size ?? '',
-      is_two_tier: !!ing.is_two_tier,
-      backstock_quantity: ing.backstock_quantity ?? '',
-      bar_quantity: ing.bar_quantity ?? '',
+      package_size: ing.package_size ? Math.round(Number(ing.package_size)) : '',
+      is_two_tier: false,
+      backstock_quantity: '',
+      bar_quantity: '',
     });
     setIsAddModalOpen(true);
-  };
-
-  const handleOpenPackage = async (id: number) => {
-    const ing = ingredients.find((i) => i.id === id);
-    const pkgUnit = ing?.package_unit || 'ถุง';
-    const prevBack = Number(ing?.backstock_quantity ?? 0);
-    const success = await openPackage(id, 1);
-    if (success) {
-      showToast(`📦 ดึง ${ing?.name || 'วัตถุดิบ'} 1 ${pkgUnit} จากหลังร้านเข้าหน้าบาร์สำเร็จ! (หลังร้านลดเหลือ ${Math.max(0, prevBack - 1)} ${pkgUnit})`);
-    }
   };
 
   const handleSaveIngredient = async (e: React.FormEvent) => {
@@ -496,30 +396,25 @@ export default function StockPage() {
       return;
     }
 
-    const isTwoTier = !!formData.is_two_tier;
-    const packSize = typeof formData.package_size === 'number' ? formData.package_size : parseFloat(String(formData.package_size || '')) || undefined;
-    const backstockQty = typeof formData.backstock_quantity === 'number' ? formData.backstock_quantity : parseFloat(String(formData.backstock_quantity || '')) || 0;
-    const barQty = typeof formData.bar_quantity === 'number' ? formData.bar_quantity : parseFloat(String(formData.bar_quantity || '')) || 0;
+    const packSize = typeof formData.package_size === 'number'
+      ? Math.round(formData.package_size)
+      : parseInt(String(formData.package_size || ''), 10) || undefined;
 
-    if (isTwoTier) {
-      if (!formData.package_unit?.trim()) {
-        alert('กรุณากรอกหน่วยบรรจุภัณฑ์ (เช่น ขวด, ลัง, ถุง) เมื่อเปิดใช้ระบบ 2 คลัง');
-        return;
-      }
-      if (!packSize || packSize <= 0) {
-        alert('กรุณากรอกขนาดบรรจุต่อแพ็ค/ขวด ให้มากกว่า 0 เมื่อเปิดใช้ระบบ 2 คลัง');
-        return;
-      }
-    }
+    let qty = typeof formData.quantity === 'number'
+      ? Math.round(formData.quantity)
+      : parseInt(String(formData.quantity || ''), 10) || 0;
 
-    let qty = typeof formData.quantity === 'number' ? formData.quantity : parseFloat(formData.quantity) || 0;
-    if (isTwoTier && packSize && packSize > 0) {
-      qty = (backstockQty * packSize) + barQty;
-    }
+    const maxStock = typeof formData.max_stock === 'number'
+      ? Math.round(formData.max_stock)
+      : parseInt(String(formData.max_stock || ''), 10) || qty;
 
-    const maxStock = typeof formData.max_stock === 'number' ? formData.max_stock : parseFloat(String(formData.max_stock || '')) || qty;
-    const reorder = typeof formData.reorder_point === 'number' ? formData.reorder_point : parseFloat(formData.reorder_point) || 0;
-    const cost = typeof formData.cost_per_unit === 'number' ? formData.cost_per_unit : parseFloat(formData.cost_per_unit) || 0;
+    const reorder = typeof formData.reorder_point === 'number'
+      ? Math.round(formData.reorder_point)
+      : parseInt(String(formData.reorder_point || ''), 10) || 0;
+
+    const cost = typeof formData.cost_per_unit === 'number'
+      ? formData.cost_per_unit
+      : parseFloat(String(formData.cost_per_unit || '')) || 0;
 
     let success = false;
     if (editingTarget) {
@@ -535,9 +430,7 @@ export default function StockPage() {
         tracking_type: formData.tracking_type,
         package_unit: formData.package_unit?.trim() || undefined,
         package_size: packSize,
-        is_two_tier: isTwoTier,
-        backstock_quantity: backstockQty,
-        bar_quantity: barQty,
+        is_two_tier: false,
       });
     } else {
       success = await addIngredient({
@@ -552,31 +445,14 @@ export default function StockPage() {
         tracking_type: formData.tracking_type,
         package_unit: formData.package_unit?.trim() || undefined,
         package_size: packSize,
-        is_two_tier: isTwoTier,
-        backstock_quantity: backstockQty,
-        bar_quantity: barQty,
+        is_two_tier: false,
       });
     }
 
     if (success) {
       setIsAddModalOpen(false);
       setEditingTarget(null);
-      setFormData({
-        name: '',
-        unit: 'กรัม',
-        quantity: '',
-        max_stock: '',
-        reorder_point: '200',
-        cost_per_unit: '0.5',
-        category: 'เมล็ดกาแฟ & ชา',
-        supplier: '',
-        tracking_type: 'strict',
-        package_unit: '',
-        package_size: '',
-        is_two_tier: false,
-        backstock_quantity: '',
-        bar_quantity: '',
-      });
+      showToast(editingTarget ? `แก้ไข ${formData.name} เรียบร้อยแล้ว` : `เพิ่ม ${formData.name} เข้าสต็อกเรียบร้อยแล้ว`);
     } else {
       alert(editingTarget ? 'ไม่สามารถบันทึกการแก้ไขได้ กรุณาลองใหม่อีกครั้ง' : 'ไม่สามารถเพิ่มวัตถุดิบได้ กรุณาลองใหม่อีกครั้ง');
     }
@@ -586,7 +462,7 @@ export default function StockPage() {
     e.preventDefault();
     if (!adjustTarget) return;
 
-    const amt = typeof adjustAmount === 'number' ? adjustAmount : parseFloat(adjustAmount) || 0;
+    const amt = typeof adjustAmount === 'number' ? Math.round(adjustAmount) : parseInt(String(adjustAmount || ''), 10) || 0;
     if (amt <= 0) {
       alert('กรุณาระบุจำนวนที่มากกว่า 0');
       return;
@@ -594,83 +470,78 @@ export default function StockPage() {
 
     const success = await adjustStock(adjustTarget.id, adjustType, amt, adjustNote);
     if (success) {
+      showToast(`ปรับปรุงสต็อก ${adjustTarget.name} สำเร็จ!`);
       setAdjustTarget(null);
       setAdjustAmount(1);
       setAdjustNote('');
     } else {
-      alert('ปรับปรุงสต็อกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+      alert('ไม่สามารถปรับปรุงสต็อกได้ กรุณาลองใหม่อีกครั้ง');
     }
   };
 
   const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`คุณต้องการลบวัตถุดิบ "${name}" หรือไม่?`)) return;
-    await deleteIngredient(id);
+    if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบวัตถุดิบ "${name}" ออกจากระบบ? การกระทำนี้ไม่สามารถย้อนกลับได้`)) {
+      const success = await deleteIngredient(id);
+      if (success) {
+        showToast(`ลบวัตถุดิบ "${name}" สำเร็จ`);
+      } else {
+        alert('เกิดข้อผิดพลาดในการลบวัตถุดิบ');
+      }
+    }
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
-      <Topbar
-        title="จัดการสต็อกวัตถุดิบ (Stock Management)"
-        subtitle="ควบคุมระดับสต็อก จุดสั่งซื้อซ้ำ (Reorder Point) และประวัติการเคลื่อนไหว"
-      />
+    <div className="flex-1 flex flex-col min-h-screen bg-stone-50/50">
+      <Topbar title="จัดการสต็อกวัตถุดิบ" />
 
-      <main className="p-4 sm:p-6 lg:p-8 space-y-5 max-w-[1600px] mx-auto w-full">
-        {/* Navigation Sub-tabs & Action buttons */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-1 p-1 bg-stone-100 rounded-xl border border-stone-200/80 overflow-x-auto no-scrollbar max-w-full">
+      <main className="p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-5">
+        {/* Navigation Tabs Bar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-stone-100 p-1.5 rounded-2xl border border-stone-200/80 shadow-2xs">
+          <div className="flex items-center gap-1 overflow-x-auto">
             <button
               onClick={() => setActiveTab('inventory')}
-              className={`h-9 px-3.5 rounded-lg text-xs transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+              className={`h-9 px-3.5 rounded-xl text-xs transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
                 activeTab === 'inventory'
                   ? 'bg-white text-stone-900 border border-stone-200 font-semibold shadow-2xs'
                   : 'text-stone-600 hover:text-stone-900 font-medium'
               }`}
             >
-              <Coffee className="w-3.5 h-3.5" />
-              <span>สต็อกหน้าบาร์</span>
-              <span className="px-1.5 py-0.2 rounded-full text-xs bg-stone-200 text-stone-700 font-mono tabular-nums font-medium">
+              <Boxes className="w-3.5 h-3.5 text-stone-700" />
+              <span>สต็อกวัตถุดิบทั้งหมด</span>
+              <span className="px-1.5 py-0.2 rounded-full text-xs bg-stone-200 text-stone-800 font-mono tabular-nums font-semibold">
                 {ingredients.length}
               </span>
             </button>
-            <button
-              onClick={() => setActiveTab('backstock')}
-              className={`h-9 px-3.5 rounded-lg text-xs transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
-                activeTab === 'backstock'
-                  ? 'bg-white text-stone-900 border border-stone-200 font-semibold shadow-2xs'
-                  : 'text-stone-600 hover:text-stone-900 font-medium'
-              }`}
-            >
-              <Warehouse className="w-3.5 h-3.5 text-stone-600" />
-              <span>สต็อกหลังร้าน</span>
-              <span className="px-1.5 py-0.2 rounded-full text-xs bg-amber-100 text-amber-900 font-mono tabular-nums font-semibold border border-amber-200/80">
-                {backstockCount}
-              </span>
-            </button>
+
             <button
               onClick={() => setActiveTab('movements')}
-              className={`h-9 px-3.5 rounded-lg text-xs transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+              className={`h-9 px-3.5 rounded-xl text-xs transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
                 activeTab === 'movements'
                   ? 'bg-white text-stone-900 border border-stone-200 font-semibold shadow-2xs'
                   : 'text-stone-600 hover:text-stone-900 font-medium'
               }`}
             >
-              <History className="w-3.5 h-3.5" />
+              <History className="w-3.5 h-3.5 text-stone-600" />
               <span>ประวัติการปรับสต็อก</span>
+              <span className="px-1.5 py-0.2 rounded-full text-xs bg-stone-200 text-stone-800 font-mono tabular-nums font-medium">
+                {movements.length}
+              </span>
             </button>
+
             <button
               onClick={() => setActiveTab('audit')}
-              className={`h-9 px-3.5 rounded-lg text-xs transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+              className={`h-9 px-3.5 rounded-xl text-xs transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
                 activeTab === 'audit'
                   ? 'bg-white text-stone-900 border border-stone-200 font-semibold shadow-2xs'
                   : 'text-stone-600 hover:text-stone-900 font-medium'
               }`}
             >
-              <ClipboardCheck className="w-3.5 h-3.5" />
+              <ClipboardCheck className="w-3.5 h-3.5 text-stone-600" />
               <span>รีเช็คสต๊อก</span>
             </button>
           </div>
 
-          {(activeTab === 'inventory' || activeTab === 'backstock') && (
+          {activeTab === 'inventory' && (
             <Button
               onClick={handleOpenCreate}
               icon={<Plus className="w-4 h-4" />}
@@ -682,15 +553,16 @@ export default function StockPage() {
           )}
         </div>
 
+        {/* Tab 1: Single Unified Stock Inventory */}
         {activeTab === 'inventory' && (
-          /* Inventory Table View */
           <div className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs overflow-hidden">
             {/* Filter Bar */}
             <div className="p-3.5 border-b border-stone-100 bg-white flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-              {/* Count Indicator */}
               <div className="h-10 inline-flex items-center gap-2 px-3.5 rounded-xl border border-stone-200/80 bg-stone-50/50 text-xs text-stone-600 shadow-2xs w-full sm:w-auto shrink-0">
                 <Calendar className="w-3.5 h-3.5 text-stone-400" />
-                <span className="font-medium">วัตถุดิบทั้งหมด (<span className="font-mono tabular-nums font-bold">{filteredIngredients.length}</span> รายการ)</span>
+                <span className="font-medium">
+                  วัตถุดิบทั้งหมด (<span className="font-mono tabular-nums font-bold text-stone-900">{filteredIngredients.length}</span> รายการ)
+                </span>
               </div>
 
               <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full sm:w-auto">
@@ -699,7 +571,7 @@ export default function StockPage() {
                   <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     type="text"
-                    placeholder="ค้นหาชื่อวัตถุดิบ..."
+                    placeholder="ค้นหาชื่อวัตถุดิบ, หมวดหมู่..."
                     value={search}
                     onChange={(e) => {
                       setSearch(e.target.value);
@@ -729,7 +601,7 @@ export default function StockPage() {
               </div>
             </div>
 
-            {/* Table */}
+            {/* Table - Optimized to fit desktop screens without horizontal scroll */}
             <div className="overflow-x-auto">
               <DndContext
                 sensors={sensors}
@@ -737,37 +609,33 @@ export default function StockPage() {
                 modifiers={[restrictToVerticalAxis]}
                 onDragEnd={handleDragEndIngredients}
               >
-                <Table>
+                <Table className="w-full">
                   <TableHeader>
-                    <TableRow className="hover:bg-transparent border-b border-stone-200">
-                      <TableHead className="w-10 px-2 text-center whitespace-nowrap text-stone-400 font-normal text-xs" title="ลากเพื่อสลับลำดับ">
-                        ย้าย
+                    <TableRow className="hover:bg-transparent border-b border-stone-200 bg-stone-50/70">
+                      <TableHead className="w-9 px-2 text-center text-stone-900 font-semibold text-xs">#</TableHead>
+                      <TableHead className="text-stone-900 font-semibold text-xs min-w-[170px]">ชื่อวัตถุดิบ</TableHead>
+                      <TableHead className="text-stone-900 font-semibold text-xs w-28">หมวดหมู่</TableHead>
+                      <TableHead className="text-right whitespace-nowrap text-stone-900 font-semibold text-xs w-24">ต้นทุน</TableHead>
+                      <TableHead className="text-left whitespace-nowrap text-stone-900 font-semibold text-xs w-48">
+                        สต็อกคงเหลือ
                       </TableHead>
-                      <TableHead className="whitespace-nowrap text-stone-900 font-semibold">ชื่อวัตถุดิบ</TableHead>
-                      <TableHead className="whitespace-nowrap text-stone-900 font-semibold">หมวดหมู่</TableHead>
-                      <TableHead className="text-center whitespace-nowrap text-stone-900 font-semibold">การตัดสต็อก</TableHead>
-                      <TableHead className="text-right whitespace-nowrap text-stone-900 font-semibold">ต้นทุน/หน่วย</TableHead>
-                      <TableHead className="text-left whitespace-nowrap text-stone-900 font-semibold min-w-[180px]">
-                        ระดับหน้าบาร์
-                      </TableHead>
-                      <TableHead className="text-right whitespace-nowrap text-stone-900 font-semibold">รวมทั้งร้าน</TableHead>
-                      <TableHead className="text-right whitespace-nowrap text-stone-900 font-semibold">จุดสั่งซื้อ</TableHead>
-                      <TableHead className="text-center whitespace-nowrap text-stone-900 font-semibold">สถานะ</TableHead>
-                      <TableHead className="text-center whitespace-nowrap w-28 text-stone-900 font-semibold">จัดการ</TableHead>
+                      <TableHead className="text-right whitespace-nowrap text-stone-900 font-semibold text-xs w-28">จุดสั่งซื้อ</TableHead>
+                      <TableHead className="text-center whitespace-nowrap text-stone-900 font-semibold text-xs w-20">สถานะ</TableHead>
+                      <TableHead className="text-center whitespace-nowrap w-28 text-stone-900 font-semibold text-xs">จัดการ</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {isLoading ? (
                       <tr>
-                        <td colSpan={10} className="p-0">
-                          <TableSkeleton rows={6} cols={10} />
+                        <td colSpan={8} className="p-0">
+                          <TableSkeleton rows={6} cols={8} />
                         </td>
                       </tr>
                     ) : (
                       <SortableContext items={paginatedIngredientIds} strategy={verticalListSortingStrategy}>
                         {paginatedIngredients.map((item) => {
-                          const maxStock = item.max_stock && item.max_stock > 0 
-                            ? Math.max(item.max_stock, item.quantity) 
+                          const maxStock = item.max_stock && item.max_stock > 0
+                            ? Math.max(item.max_stock, item.quantity)
                             : Math.max(item.quantity, item.reorder_point * 2 || 1);
                           const ratio = Math.min(100, Math.round((item.quantity / (maxStock || 1)) * 100));
 
@@ -781,14 +649,9 @@ export default function StockPage() {
                               onAdjust={(target) => {
                                 setAdjustTarget(target);
                                 setAdjustType('in');
-                                setAdjustAmount(1);
+                                setAdjustAmount(target.package_size || 1);
                               }}
                               onDelete={handleDelete}
-                              onOpenPackage={handleOpenPackage}
-                              onWaste={(target) => {
-                                setWasteModalItem(target);
-                                setWasteDefaultTier('bar');
-                              }}
                             />
                           );
                         })}
@@ -799,7 +662,7 @@ export default function StockPage() {
               </DndContext>
             </div>
 
-            {/* Pagination: only displays if items > 8 */}
+            {/* Pagination */}
             <div className="p-3 border-t border-stone-100">
               <Pagination
                 currentPage={currentPage}
@@ -811,21 +674,7 @@ export default function StockPage() {
           </div>
         )}
 
-        {/* Backstock Tab View */}
-        {activeTab === 'backstock' && (
-          <BackstockTab
-            ingredients={ingredients}
-            onOpenEdit={handleOpenEdit}
-            onOpenCreate={handleOpenCreate}
-            onToast={showToast}
-            onWaste={(target, tier) => {
-              setWasteModalItem(target);
-              setWasteDefaultTier(tier);
-            }}
-          />
-        )}
-
-        {/* Movement History Log View */}
+        {/* Tab 2: Movement History Log View */}
         {activeTab === 'movements' && (
           <div className="bg-white rounded-2xl border border-stone-200 shadow-2xs p-5 space-y-3">
             <h3 className="font-semibold text-stone-900 text-sm flex items-center gap-2">
@@ -838,37 +687,36 @@ export default function StockPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent border-b border-stone-200">
-                    <TableHead className="text-stone-900 font-semibold">วัน-เวลา</TableHead>
-                    <TableHead className="text-stone-900 font-semibold">วัตถุดิบ</TableHead>
-                    <TableHead className="text-stone-900 font-semibold">ประเภท</TableHead>
-                    <TableHead className="text-right text-stone-900 font-semibold">จำนวนที่ปรับ</TableHead>
-                    <TableHead className="text-right text-stone-900 font-semibold">คงเหลือสุทธิ</TableHead>
-                    <TableHead className="text-stone-900 font-semibold">หมายเหตุ / เหตุผล</TableHead>
-                    <TableHead className="text-stone-900 font-semibold">ผู้บันทึก</TableHead>
+                    <TableHead className="text-stone-900 font-semibold text-xs">วัน-เวลา</TableHead>
+                    <TableHead className="text-stone-900 font-semibold text-xs">วัตถุดิบ</TableHead>
+                    <TableHead className="text-stone-900 font-semibold text-xs">ประเภท</TableHead>
+                    <TableHead className="text-right text-stone-900 font-semibold text-xs">จำนวนที่ปรับ</TableHead>
+                    <TableHead className="text-right text-stone-900 font-semibold text-xs">คงเหลือสุทธิ</TableHead>
+                    <TableHead className="text-stone-900 font-semibold text-xs">หมายเหตุ / เหตุผล</TableHead>
+                    <TableHead className="text-stone-900 font-semibold text-xs">ผู้บันทึก</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {movements.map((mov) => (
                     <TableRow key={mov.id} className="hover:bg-stone-50/80 transition-colors">
                       <TableCell className="text-stone-500 font-mono tabular-nums text-xs">{mov.created_at}</TableCell>
-                      <TableCell className="font-medium text-stone-900">{mov.ingredient_name}</TableCell>
+                      <TableCell className="font-medium text-stone-900 text-xs">{mov.ingredient_name}</TableCell>
                       <TableCell>
                         {mov.type === 'in' && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-700 border border-stone-200">
-                            <TrendingUp className="w-3 h-3 text-stone-600" />
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
+                            <TrendingUp className="w-3 h-3 text-emerald-600" />
                             รับเข้า
                           </span>
                         )}
                         {mov.type === 'open' && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-900 border border-amber-200">
-                            <Package className="w-3 h-3 text-amber-800" />
-                            เปิดเข้าบาร์
+                            เปิดใช้งาน
                           </span>
                         )}
                         {mov.type === 'consume' && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-stone-50 text-stone-600 border border-stone-200">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-700 border border-stone-200">
                             <Coffee className="w-3 h-3 text-stone-500" />
-                            ตัดชง (POS)
+                            ตัดขาย (POS)
                           </span>
                         )}
                         {mov.type === 'out' && (
@@ -884,7 +732,7 @@ export default function StockPage() {
                           </span>
                         )}
                         {mov.type === 'adjust' && (
-                          <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-[#f5efe6] text-[#78350f] border border-[#e8ded0]">
+                          <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200">
                             ปรับยอดนับสต็อก
                           </span>
                         )}
@@ -900,10 +748,10 @@ export default function StockPage() {
                           mov.quantity > 0 ? 'text-stone-800' : 'text-stone-500'
                         }`}
                       >
-                        {mov.quantity > 0 ? `+${mov.quantity}` : mov.quantity} {mov.unit}
+                        {mov.quantity > 0 ? `+${formatInteger(mov.quantity)}` : formatInteger(mov.quantity)} {mov.unit}
                       </TableCell>
-                      <TableCell className="text-right font-mono tabular-nums text-xs text-stone-600 font-medium">
-                        {mov.remaining_quantity} {mov.unit}
+                      <TableCell className="text-right font-mono tabular-nums text-xs text-stone-900 font-semibold">
+                        {formatInteger(mov.remaining_quantity)} {mov.unit}
                       </TableCell>
                       <TableCell className="text-stone-600 font-normal text-xs">{mov.note || '-'}</TableCell>
                       <TableCell className="text-stone-500 font-normal text-xs">{mov.staff_name || '-'}</TableCell>
@@ -915,12 +763,11 @@ export default function StockPage() {
           </div>
         )}
 
-        {/* Stock Audit Tab */}
+        {/* Tab 3: Stock Audit Tab */}
         {activeTab === 'audit' && (
           <StockAuditTab
             ingredients={ingredients}
             onReconcileComplete={() => {
-              // Reload stock data after reconcile
               window.location.reload();
             }}
           />
@@ -935,14 +782,6 @@ export default function StockPage() {
         formData={formData}
         setFormData={setFormData}
         editingTarget={editingTarget}
-      />
-
-      {/* Quick Waste Modal */}
-      <QuickWasteModal
-        ingredient={wasteModalItem}
-        isOpen={Boolean(wasteModalItem)}
-        onClose={() => setWasteModalItem(null)}
-        defaultTier={wasteDefaultTier}
       />
 
       {/* Modular Adjust Stock Modal */}
@@ -976,3 +815,4 @@ export default function StockPage() {
     </div>
   );
 }
+ 

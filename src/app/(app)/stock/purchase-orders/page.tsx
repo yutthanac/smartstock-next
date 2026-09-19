@@ -34,7 +34,7 @@ import {
 } from '@/components/Table';
 
 // Sample realistic SVG receipt for instant demo
-const SAMPLE_RECEIPT_IMAGE =
+export const SAMPLE_RECEIPT_IMAGE =
   'data:image/svg+xml;charset=utf-8,' +
   encodeURIComponent(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 660" width="420" height="660" style="background:#ffffff;font-family:monospace;">
@@ -77,6 +77,24 @@ const SAMPLE_RECEIPT_IMAGE =
 
 const INITIAL_MOCK_SHOPPING_LISTS: PurchaseOrder[] = [
   {
+    id: 'PO-20260906-01',
+    store_name: 'โรงคั่วกาแฟ Aroma Specialty',
+    buyer_name: 'พนักงานจัดซื้อ',
+    date: '2026-09-06',
+    status: 'pending',
+    items: [
+      {
+        name: 'เมล็ดกาแฟ Single Origin Ethiopia (คั่วอ่อน)',
+        quantity: 6,
+        unit: 'ชิ้น',
+        current_stock: 3,
+        reorder_point: 2,
+        checked: false,
+      },
+    ],
+    note: 'สั่งซื้อเมล็ดกาแฟ Ethiopia เพิ่ม 6 ชิ้น (฿3,900)',
+  },
+  {
     id: 'PO-20260905-01',
     store_name: 'โรงคั่วกาแฟ Aroma Specialty',
     buyer_name: 'บาริสต้าตั้ม',
@@ -88,7 +106,7 @@ const INITIAL_MOCK_SHOPPING_LISTS: PurchaseOrder[] = [
       {
         name: 'เมล็ดกาแฟ House Blend คั่วกลาง',
         quantity: 10,
-        unit: 'กก.',
+        unit: 'ชิ้น',
         cost_per_unit: 380,
         total_price: 3800,
         current_stock: 2.5,
@@ -98,7 +116,7 @@ const INITIAL_MOCK_SHOPPING_LISTS: PurchaseOrder[] = [
       {
         name: 'เมล็ดกาแฟ Single Origin Ethiopia',
         quantity: 3,
-        unit: 'กก.',
+        unit: 'ชิ้น',
         cost_per_unit: 650,
         total_price: 1950,
         current_stock: 0.8,
@@ -178,7 +196,16 @@ export default function PurchaseOrdersPage() {
     try {
       const saved = localStorage.getItem('smartstock_shopping_orders');
       if (saved) {
-        setPoList(JSON.parse(saved));
+        const parsed: PurchaseOrder[] = JSON.parse(saved);
+        // Ensure the test demo order is available
+        const hasTestPO = parsed.some((p) => p.id === 'PO-20260906-01');
+        if (!hasTestPO) {
+          const merged = [INITIAL_MOCK_SHOPPING_LISTS[0], ...parsed];
+          setPoList(merged);
+          localStorage.setItem('smartstock_shopping_orders', JSON.stringify(merged));
+        } else {
+          setPoList(parsed);
+        }
       } else {
         setPoList(INITIAL_MOCK_SHOPPING_LISTS);
         localStorage.setItem('smartstock_shopping_orders', JSON.stringify(INITIAL_MOCK_SHOPPING_LISTS));
@@ -205,15 +232,53 @@ export default function PurchaseOrdersPage() {
 
   // Handle open create modal from low-stock recommendation
   const handleCreateFromLowStock = () => {
-    const recommended: PurchaseOrderItem[] = lowStock.map((ing) => ({
-      ingredient_id: ing.id,
-      name: ing.name,
-      quantity: Math.max(1, (ing.max_stock || ing.reorder_point * 3) - ing.quantity),
-      unit: ing.unit,
-      current_stock: ing.quantity,
-      reorder_point: ing.reorder_point,
-      checked: false,
-    }));
+    const isContinuousUnit = (u?: string) => {
+      if (!u) return false;
+      const clean = u.trim().toLowerCase();
+      return [
+        'กรัม',
+        'g',
+        'gram',
+        'grams',
+        'มล.',
+        'ml',
+        'cc',
+        'ซีซี',
+        'มิลลิลิตร',
+        'กก.',
+        'kg',
+        'กิโล',
+        'กิโลกรัม',
+        'ลิตร',
+        'l',
+      ].includes(clean);
+    };
+
+    const recommended: PurchaseOrderItem[] = lowStock.map((ing) => {
+      const isRaw = isContinuousUnit(ing.unit);
+      const packSize = Number(ing.package_size || 0);
+      const targetDiff = Math.max(1, (ing.max_stock || ing.reorder_point * 3) - ing.quantity);
+
+      let quantity = targetDiff;
+      let unit = ing.unit;
+
+      if (isRaw) {
+        unit = 'ชิ้น';
+        if (packSize > 1) {
+          quantity = Math.max(1, Math.ceil(targetDiff / packSize));
+        }
+      }
+
+      return {
+        ingredient_id: ing.id,
+        name: ing.name,
+        quantity,
+        unit,
+        current_stock: ing.quantity,
+        reorder_point: ing.reorder_point,
+        checked: false,
+      };
+    });
 
     setPrefillItems(recommended);
     setPrefillStore(lowStock[0]?.supplier || 'แม็คโคร / ตลาดสด');
@@ -387,74 +452,44 @@ export default function PurchaseOrdersPage() {
 
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
-      <Topbar
-        title="รายการไปซื้อของ & สแกนใบเสร็จ"
-        subtitle="จดลิสต์รายการไปจ่ายตลาด พนักงานอัปโหลดรูปบิล/ใบเสร็จ AI ตรวจสอบและรับเข้าสต็อกจริง"
-      />
+      <Topbar title="รายการซื้อของ & ใบเสร็จ" />
 
       <main className="p-4 sm:p-6 md:p-8 space-y-5 max-w-7xl mx-auto w-full">
         {/* PO Spending Summary KPI Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs p-4 flex flex-col justify-between">
-            <span className="text-xs text-stone-500 font-normal">ยอดจัดซื้อรับเข้าแล้ว</span>
+            <span className="text-xs text-stone-500 font-medium">ยอดจัดซื้อสำเร็จ</span>
             <div className="mt-2 text-xl font-bold font-mono tabular-nums text-stone-900">
               ฿{totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
-            <span className="text-[11px] text-stone-400 mt-1">{completedCount} ใบสั่งซื้อสำเร็จ</span>
+            <span className="text-[11px] text-stone-400 mt-1 font-mono tabular-nums">{completedCount} รายการ</span>
           </div>
           <div className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs p-4 flex flex-col justify-between">
-            <span className="text-xs text-stone-500 font-normal">รอนำไปซื้อ</span>
+            <span className="text-xs text-stone-500 font-medium">รอซื้อ</span>
             <div className="mt-2 text-xl font-bold font-mono tabular-nums text-stone-700">
               {pendingCount}
             </div>
-            <span className="text-[11px] text-stone-400 mt-1">รายการเช็คลิสต์เปิดอยู่</span>
+            <span className="text-[11px] text-stone-400 mt-1 font-mono tabular-nums">{pendingCount} รายการ</span>
           </div>
           <div className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs p-4 flex flex-col justify-between">
-            <span className="text-xs text-stone-500 font-normal">มีใบเสร็จรอตรวจ</span>
+            <span className="text-xs text-stone-500 font-medium">รอตรวจบิล</span>
             <div className="mt-2 text-xl font-bold font-mono tabular-nums text-amber-700">
               {uploadedCount}
             </div>
-            <span className="text-[11px] text-amber-600 mt-1">รอ AI / ผู้จัดการตรวจ</span>
+            <span className="text-[11px] text-amber-600 mt-1 font-mono tabular-nums">{uploadedCount} รายการ</span>
           </div>
           <div className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs p-4 flex flex-col justify-between">
-            <span className="text-xs text-stone-500 font-normal">ของใกล้หมด</span>
+            <span className="text-xs text-stone-500 font-medium">ของใกล้หมด</span>
             <div className="mt-2 text-xl font-bold font-mono tabular-nums text-rose-600">
               {lowStock.length}
             </div>
-            <span className="text-[11px] text-rose-500 mt-1">รายการสต็อกต่ำกว่าเกณฑ์</span>
+            <span className="text-[11px] text-rose-500 mt-1 font-mono tabular-nums">{lowStock.length} รายการ</span>
           </div>
         </div>
 
-        {/* Recommended Low-Stock Alert Card */}
-        {lowStock.length > 0 && (
-          <div className="p-4 rounded-2xl bg-white border border-stone-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200/80 flex items-center justify-center text-[#92400e] shrink-0">
-                  <Package className="w-4 h-4" />
-                </div>
-                <h3 className="font-semibold text-sm text-stone-900">
-                  มีวัตถุดิบใกล้หมด <span className="font-mono tabular-nums font-bold">{lowStock.length}</span> รายการที่ต้องไปซื้อเพิ่ม
-                </h3>
-              </div>
-              <p className="text-xs text-stone-500 mt-1 font-normal">
-                สร้างลิสต์รายการไปจ่ายตลาดจากของใกล้หมดได้ทันที ไม่ต้องกรอกราคาล่วงหน้า
-              </p>
-            </div>
-            <Button
-              onClick={handleCreateFromLowStock}
-              icon={<Plus className="w-4 h-4" />}
-              size="md"
-              className="shrink-0 whitespace-nowrap shadow-xs w-full sm:w-auto cursor-pointer rounded-xl bg-stone-900 text-white hover:bg-stone-800"
-            >
-              ดึงของใกล้หมดทำลิสต์ไปซื้อ
-            </Button>
-          </div>
-        )}
-
         {/* Shopping Lists Table */}
-        <div className="bg-white rounded-2xl border border-stone-200 shadow-2xs p-5 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs overflow-hidden">
+          <div className="p-4 sm:p-5 border-b border-stone-100 bg-white flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
             <div>
               <h3 className="font-semibold text-stone-900 text-sm flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-stone-100 border border-stone-200/80 flex items-center justify-center text-stone-700 shrink-0">
@@ -462,18 +497,15 @@ export default function PurchaseOrdersPage() {
                 </div>
                 <span>ประวัติรายการไปซื้อของ (<span className="font-mono tabular-nums font-bold">{filteredPOs.length}</span>)</span>
               </h3>
-              <p className="text-xs text-stone-400 font-normal mt-0.5">
-                คลิกรายการเพื่อดูเช็คลิสต์ ส่งรูปใบเสร็จ หรือตรวจบิลรับเข้าสต็อก
-              </p>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex flex-wrap items-center gap-2.5">
               {/* Filter Tabs */}
               <div className="inline-flex p-1 bg-stone-100 rounded-xl text-xs font-medium">
                 <button
                   type="button"
                   onClick={() => setStatusFilter('all')}
-                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                  className={`px-3 py-1.5 rounded-lg transition-all whitespace-nowrap ${
                     statusFilter === 'all'
                       ? 'bg-white text-stone-900 shadow-2xs font-semibold'
                       : 'text-stone-500 hover:text-stone-900'
@@ -484,7 +516,7 @@ export default function PurchaseOrdersPage() {
                 <button
                   type="button"
                   onClick={() => setStatusFilter('pending')}
-                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                  className={`px-3 py-1.5 rounded-lg transition-all whitespace-nowrap ${
                     statusFilter === 'pending'
                       ? 'bg-white text-stone-900 shadow-2xs font-semibold'
                       : 'text-stone-500 hover:text-stone-900'
@@ -495,7 +527,7 @@ export default function PurchaseOrdersPage() {
                 <button
                   type="button"
                   onClick={() => setStatusFilter('receipt_uploaded')}
-                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                  className={`px-3 py-1.5 rounded-lg transition-all whitespace-nowrap ${
                     statusFilter === 'receipt_uploaded'
                       ? 'bg-white text-stone-900 shadow-2xs font-semibold'
                       : 'text-stone-500 hover:text-stone-900'
@@ -506,7 +538,7 @@ export default function PurchaseOrdersPage() {
                 <button
                   type="button"
                   onClick={() => setStatusFilter('completed')}
-                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                  className={`px-3 py-1.5 rounded-lg transition-all whitespace-nowrap ${
                     statusFilter === 'completed'
                       ? 'bg-white text-stone-900 shadow-2xs font-semibold'
                       : 'text-stone-500 hover:text-stone-900'
@@ -520,7 +552,7 @@ export default function PurchaseOrdersPage() {
                 onClick={handleOpenBlankCreate}
                 icon={<Plus className="w-4 h-4" />}
                 size="md"
-                className="shrink-0 whitespace-nowrap shadow-xs w-full sm:w-auto cursor-pointer rounded-xl bg-stone-900 text-white hover:bg-stone-800"
+                className="shrink-0 whitespace-nowrap shadow-xs cursor-pointer rounded-xl bg-stone-900 text-white hover:bg-stone-800"
               >
                 สร้างลิสต์ไปซื้อของใหม่
               </Button>
@@ -528,17 +560,17 @@ export default function PurchaseOrdersPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <Table>
+            <Table className="w-full">
               <TableHeader>
-                <TableRow className="hover:bg-transparent border-b border-stone-200">
-                  <TableHead className="text-stone-900 font-semibold">เลขที่</TableHead>
-                  <TableHead className="min-w-40 text-stone-900 font-semibold">ร้าน / ตลาดเป้าหมาย</TableHead>
-                  <TableHead className="min-w-28 text-stone-900 font-semibold">ผู้ไปซื้อ</TableHead>
-                  <TableHead className="min-w-24 text-stone-900 font-semibold">วันที่</TableHead>
-                  <TableHead className="text-center min-w-20 text-stone-900 font-semibold">จำนวน</TableHead>
-                  <TableHead className="text-right min-w-28 text-stone-900 font-semibold">ยอดเงิน</TableHead>
-                  <TableHead className="text-center min-w-36 text-stone-900 font-semibold">สถานะ</TableHead>
-                  <TableHead className="text-center min-w-36 text-stone-900 font-semibold">การดำเนินการ</TableHead>
+                <TableRow className="hover:bg-transparent border-b border-stone-200 bg-stone-50/70">
+                  <TableHead className="text-stone-900 font-semibold text-xs whitespace-nowrap py-3.5 px-4 w-36">เลขที่</TableHead>
+                  <TableHead className="text-stone-900 font-semibold text-xs whitespace-nowrap py-3.5 px-4 min-w-[200px]">ร้าน / ตลาดเป้าหมาย</TableHead>
+                  <TableHead className="text-stone-900 font-semibold text-xs whitespace-nowrap py-3.5 px-4 w-36">ผู้ไปซื้อ</TableHead>
+                  <TableHead className="text-stone-900 font-semibold text-xs whitespace-nowrap py-3.5 px-4 w-28">วันที่</TableHead>
+                  <TableHead className="text-center text-stone-900 font-semibold text-xs whitespace-nowrap py-3.5 px-4 w-24">จำนวน</TableHead>
+                  <TableHead className="text-right text-stone-900 font-semibold text-xs whitespace-nowrap py-3.5 px-4 w-32">ยอดเงิน</TableHead>
+                  <TableHead className="text-center text-stone-900 font-semibold text-xs whitespace-nowrap py-3.5 px-4 w-36">สถานะ</TableHead>
+                  <TableHead className="text-center text-stone-900 font-semibold text-xs whitespace-nowrap py-3.5 px-4 min-w-[240px]">การดำเนินการ</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -567,51 +599,57 @@ export default function PurchaseOrdersPage() {
                           }
                         }}
                         className={`cursor-pointer transition-colors ${
-                          isReceiptUploaded ? 'bg-[#faf6f0]/60 hover:bg-[#f5efe6]/70' : 'hover:bg-stone-50/80'
+                          isReceiptUploaded ? 'bg-amber-50/30 hover:bg-amber-50/50' : 'hover:bg-stone-50/80'
                         }`}
                       >
-                        <TableCell className="font-mono tabular-nums font-semibold text-stone-900">
+                        <TableCell className="font-mono tabular-nums font-semibold text-stone-900 text-xs whitespace-nowrap py-3.5 px-4">
                           {po.id}
                         </TableCell>
-                        <TableCell className="text-stone-800 font-medium">
+                        <TableCell className="text-stone-800 font-medium text-xs whitespace-nowrap py-3.5 px-4">
                           <div className="flex items-center gap-1.5">
                             <Store className="w-3.5 h-3.5 text-stone-400 shrink-0" />
                             <span>{po.store_name}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-stone-600 font-normal">{po.buyer_name || '-'}</TableCell>
-                        <TableCell className="text-stone-500 font-mono tabular-nums text-xs font-normal">{po.date}</TableCell>
-                        <TableCell className="text-center text-stone-700 font-normal">
-                          <span className="font-mono tabular-nums">{po.items?.length || 0}</span> รายการ
+                        <TableCell className="text-stone-600 font-normal text-xs whitespace-nowrap py-3.5 px-4">
+                          {po.buyer_name || '-'}
                         </TableCell>
-                        <TableCell className="text-right font-mono tabular-nums font-semibold text-stone-900">
-                          {(po.totalAmount ?? 0) > 0
-                            ? `฿${(po.totalAmount ?? 0).toLocaleString(undefined, {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}`
-                            : <span className="text-stone-400 text-xs font-normal">รอราคาจากบิล</span>}
+                        <TableCell className="text-stone-500 font-mono tabular-nums text-xs font-normal whitespace-nowrap py-3.5 px-4">
+                          {po.date}
                         </TableCell>
-                        <TableCell className="text-center">
+                        <TableCell className="text-center text-stone-700 font-normal text-xs whitespace-nowrap py-3.5 px-4">
+                          <span className="font-mono tabular-nums font-semibold">{po.items?.length || 0}</span> รายการ
+                        </TableCell>
+                        <TableCell className="text-right font-mono tabular-nums font-semibold text-stone-900 text-xs whitespace-nowrap py-3.5 px-4">
+                          {(po.totalAmount ?? 0) > 0 ? (
+                            `฿${(po.totalAmount ?? 0).toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}`
+                          ) : (
+                            <span className="text-stone-400 text-xs font-normal">รอราคาจากบิล</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center whitespace-nowrap py-3.5 px-4">
                           {isCompleted && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                              <CheckCircle2 className="w-3 h-3 text-emerald-600" /> รับเข้าสต็อกแล้ว
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 whitespace-nowrap">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" /> รับเข้าสต็อกแล้ว
                             </span>
                           )}
                           {isReceiptUploaded && (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#f5efe6] text-[#78350f] border border-[#e8ded0]">
-                              <Sparkles className="w-3 h-3 text-[#78350f]" /> มีใบเสร็จ - รอตรวจ
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-200 whitespace-nowrap">
+                              รอตรวจสอบ
                             </span>
                           )}
                           {isPending && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-stone-100 text-stone-700 border border-stone-200">
-                              <Clock className="w-3 h-3 text-stone-500" /> รอนำไปซื้อ
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-stone-100 text-stone-700 border border-stone-200 whitespace-nowrap">
+                              <Clock className="w-3 h-3 text-stone-500 shrink-0" /> รอนำไปซื้อ
                             </span>
                           )}
                         </TableCell>
-                        <TableCell className="text-center whitespace-nowrap">
+                        <TableCell className="text-center whitespace-nowrap py-3.5 px-4">
                           <div
-                            className="inline-flex items-center gap-1.5 shrink-0"
+                            className="inline-flex items-center justify-center gap-1.5 shrink-0"
                             onClick={(e) => e.stopPropagation()}
                           >
                             {/* Staff: Upload receipt */}
@@ -619,7 +657,7 @@ export default function PurchaseOrdersPage() {
                               <button
                                 type="button"
                                 onClick={() => setUploadingReceiptPO(po)}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg bg-[#78350f] hover:bg-[#92400e] text-white shadow-2xs transition-all cursor-pointer active:scale-95"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg bg-stone-900 hover:bg-stone-800 text-white shadow-2xs transition-all cursor-pointer active:scale-95 whitespace-nowrap"
                                 title="พนักงานถ่ายรูปบิล/ใบเสร็จส่งเข้าระบบ"
                               >
                                 <Camera className="w-3.5 h-3.5" />
@@ -632,11 +670,10 @@ export default function PurchaseOrdersPage() {
                               <button
                                 type="button"
                                 onClick={() => setVerifyingReceiptPO(po)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg bg-stone-900 hover:bg-stone-800 text-white shadow-xs transition-all cursor-pointer active:scale-95"
+                                className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg bg-stone-900 hover:bg-stone-800 text-white shadow-xs transition-all cursor-pointer active:scale-95 whitespace-nowrap"
                                 title="ตรวจใบเสร็จด้วย AI และกดยืนยันรับเข้าสต็อกจริง"
                               >
-                                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                                <span>ตรวจบิล &amp; นำเข้าสต็อก</span>
+                                <span>ตรวจบิล</span>
                               </button>
                             )}
 
@@ -655,7 +692,7 @@ export default function PurchaseOrdersPage() {
                             <button
                               type="button"
                               onClick={(e) => handleDeletePO(po.id, e)}
-                              className="p-1.5 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-stone-100 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-stone-100 transition-colors cursor-pointer shrink-0"
                               title="ลบรายการ"
                             >
                               <Trash2 className="w-3.5 h-3.5" />

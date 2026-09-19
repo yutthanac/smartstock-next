@@ -176,12 +176,9 @@ export default function RecipeMenuPage() {
 
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
-      <Topbar
-        title="เมนู & สูตรชง (Recipe BOM)"
-        subtitle="ผูกเมนูกับวัตถุดิบและสูตรชง/เสิร์ฟ พร้อมคำนวณต้นทุนและกำไรต่อแก้วอัตโนมัติ"
-      />
+      <Topbar title="จัดการเมนู & สูตร" />
 
-      <main className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
+      <main className="p-4 sm:p-6 lg:p-8 space-y-5 max-w-7xl mx-auto w-full">
         {/* Toolbar: Search, Category Filter, Card/List Switcher & Create button */}
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200/90 shadow-2xs">
           {/* Left Controls: Search & Category Filter */}
@@ -191,7 +188,7 @@ export default function RecipeMenuPage() {
               <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
-                placeholder="ค้นหาชื่อเมนู หรือรายละเอียด..."
+                placeholder="ค้นหาชื่อเมนู..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-10 w-full pl-9 pr-4 text-xs sm:text-sm rounded-xl bg-white border border-stone-200/90 text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-stone-400 transition-colors font-normal shadow-2xs"
@@ -226,7 +223,7 @@ export default function RecipeMenuPage() {
                     ? 'bg-stone-900 text-white shadow-2xs font-semibold'
                     : 'text-stone-500 hover:text-stone-900'
                 }`}
-                title="มุมมองการ์ด (Card View)"
+                title="มุมมองการ์ด"
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">การ์ด</span>
@@ -240,7 +237,7 @@ export default function RecipeMenuPage() {
                     ? 'bg-stone-900 text-white shadow-2xs font-semibold'
                     : 'text-stone-500 hover:text-stone-900'
                 }`}
-                title="มุมมองรายการ (List View)"
+                title="มุมมองรายการ"
               >
                 <ListIcon className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">รายการ</span>

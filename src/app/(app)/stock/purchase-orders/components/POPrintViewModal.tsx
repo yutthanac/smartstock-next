@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { PurchaseOrder } from '../types';
 import { Button } from '@/components/Button';
+import { useStock } from '@/lib/StockContext';
 
 interface POPrintViewModalProps {
   po: PurchaseOrder | null;
@@ -22,7 +23,66 @@ export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
   onClose,
   onMarkCompleted,
 }) => {
+  const { ingredients } = useStock();
+
   if (!po) return null;
+
+  const isContinuousUnit = (unitStr?: string) => {
+    if (!unitStr) return false;
+    const clean = unitStr.trim().toLowerCase();
+    return [
+      'กรัม',
+      'g',
+      'gram',
+      'grams',
+      'มล.',
+      'ml',
+      'cc',
+      'ซีซี',
+      'มิลลิลิตร',
+      'กก.',
+      'kg',
+      'กิโล',
+      'กิโลกรัม',
+      'ลิตร',
+      'l',
+      'liter',
+    ].includes(clean);
+  };
+
+  const getDisplayItem = (item: (typeof po.items)[number]) => {
+    const ing = ingredients.find(
+      (i) =>
+        (item.ingredient_id && i.id === item.ingredient_id) ||
+        i.name.trim().toLowerCase() === item.name.trim().toLowerCase()
+    );
+
+    const isRaw = isContinuousUnit(item.unit) || (ing && isContinuousUnit(ing.unit));
+    const packSize = Number(ing?.package_size || 0);
+
+    let displayUnit = item.unit;
+    let displayQty = item.quantity;
+    let packageInfo = '';
+
+    if (isRaw) {
+      // Per user request: change unit to 'ชิ้น'
+      displayUnit = 'ชิ้น';
+      if (packSize > 1 && item.quantity >= packSize) {
+        displayQty = Math.ceil(item.quantity / packSize);
+        packageInfo = `(1 ชิ้น = ${packSize.toLocaleString()} ${item.unit || ing?.unit || 'กรัม'})`;
+      } else if (packSize > 1) {
+        packageInfo = `(1 ชิ้น = ${packSize.toLocaleString()} ${item.unit || ing?.unit || 'กรัม'})`;
+      }
+    }
+
+    return {
+      ...item,
+      displayQty,
+      displayUnit,
+      packageInfo,
+      stockUnit: ing?.unit || item.unit,
+    };
+  };
 
   const handlePrint = () => {
     window.print();
@@ -31,15 +91,18 @@ export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
   const handleExportCSV = () => {
     const headers = ['ลำดับ', 'สถานะซื้อ', 'รายการวัตถุดิบ/สินค้า', 'จำนวนที่ต้องซื้อ', 'หน่วย', 'ราคาประมาณ/หน่วย (บาท)', 'ยอดเงินรวม (บาท)'];
     
-    const rows = po.items.map((item, idx) => [
-      idx + 1,
-      item.checked ? '"ซื้อแล้ว"' : '"ยังไม่ซื้อ"',
-      `"${(item.name || '').replace(/"/g, '""')}"`,
-      item.quantity,
-      `"${item.unit}"`,
-      item.cost_per_unit != null ? item.cost_per_unit.toFixed(2) : '-',
-      item.total_price != null ? item.total_price.toFixed(2) : '-',
-    ]);
+    const rows = po.items.map((rawItem, idx) => {
+      const item = getDisplayItem(rawItem);
+      return [
+        idx + 1,
+        rawItem.checked ? '"ซื้อแล้ว"' : '"ยังไม่ซื้อ"',
+        `"${(rawItem.name || '').replace(/"/g, '""')}"`,
+        item.displayQty,
+        `"${item.displayUnit}"`,
+        rawItem.cost_per_unit != null ? rawItem.cost_per_unit.toFixed(2) : '-',
+        rawItem.total_price != null ? rawItem.total_price.toFixed(2) : '-',
+      ];
+    });
 
     const summaryRows = [
       [],
@@ -202,41 +265,49 @@ export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-200">
-                {po.items.map((item, index) => (
-                  <tr key={index} className="hover:bg-stone-50 print:hover:bg-transparent">
-                    {/* Printable Checkbox */}
-                    <td className="py-2 px-3 text-center">
-                      <div className="w-5 h-5 mx-auto border-2 border-stone-400 rounded flex items-center justify-center print:border-black">
-                        {item.checked && <span className="font-bold text-sm">✓</span>}
-                      </div>
-                    </td>
-                    <td className="py-2 px-3 text-center text-stone-400 font-medium font-mono tabular-nums">{index + 1}</td>
-                    <td className="py-2 px-4">
-                      <span className="font-semibold text-stone-900">{item.name}</span>
-                      {item.current_stock !== undefined && (
-                        <span className="text-xs text-stone-500 ml-2 print:hidden font-mono tabular-nums">
-                          (คงเหลือที่ร้าน: {item.current_stock} {item.unit})
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-2 px-3 text-center font-bold text-stone-900 font-mono tabular-nums">
-                      {item.quantity}
-                    </td>
-                    <td className="py-2 px-3 text-center text-stone-700">
-                      {item.unit}
-                    </td>
-                    <td className="py-2 px-3 text-right text-stone-600 font-mono tabular-nums">
-                      {item.cost_per_unit != null && item.cost_per_unit > 0
-                        ? `฿${item.cost_per_unit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                        : '-'}
-                    </td>
-                    <td className="py-2 px-4 text-right font-bold text-stone-900 font-mono tabular-nums">
-                      {item.total_price != null && item.total_price > 0
-                        ? `฿${item.total_price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                        : '-'}
-                    </td>
-                  </tr>
-                ))}
+                {po.items.map((rawItem, index) => {
+                  const item = getDisplayItem(rawItem);
+                  return (
+                    <tr key={index} className="hover:bg-stone-50 print:hover:bg-transparent">
+                      {/* Printable Checkbox */}
+                      <td className="py-2 px-3 text-center">
+                        <div className="w-5 h-5 mx-auto border-2 border-stone-400 rounded flex items-center justify-center print:border-black">
+                          {rawItem.checked && <span className="font-bold text-sm">✓</span>}
+                        </div>
+                      </td>
+                      <td className="py-2 px-3 text-center text-stone-400 font-medium font-mono tabular-nums">{index + 1}</td>
+                      <td className="py-2 px-4">
+                        <span className="font-semibold text-stone-900">{rawItem.name}</span>
+                        {item.packageInfo && (
+                          <span className="text-xs text-stone-500 ml-2 font-mono tabular-nums print:text-stone-600">
+                            {item.packageInfo}
+                          </span>
+                        )}
+                        {rawItem.current_stock !== undefined && (
+                          <span className="text-xs text-stone-400 ml-2 print:hidden font-mono tabular-nums">
+                            (คงเหลือที่ร้าน: {rawItem.current_stock} {item.stockUnit})
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 text-center font-bold text-stone-900 font-mono tabular-nums whitespace-nowrap">
+                        {item.displayQty}
+                      </td>
+                      <td className="py-2.5 px-3 text-center text-stone-700 font-medium whitespace-nowrap">
+                        {item.displayUnit}
+                      </td>
+                      <td className="py-2.5 px-3 text-right text-stone-600 font-mono tabular-nums whitespace-nowrap">
+                        {rawItem.cost_per_unit != null && rawItem.cost_per_unit > 0
+                          ? `฿${rawItem.cost_per_unit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                          : '-'}
+                      </td>
+                      <td className="py-2.5 px-4 text-right font-bold text-stone-900 font-mono tabular-nums whitespace-nowrap">
+                        {rawItem.total_price != null && rawItem.total_price > 0
+                          ? `฿${rawItem.total_price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                          : '-'}
+                      </td>
+                    </tr>
+                  );
+                })}
 
                 {/* Blank filler rows to fill A4 sheet proportionally */}
                 {blankRows.map((rowNum) => (

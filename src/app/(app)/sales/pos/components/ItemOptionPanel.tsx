@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Sparkles, Plus, Minus, Layers } from 'lucide-react';
-import { MenuItem } from '@/types';
+import { ArrowLeft, Sparkles, Plus, Minus, Layers, PlusCircle, Check } from 'lucide-react';
+import { MenuItem, MenuOptionIngredient } from '@/types';
 import { Button } from '@/components/Button';
 import { useStock } from '@/lib/StockContext';
 import { CartItemOption } from './ItemOptionModal';
@@ -20,7 +20,7 @@ export const ItemOptionPanel: React.FC<ItemOptionPanelProps> = ({
   onCancel,
   onConfirm,
 }) => {
-  const { ingredients } = useStock();
+  const { ingredients, getMenuOptions } = useStock();
   const initShots = initialOptions?.extraShots ?? (initialOptions?.isSpecial ? 1 : 0);
 
   const [temperature, setTemperature] = useState<string>(initialOptions?.temperature || 'เย็น');
@@ -28,6 +28,10 @@ export const ItemOptionPanel: React.FC<ItemOptionPanelProps> = ({
   const [diningOption, setDiningOption] = useState<string>(initialOptions?.diningOption || 'ทานที่ร้าน');
   const [extraShots, setExtraShots] = useState<number>(initShots);
   const [customNote, setCustomNote] = useState<string>(initialOptions?.customNote || '');
+  const [availableOptions, setAvailableOptions] = useState<MenuOptionIngredient[]>([]);
+  const [selectedModifiers, setSelectedModifiers] = useState<MenuOptionIngredient[]>(
+    initialOptions?.selectedModifiers || []
+  );
 
   useEffect(() => {
     const shots = initialOptions?.extraShots ?? (initialOptions?.isSpecial ? 1 : 0);
@@ -36,9 +40,22 @@ export const ItemOptionPanel: React.FC<ItemOptionPanelProps> = ({
     setDiningOption(initialOptions?.diningOption || 'ทานที่ร้าน');
     setExtraShots(shots);
     setCustomNote(initialOptions?.customNote || '');
+    setSelectedModifiers(initialOptions?.selectedModifiers || []);
   }, [item, initialOptions]);
 
-  const quickTags = ['แยกน้ำแข็ง', 'วิปครีม', 'ไม่ใส่ไซรัป'];
+  // Load menu options / add-on modifiers
+  useEffect(() => {
+    if (item?.option_ingredients && item.option_ingredients.length > 0) {
+      setAvailableOptions(item.option_ingredients);
+    } else {
+      getMenuOptions().then((opts) => {
+        const matching = opts.filter((o) => !o.menu_item_id || o.menu_item_id === item?.id);
+        setAvailableOptions(matching);
+      });
+    }
+  }, [item]);
+
+  const quickTags = ['แยกน้ำแข็ง', 'วิปครีม'];
 
   const handleToggleTag = (tag: string) => {
     const currentTags = customNote
@@ -53,8 +70,20 @@ export const ItemOptionPanel: React.FC<ItemOptionPanelProps> = ({
     }
   };
 
+  const handleToggleModifier = (opt: MenuOptionIngredient) => {
+    setSelectedModifiers((prev) => {
+      const exists = prev.some((m) => m.id === opt.id || m.name === opt.name);
+      if (exists) {
+        return prev.filter((m) => m.id !== opt.id && m.name !== opt.name);
+      } else {
+        return [...prev, opt];
+      }
+    });
+  };
+
   const blendExtra = temperature === 'ปั่น (+10฿)' ? 10 : 0;
-  const currentPrice = item.price + extraShots * 15 + blendExtra;
+  const modifierTotal = selectedModifiers.reduce((sum, m) => sum + (Number(m.price) || 0), 0);
+  const currentPrice = item.price + extraShots * 15 + blendExtra + modifierTotal;
 
   // Real-time BOM stock calculation based on live options
   let sweetnessMultiplier = 1.0;
@@ -74,6 +103,54 @@ export const ItemOptionPanel: React.FC<ItemOptionPanelProps> = ({
     sweetnessMultiplier = 0.0;
   }
 
+  // Comprehensive Sweetener Detection Helper
+  const checkIsSweetener = (name: string, category?: string) => {
+    const n = (name || '').toLowerCase();
+    const c = (category || '').toLowerCase();
+    return (
+      n.includes('ไซรัป') ||
+      n.includes('syrup') ||
+      n.includes('นมข้น') ||
+      n.includes('ข้นหวาน') ||
+      n.includes('น้ำตาล') ||
+      n.includes('น้ำเชื่อม') ||
+      n.includes('น้ำผึ้ง') ||
+      n.includes('honey') ||
+      n.includes('คาราเมล') ||
+      n.includes('caramel') ||
+      n.includes('วานิลลา') ||
+      n.includes('vanilla') ||
+      n.includes('มะลิ') ||
+      n.includes('mali') ||
+      n.includes('คาร์เนชัน') ||
+      n.includes('carnation') ||
+      n.includes('ทีพอท') ||
+      n.includes('teapot') ||
+      n.includes('falcon') ||
+      n.includes('นกเหยี่ยว') ||
+      n.includes('condensed') ||
+      n.includes('sweetener') ||
+      n.includes('stevia') ||
+      n.includes('หญ้าหวาน') ||
+      n.includes('หล่อฮังก๊วย') ||
+      c.includes('ไซรัป') ||
+      c.includes('syrup') ||
+      c.includes('สารให้ความหวาน') ||
+      c.includes('ความหวาน')
+    );
+  };
+
+  // Detect sweetness ingredients used in this recipe
+  const recipeSweeteners: string[] = [];
+  (item.recipes || []).forEach((r) => {
+    const ing = ingredients.find((i) => i.id === r.ingredient_id);
+    const ingName = ing ? ing.name : (r.ingredient_name || '');
+    const ingCat = ing?.category || '';
+    if (checkIsSweetener(ingName, ingCat) && !recipeSweeteners.includes(ingName)) {
+      recipeSweeteners.push(ingName);
+    }
+  });
+
   const previewDeductions = (item.recipes || []).map((r) => {
     const ing = ingredients.find((i) => i.id === r.ingredient_id);
     const ingName = ing ? ing.name : (r.ingredient_name || 'วัตถุดิบ');
@@ -90,13 +167,8 @@ export const ItemOptionPanel: React.FC<ItemOptionPanelProps> = ({
         (ingNameLower.includes('กาแฟ') && !ingNameLower.includes('แก้ว'))) ||
       (ingCatLower.includes('เมล็ดกาแฟ') ||
         (ingCatLower.includes('กาแฟ') && !ingCatLower.includes('แก้ว')));
-    const isSweetener =
-      ingNameLower.includes('ไซรัป') ||
-      ingNameLower.includes('syrup') ||
-      ingNameLower.includes('นมข้นหวาน') ||
-      ingNameLower.includes('น้ำผึ้ง') ||
-      ingNameLower.includes('น้ำเชื่อม') ||
-      ingCatLower.includes('ไซรัป');
+
+    const isSweetener = checkIsSweetener(ingName, ing?.category);
 
     let mult = 1.0;
     let badgeText = '';
@@ -105,9 +177,9 @@ export const ItemOptionPanel: React.FC<ItemOptionPanelProps> = ({
       badgeText = `+${extraShots} ช็อต`;
     } else if (isSweetener) {
       mult = sweetnessMultiplier;
-      if (sweetnessMultiplier === 0) badgeText = 'ไม่หวาน (0%)';
-      else if (sweetnessMultiplier < 1) badgeText = `ลดหวาน (${Math.round(sweetnessMultiplier * 100)}%)`;
-      else if (sweetnessMultiplier > 1) badgeText = `เพิ่มหวาน (${Math.round(sweetnessMultiplier * 100)}%)`;
+      if (sweetnessMultiplier === 0) badgeText = 'ไม่หวาน';
+      else if (sweetnessMultiplier < 1) badgeText = 'หวานน้อย';
+      else if (sweetnessMultiplier > 1) badgeText = 'หวานมาก';
     }
 
     const ingUnitLower = (ingUnit || '').toLowerCase().trim();
@@ -120,7 +192,7 @@ export const ItemOptionPanel: React.FC<ItemOptionPanelProps> = ({
 
     const deductedQty = Number((baseQty * mult * unitFactor).toFixed(3));
     return {
-      id: r.ingredient_id,
+      id: `base-${r.ingredient_id}`,
       name: ingName,
       unit: ingUnit,
       baseQty,
@@ -132,6 +204,32 @@ export const ItemOptionPanel: React.FC<ItemOptionPanelProps> = ({
       badgeText,
     };
   });
+
+  // Add-on modifiers stock deductions
+  const modifierDeductions = selectedModifiers.map((mod) => {
+    const ing = ingredients.find((i) => i.id === mod.ingredient_id);
+    const ingName = ing ? ing.name : (mod.ingredient_name || 'วัตถุดิบเสริม');
+    const ingUnit = ing ? ing.unit : (mod.ingredient_unit || 'หน่วย');
+    const ingCurrent = ing ? Number(ing.quantity) : 0;
+    const deductQty = Number(mod.quantity) || 1;
+    const remaining = Math.max(0, ingCurrent - deductQty);
+
+    return {
+      id: `mod-${mod.id}-${mod.name}`,
+      name: `${ingName} (+${mod.name})`,
+      unit: ingUnit,
+      baseQty: deductQty,
+      deductedQty: deductQty,
+      currentQty: ingCurrent,
+      remainingQty: Math.round(remaining * 10) / 10,
+      badgeText: `+฿${mod.price}`,
+      isSweetener: false,
+      isCoffee: false,
+      isModifier: true,
+    };
+  });
+
+  const allPreviewDeductions = [...previewDeductions, ...modifierDeductions];
 
   const isTakeaway = diningOption === 'กลับบ้าน' || customNote.includes('กลับบ้าน');
   const takeawayCup = isTakeaway
@@ -150,6 +248,7 @@ export const ItemOptionPanel: React.FC<ItemOptionPanelProps> = ({
       extraShots,
       diningOption,
       customNote: customNote.trim(),
+      selectedModifiers,
     });
   };
 
@@ -205,22 +304,40 @@ export const ItemOptionPanel: React.FC<ItemOptionPanelProps> = ({
 
         {/* Sweetness */}
         <div>
-          <label className="font-semibold text-stone-700 block mb-1.5">ระดับความหวาน</label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="font-semibold text-stone-700 block">ระดับความหวาน</label>
+            {recipeSweeteners.length > 0 ? (
+              <span className="text-[11px] text-stone-500 font-medium flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                ตัดจาก: <strong className="text-stone-800 font-medium">{recipeSweeteners.join(', ')}</strong>
+              </span>
+            ) : (
+              <span className="text-[11px] text-stone-400">สูตรไม่มีสารให้ความหวานหลัก</span>
+            )}
+          </div>
           <div className="grid grid-cols-4 gap-1.5">
-            {['ไม่หวาน', 'หวานน้อย', 'หวาน', 'หวานมาก'].map((sw) => (
-              <button
-                key={sw}
-                type="button"
-                onClick={() => setSweetness(sw)}
-                className={`py-2 px-1 rounded-xl font-medium text-xs transition-all border text-center cursor-pointer ${
-                  sweetness === sw
-                    ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
-                    : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'
-                }`}
-              >
-                {sw}
-              </button>
-            ))}
+            {[
+              { label: 'ไม่หวาน', val: 'ไม่หวาน' },
+              { label: 'หวานน้อย', val: 'หวานน้อย' },
+              { label: 'ปกติ', val: 'หวาน' },
+              { label: 'หวานมาก', val: 'หวานมาก' },
+            ].map(({ label, val }) => {
+              const isSelected = sweetness === val || (val === 'หวาน' && sweetness === 'หวาน 100%');
+              return (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => setSweetness(val === 'หวาน' ? 'หวาน 100%' : val)}
+                  className={`py-2 px-1 rounded-xl font-medium text-xs transition-all border text-center cursor-pointer ${
+                    isSelected
+                      ? 'bg-stone-900 text-white border-stone-900 shadow-xs font-semibold'
+                      : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -255,6 +372,55 @@ export const ItemOptionPanel: React.FC<ItemOptionPanelProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Dynamic Option Modifiers (รายการสั่งเพิ่ม / ท็อปปิ้ง) */}
+        {availableOptions.length > 0 && (
+          <div className="p-3 rounded-2xl bg-white border border-stone-200 shadow-2xs space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="font-semibold text-stone-800 text-xs flex items-center gap-1.5">
+                <PlusCircle className="w-3.5 h-3.5 text-stone-700" />
+                <span>รายการสั่งเพิ่ม (Add-ons)</span>
+              </label>
+              <span className="text-[11px] text-stone-400 font-medium">ตัดสต็อกอัตโนมัติ</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              {availableOptions.map((opt) => {
+                const isSelected = selectedModifiers.some(
+                  (m) => m.id === opt.id || m.name === opt.name
+                );
+                return (
+                  <button
+                    key={opt.id || opt.name}
+                    type="button"
+                    onClick={() => handleToggleModifier(opt)}
+                    className={`p-2 rounded-xl text-left border transition-all cursor-pointer flex items-center justify-between ${
+                      isSelected
+                        ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
+                        : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
+                    }`}
+                  >
+                    <div className="min-w-0 pr-1">
+                      <div className="font-semibold text-xs truncate flex items-center gap-1">
+                        {isSelected && <Check className="w-3 h-3 text-emerald-400 shrink-0" />}
+                        <span className="truncate">{opt.name}</span>
+                      </div>
+                      <div className={`text-[10px] ${isSelected ? 'text-stone-300' : 'text-stone-500'}`}>
+                        {opt.quantity} {opt.ingredient_unit || 'หน่วย'}
+                      </div>
+                    </div>
+                    <span
+                      className={`text-xs font-mono font-bold shrink-0 ${
+                        isSelected ? 'text-amber-300' : 'text-stone-700'
+                      }`}
+                    >
+                      {opt.price > 0 ? `+฿${opt.price}` : 'ฟรี'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Dine-in vs Takeaway */}
         <div>
@@ -327,15 +493,15 @@ export const ItemOptionPanel: React.FC<ItemOptionPanelProps> = ({
           <div className="flex items-center justify-between">
             <span className="font-semibold text-stone-800 text-xs flex items-center gap-1.5">
               <Layers className="w-3.5 h-3.5 text-stone-600" />
-              <span>ตัดสต็อกแก้วนี้ (Preview)</span>
+              <span>Preview</span>
             </span>
             <span className="text-xs text-stone-500 font-medium">
-              {previewDeductions.length + (takeawayCup ? 1 : 0)} รายการ
+              {allPreviewDeductions.length + (takeawayCup ? 1 : 0)} รายการ
             </span>
           </div>
 
           <div className="space-y-1.5 max-h-48 overflow-y-auto pr-0.5">
-            {previewDeductions.map((d) => (
+            {allPreviewDeductions.map((d) => (
               <div
                 key={d.id}
                 className="flex items-center justify-between text-xs p-2 rounded-xl bg-white border border-stone-200/80 shadow-2xs"
@@ -348,6 +514,8 @@ export const ItemOptionPanel: React.FC<ItemOptionPanelProps> = ({
                         className={`text-xs px-1.5 py-0.2 rounded font-semibold ${
                           d.deductedQty === 0
                             ? 'bg-rose-100 text-rose-700'
+                            : (d as any).isModifier
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                             : d.isSweetener && d.deductedQty < d.baseQty
                             ? 'bg-[#f5efe6] text-[#78350f] border border-[#e8ded0]'
                             : 'bg-stone-100 text-stone-700 border border-stone-200'

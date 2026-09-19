@@ -185,32 +185,30 @@ export const MenuModal: React.FC<MenuModalProps> = ({
             onUpdateOptionRow={onUpdateOptionRow}
           />
 
-          {/* Live BOM Margin Summary Box */}
+          {/* Live BOM Margin Summary */}
           <div className="p-4 rounded-xl bg-stone-900 text-white space-y-2 border border-stone-800">
-            <div className="flex items-center justify-between text-xs border-b border-stone-800 pb-2">
-              <span className="text-stone-400 font-semibold uppercase tracking-wider text-xs">
-                สรุปต้นทุนและกำไร (BOM Margin Calculation)
-              </span>
+            <div className="text-xs text-stone-400 border-b border-stone-800 pb-2 font-medium">
+              สรุปต้นทุนและกำไร
             </div>
 
             <div className="grid grid-cols-3 gap-2 text-center pt-1">
               <div className="p-2.5 rounded-lg bg-stone-800/90 border border-stone-700/60">
                 <div className="text-xs text-stone-400 flex items-center justify-center gap-1">
-                  <PieChart className="w-3.5 h-3.5 text-stone-300" /> ต้นทุนสูตร
+                  <PieChart className="w-3.5 h-3.5" /> ต้นทุน
                 </div>
                 <div className="text-sm font-bold text-white mt-0.5 font-mono tabular-nums">฿{calculatedCost.toFixed(2)}</div>
               </div>
 
               <div className="p-2.5 rounded-lg bg-stone-800/90 border border-stone-700/60">
                 <div className="text-xs text-stone-400 flex items-center justify-center gap-1">
-                  <DollarSign className="w-3.5 h-3.5 text-[#f5efe6]" /> กำไรต่อแก้ว
+                  <DollarSign className="w-3.5 h-3.5" /> กำไร/แก้ว
                 </div>
                 <div className="text-sm font-bold text-white mt-0.5 font-mono tabular-nums">฿{calculatedProfit.toFixed(2)}</div>
               </div>
 
               <div className="p-2.5 rounded-lg bg-stone-800/90 border border-stone-700/60">
                 <div className="text-xs text-stone-400 flex items-center justify-center gap-1">
-                  <TrendingUp className="w-3.5 h-3.5 text-amber-300" /> อัตรากำไร (% Margin)
+                  <TrendingUp className="w-3.5 h-3.5 text-amber-300" /> Margin
                 </div>
                 <div className="text-sm font-bold text-amber-200 mt-0.5 font-mono tabular-nums">{calculatedMargin}%</div>
               </div>

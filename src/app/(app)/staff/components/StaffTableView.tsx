@@ -43,8 +43,19 @@ export const StaffTableView: React.FC<StaffTableViewProps> = ({
                   {/* Name & Avatar */}
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-stone-900 text-white font-normal flex items-center justify-center text-xs shadow-xs font-mono uppercase">
-                        {staff.name.slice(0, 2)}
+                      <div className="w-9 h-9 rounded-xl bg-stone-900 text-white font-normal flex items-center justify-center text-xs shadow-xs font-mono uppercase overflow-hidden shrink-0 border border-stone-200/80">
+                        {staff.avatar ? (
+                          <img
+                            src={staff.avatar}
+                            alt={staff.name}
+                            className="w-full h-full object-cover rounded-xl"
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          staff.name.slice(0, 2)
+                        )}
                       </div>
                       <div>
                         <div className="font-medium text-stone-900 flex items-center gap-1.5 text-xs">

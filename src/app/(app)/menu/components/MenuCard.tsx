@@ -60,7 +60,7 @@ export const MenuCard: React.FC<MenuCardProps> = ({ item, onEdit, onDelete }) =>
           <div className="pt-2 border-t border-stone-100">
             <div className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <Layers className="w-3.5 h-3.5 text-stone-500" />
-              สูตรวัตถุดิบ:
+              วัตถุดิบในสูตร:
             </div>
             <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
               {item.recipes && item.recipes.length > 0 ? (
@@ -76,7 +76,7 @@ export const MenuCard: React.FC<MenuCardProps> = ({ item, onEdit, onDelete }) =>
                   </div>
                 ))
               ) : (
-                <div className="text-xs text-stone-400 italic py-1">ยังไม่ได้ผูกสูตรวัตถุดิบ</div>
+                <div className="text-xs text-stone-400 italic py-1">ยังไม่มีสูตร</div>
               )}
             </div>
           </div>
@@ -86,16 +86,16 @@ export const MenuCard: React.FC<MenuCardProps> = ({ item, onEdit, onDelete }) =>
       {/* Card Footer: Cost & Margin summary */}
       <div className="p-4 bg-stone-50/80 border-t border-stone-100 flex items-center justify-between text-xs rounded-b-2xl">
         <div>
-          <div className="text-stone-400 text-xs">ต้นทุนวัตถุดิบ</div>
+          <div className="text-stone-400 text-xs">ต้นทุน</div>
           <div className="font-semibold text-stone-700 font-mono tabular-nums">฿{item.recipe_cost}</div>
         </div>
         <div>
-          <div className="text-stone-400 text-xs">กำไรต่อจาน</div>
+          <div className="text-stone-400 text-xs">กำไร</div>
           <div className="font-bold text-stone-900 font-mono tabular-nums">฿{(item.price - item.recipe_cost).toFixed(2)}</div>
         </div>
         <div className="text-right">
-          <div className="text-stone-400 text-xs mb-0.5">อัตรากำไร</div>
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#f5efe6] text-[#78350f] border border-[#e8ded0]">
+          <div className="text-stone-400 text-xs mb-0.5">มาร์จิ้น</div>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-stone-100 text-stone-800 border border-stone-200 font-mono tabular-nums">
             {item.margin_percent}%
           </span>
         </div>

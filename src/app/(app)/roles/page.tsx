@@ -223,12 +223,9 @@ export default function RolesPermissionPage() {
 
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
-      <Topbar
-        title="กำหนดสิทธิ์บทบาท (Role & Permissions Matrix)"
-        subtitle="ตั้งค่าว่าแต่ละบทบาท (Role) สามารถมองเห็นหรือจัดการส่วนใดของระบบได้บ้าง"
-      />
+      <Topbar title="กำหนดสิทธิ์การใช้งาน" />
 
-      <main className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
+      <main className="p-4 sm:p-6 lg:p-8 space-y-5 max-w-7xl mx-auto w-full">
         {/* Success / Error Notification */}
         {successMsg && (
           <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-between text-sm animate-fade-in">
@@ -256,21 +253,21 @@ export default function RolesPermissionPage() {
 
         {/* View Mode Toggle */}
         <div className="flex items-center justify-between bg-white rounded-2xl border border-stone-200/90 shadow-2xs p-3.5">
-          <h3 className="font-semibold text-stone-900 text-sm">นโยบายสิทธิ์บทบาท</h3>
+          <h3 className="font-semibold text-stone-900 text-sm">กำหนดสิทธิ์บทบาท</h3>
           <div className="inline-flex rounded-xl border border-stone-200/80 p-1 bg-stone-100 gap-1">
             <button
               type="button"
               onClick={() => setViewMode('card')}
               className={`h-8 px-3 text-xs rounded-lg font-medium transition-all cursor-pointer ${viewMode === 'card' ? 'bg-white text-stone-900 border border-stone-200 shadow-2xs font-semibold' : 'text-stone-500 hover:text-stone-800'}`}
             >
-              แลกทีละ Role
+              ดูตามบทบาท
             </button>
             <button
               type="button"
               onClick={() => setViewMode('matrix')}
               className={`h-8 px-3 text-xs rounded-lg font-medium transition-all cursor-pointer ${viewMode === 'matrix' ? 'bg-white text-stone-900 border border-stone-200 shadow-2xs font-semibold' : 'text-stone-500 hover:text-stone-800'}`}
             >
-              Matrix Grid
+              ตารางสิทธิ์รวม
             </button>
           </div>
         </div>

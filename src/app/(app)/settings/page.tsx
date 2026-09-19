@@ -94,10 +94,7 @@ export default function SettingsPage() {
 
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
-      <Topbar
-        title="ตั้งค่าระบบ"
-        subtitle="จัดการหน่วยนับ ปรับแต่งเมนู และสิทธิ์ร้านค้า"
-      />
+      <Topbar title="ตั้งค่าระบบ" />
 
       <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
         {/* Navigation Tabs */}
@@ -155,20 +152,13 @@ export default function SettingsPage() {
             {/* Add New Unit Card */}
             <div className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-xs space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-stone-100">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-2xl bg-stone-100 border border-stone-200/80 flex items-center justify-center text-stone-800">
-                    <Plus className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-stone-900 text-base">เพิ่มหน่วยนับใหม่เข้าระบบ</h3>
-                    <p className="text-xs text-stone-500">
-                      หน่วยที่บันทึกตรงนี้จะปรากฏให้เลือกในระบบสต็อกและใบจัดซื้อ/จ่ายตลาดทันที
-                    </p>
-                  </div>
-                </div>
+                <h3 className="font-semibold text-stone-900 text-sm flex items-center gap-2">
+                  <Plus className="w-4 h-4 text-stone-600" />
+                  เพิ่มหน่วยนับใหม่
+                </h3>
                 {saveToast && (
-                  <span className="inline-flex items-center gap-1 text-xs font-normal text-stone-800 bg-stone-100 px-3 py-1 rounded-full border border-stone-200 animate-fade-in">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-stone-700" /> บันทึกสำเร็จ!
+                  <span className="inline-flex items-center gap-1 text-xs text-stone-700 bg-stone-100 px-3 py-1 rounded-full border border-stone-200">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> บันทึกสำเร็จ!
                   </span>
                 )}
               </div>
@@ -213,13 +203,10 @@ export default function SettingsPage() {
             {/* Units List Table */}
             <div className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-xs space-y-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-stone-900 text-base flex items-center gap-2">
-                    <Scale className="w-5 h-5 text-stone-800" />
-                    รายการหน่วยนับที่มีอยู่ในระบบ ({units.length} หน่วย)
-                  </h3>
-                  <p className="text-xs text-stone-500">หน่วยนับเหล่านี้จะปรากฏในเมนูเลือกของระบบสต็อกและจัดซื้อทันที</p>
-                </div>
+                <h3 className="font-semibold text-stone-900 text-sm flex items-center gap-2">
+                  <Scale className="w-4 h-4 text-stone-600" />
+                  หน่วยนับ ({units.length})
+                </h3>
               </div>
 
               <div className="overflow-x-auto">

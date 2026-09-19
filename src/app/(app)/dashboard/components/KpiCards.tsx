@@ -14,8 +14,8 @@ export const KpiCards: React.FC<KpiCardsProps> = ({ dashboard, view = 'hero-layo
       {/* Top Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <span className="text-sm sm:text-base font-semibold text-stone-600">
-            ยอดขายวันนี้ (Baht)
+          <span className="text-sm sm:text-base font-semibold text-stone-700">
+            ยอดขายวันนี้
           </span>
         </div>
         {/* Minimalist Tactile Icon Well */}
@@ -35,7 +35,7 @@ export const KpiCards: React.FC<KpiCardsProps> = ({ dashboard, view = 'hero-layo
       <div className="pt-5 border-t border-stone-100 flex items-center justify-between flex-wrap gap-2">
         <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
           dashboard.today_sales_change >= 0 
-            ? 'bg-[#f5efe6] text-[#78350f] border border-[#e8ded0]' 
+            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' 
             : 'bg-stone-100 text-stone-700 border border-stone-200'
         }`}>
           {dashboard.today_sales_change >= 0 ? (
@@ -47,7 +47,7 @@ export const KpiCards: React.FC<KpiCardsProps> = ({ dashboard, view = 'hero-layo
             {dashboard.today_sales_change > 0 ? `+${dashboard.today_sales_change}%` : `${dashboard.today_sales_change}%`} จากเมื่อวาน
           </span>
         </div>
-        <span className="text-sm text-stone-500 font-medium">
+        <span className="text-sm text-stone-500 font-medium font-mono tabular-nums">
           ทั้งหมด <span className="font-semibold text-stone-800">{dashboard.total_orders_today}</span> บิล
         </span>
       </div>
@@ -58,13 +58,13 @@ export const KpiCards: React.FC<KpiCardsProps> = ({ dashboard, view = 'hero-layo
     <div className="bg-white rounded-2xl border border-stone-200/90 hover:border-stone-300 shadow-2xs p-5 relative overflow-hidden group flex items-center justify-between gap-4 w-full transition-all">
       <div className="space-y-1.5">
         <span className="text-sm font-semibold text-stone-600 block">
-          ต้นทุนวัตถุดิบวันนี้
+          ต้นทุนวันนี้
         </span>
         <div className="text-2xl sm:text-3xl font-bold text-stone-900 tracking-tight tabular-nums">
           {dashboard.today_cost.toLocaleString()}
         </div>
-        <div className="text-sm text-stone-500 font-medium">
-          คิดเป็น {((dashboard.today_cost / (dashboard.today_sales || 1)) * 100).toFixed(1)}% ของยอดขาย
+        <div className="text-xs text-stone-500 font-medium font-mono tabular-nums">
+          {((dashboard.today_cost / (dashboard.today_sales || 1)) * 100).toFixed(1)}% ของยอดขาย
         </div>
       </div>
       {/* Refined Uniform Icon Well */}
@@ -78,17 +78,15 @@ export const KpiCards: React.FC<KpiCardsProps> = ({ dashboard, view = 'hero-layo
     <div className="bg-white rounded-2xl border border-stone-200/90 hover:border-stone-300 shadow-2xs p-5 relative overflow-hidden group flex items-center justify-between gap-4 w-full transition-all">
       <div className="space-y-1.5">
         <span className="text-sm font-semibold text-stone-600 block">
-          กำไรสุทธิโดยประมาณ
+          กำไรสุทธิ
         </span>
         <div className="text-2xl sm:text-3xl font-bold text-stone-900 tracking-tight tabular-nums">
           {dashboard.today_profit.toLocaleString()}
         </div>
         <div className="flex items-center gap-2 pt-0.5">
-          {/* Warm Wood / Coffee Accent Badge */}
-          <span className="bg-[#f5efe6] text-[#78350f] border border-[#e8ded0] px-2.5 py-0.5 rounded-md font-semibold text-xs">
-            Margin {dashboard.profit_margin}%
+          <span className="bg-stone-100 text-stone-800 border border-stone-200 px-2.5 py-0.5 rounded-md font-semibold text-xs font-mono tabular-nums">
+            มาร์จิ้น {dashboard.profit_margin}%
           </span>
-          <span className="text-sm text-stone-500 font-medium">กำไรขั้นต้น</span>
         </div>
       </div>
       {/* Refined Uniform Icon Well */}
@@ -102,7 +100,7 @@ export const KpiCards: React.FC<KpiCardsProps> = ({ dashboard, view = 'hero-layo
     <div className="bg-white rounded-2xl border border-stone-200/90 hover:border-stone-300 shadow-2xs p-5 relative overflow-hidden group flex items-center justify-between gap-4 w-full transition-all">
       <div className="space-y-1.5">
         <span className="text-sm font-semibold text-stone-600 block">
-          ยอดคืนเงินลูกค้า (Refund)
+          ยอดคืนเงิน
         </span>
         <div className="flex items-baseline gap-2">
           <span className="text-2xl sm:text-3xl font-bold text-rose-600 tracking-tight tabular-nums font-mono">
@@ -110,8 +108,8 @@ export const KpiCards: React.FC<KpiCardsProps> = ({ dashboard, view = 'hero-layo
           </span>
         </div>
         <div>
-          <span className="bg-[#fef2f2] text-[#991b1b] border border-[#fee2e2] px-2.5 py-0.5 rounded-md font-medium text-xs">
-            ยกเลิกแล้ว {dashboard.today_cancelled_count ?? 0} บิล
+          <span className="bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-md font-medium text-xs font-mono tabular-nums">
+            ยกเลิก {dashboard.today_cancelled_count ?? 0} บิล
           </span>
         </div>
       </div>

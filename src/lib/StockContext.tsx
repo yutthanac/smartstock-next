@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Ingredient, MenuItem, Order, StockMovement, DashboardKPI, UnitSetting, MenuOptionIngredient, WasteStatsResponse } from '@/types';
 import { useAuth } from './AuthContext';
 
@@ -253,7 +253,7 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
     fetchData();
   }, [token, activeStore?.id]);
 
-  const fetchRefundStats = async (startDate?: string, endDate?: string) => {
+  const fetchRefundStats = useCallback(async (startDate?: string, endDate?: string) => {
     try {
       let url = `${API_BASE_URL}/pos/orders/refund-stats`;
       const params = new URLSearchParams();
@@ -273,7 +273,7 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
       console.error('Error fetching refund stats:', e);
       return null;
     }
-  };
+  }, [activeStore?.id, token]);
 
   // Ingredients API calls
   const addIngredient = async (item: Omit<Ingredient, 'id' | 'status'>): Promise<boolean> => {
@@ -439,7 +439,7 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const fetchWasteStats = async (period = 'today'): Promise<WasteStatsResponse | null> => {
+  const fetchWasteStats = useCallback(async (period = 'today'): Promise<WasteStatsResponse | null> => {
     try {
       const res = await fetch(`${API_BASE_URL}/reports/waste-stats?period=${period}`, {
         headers: apiHeaders(),
@@ -452,7 +452,7 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
       console.error('Error fetching waste stats:', e);
       return null;
     }
-  };
+  }, [activeStore?.id, token]);
 
   const getMenuOptions = async (): Promise<MenuOptionIngredient[]> => {
     try {

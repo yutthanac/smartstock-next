@@ -13,10 +13,7 @@ export default function DashboardPage() {
 
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
-      <Topbar
-        title="ภาพรวมร้านค้า"
-        subtitle="สรุปยอดขาย ต้นทุน และสต็อกสินค้าวันนี้"
-      />
+      <Topbar title="ภาพรวมร้านค้า" />
 
       <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
         {/* Page Sub-Header with Top-Right Revenue Calendar Dropdown Bar */}
@@ -29,7 +26,7 @@ export default function DashboardPage() {
         {isLoading ? (
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <div className="lg:col-span-5 bg-white p-6 rounded-3xl border border-slate-200/80 space-y-4">
+              <div className="lg:col-span-5 bg-white p-6 rounded-3xl border border-stone-200/90 space-y-4">
                 <Skeleton className="h-6 w-32" />
                 <Skeleton className="h-12 w-48" />
                 <Skeleton className="h-4 w-40" />
@@ -40,16 +37,16 @@ export default function DashboardPage() {
                 <Skeleton className="h-36 rounded-3xl" />
               </div>
             </div>
-            <div className="bg-white p-6 rounded-3xl border border-slate-200/80 space-y-4">
+            <div className="bg-white p-6 rounded-3xl border border-stone-200/90 space-y-4">
               <Skeleton className="h-6 w-48" />
               <Skeleton className="h-72 w-full rounded-2xl" />
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white p-6 rounded-3xl border border-slate-200/80 space-y-4">
+              <div className="bg-white p-6 rounded-3xl border border-stone-200/90 space-y-4">
                 <Skeleton className="h-6 w-44" />
                 <Skeleton className="h-20 w-full rounded-2xl" />
               </div>
-              <div className="bg-white p-6 rounded-3xl border border-slate-200/80 space-y-4">
+              <div className="bg-white p-6 rounded-3xl border border-stone-200/90 space-y-4">
                 <Skeleton className="h-6 w-44" />
                 <Skeleton className="h-20 w-full rounded-2xl" />
               </div>

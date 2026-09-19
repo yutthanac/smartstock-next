@@ -10,6 +10,8 @@ import {
   ShoppingBag,
   User,
   Info,
+  Package,
+  AlertTriangle,
 } from 'lucide-react';
 import { Ingredient } from '@/types';
 import { PurchaseOrder, PurchaseOrderItem } from '../types';
@@ -25,6 +27,28 @@ interface CreatePOModalProps {
   initialItems?: PurchaseOrderItem[];
   defaultStore?: string;
 }
+
+const isContinuousUnit = (u?: string) => {
+  if (!u) return false;
+  const clean = u.trim().toLowerCase();
+  return [
+    'กรัม',
+    'g',
+    'gram',
+    'grams',
+    'มล.',
+    'ml',
+    'cc',
+    'ซีซี',
+    'มิลลิลิตร',
+    'กก.',
+    'kg',
+    'กิโล',
+    'กิโลกรัม',
+    'ลิตร',
+    'l',
+  ].includes(clean);
+};
 
 export const CreatePOModal: React.FC<CreatePOModalProps> = ({
   isOpen,
@@ -81,11 +105,25 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
       return;
     }
 
+    const isRaw = isContinuousUnit(ing.unit);
+    const packSize = Number(ing.package_size || 0);
+    const targetDiff = Math.max(1, (ing.max_stock || ing.reorder_point * 3) - ing.quantity);
+
+    let quantity = targetDiff;
+    let unit = ing.unit;
+
+    if (isRaw) {
+      unit = 'ชิ้น';
+      if (packSize > 1) {
+        quantity = Math.max(1, Math.ceil(targetDiff / packSize));
+      }
+    }
+
     const newItem: PurchaseOrderItem = {
       ingredient_id: ing.id,
       name: ing.name,
-      quantity: Math.max(1, (ing.max_stock || ing.reorder_point * 3) - ing.quantity),
-      unit: ing.unit,
+      quantity,
+      unit,
       current_stock: ing.quantity,
       reorder_point: ing.reorder_point,
       checked: false,
@@ -160,26 +198,98 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
     'ร้านเบเกอรี่ซัพพลาย',
   ];
 
+  // Compute estimated totals for the checklist table
+  let catalogTotal = 0;
+  let hasCustom = false;
+  for (const item of items) {
+    const ing = item.ingredient_id
+      ? availableIngredients.find((i) => i.id === item.ingredient_id)
+      : null;
+    if (ing && ing.cost_per_unit) {
+      const ps = ing.package_size && Number(ing.package_size) > 1 ? Number(ing.package_size) : 1;
+      catalogTotal += item.quantity * ing.cost_per_unit * ps;
+    } else if (!item.ingredient_id) {
+      hasCustom = true;
+    }
+  }
+
+  // Pull all low-stock items into checklist
+  const lowStockIngredients = availableIngredients.filter(
+    (ing) => (ing.status === 'low' || ing.status === 'out' || ing.quantity <= ing.reorder_point) &&
+             !items.some((i) => i.ingredient_id === ing.id)
+  );
+
+  const handleAddLowStock = () => {
+    if (lowStockIngredients.length === 0) {
+      alert('ไม่มีวัตถุดิบที่ใกล้หมดเพิ่มเติม');
+      return;
+    }
+
+    const newItems: PurchaseOrderItem[] = lowStockIngredients.map((ing) => {
+      const isRaw = isContinuousUnit(ing.unit);
+      const packSize = Number(ing.package_size || 0);
+      const targetDiff = Math.max(1, (ing.max_stock || ing.reorder_point * 3) - ing.quantity);
+
+      let quantity = targetDiff;
+      let unit = ing.unit;
+
+      if (isRaw) {
+        unit = 'ชิ้น';
+        if (packSize > 1) {
+          quantity = Math.max(1, Math.ceil(targetDiff / packSize));
+        }
+      }
+
+      return {
+        ingredient_id: ing.id,
+        name: ing.name,
+        quantity,
+        unit,
+        current_stock: ing.quantity,
+        reorder_point: ing.reorder_point,
+        checked: false,
+      };
+    });
+
+    setItems((prev) => [...prev, ...newItems]);
+  };
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[90vh] animate-scale-in">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-stone-50 border-b border-stone-200">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-stone-100 border border-stone-200/80 text-stone-700 flex items-center justify-center">
+        <div className="flex items-center justify-between px-6 py-4 bg-stone-50 border-b border-stone-200 gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 shrink-0 rounded-xl bg-stone-100 border border-stone-200/80 text-stone-700 flex items-center justify-center">
               <ShoppingBag className="w-5 h-5 text-stone-700" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h3 className="font-semibold text-stone-900 text-base">สร้างลิสต์รายการไปซื้อของ (Checklist)</h3>
               <p className="text-xs text-stone-500">จดรายการของที่ต้องไปซื้อให้พนักงานออกไปจ่ายตลาด</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleAddLowStock}
+              className="px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200/80 text-amber-800 text-xs font-semibold flex items-center gap-1.5 hover:bg-amber-100 transition-colors cursor-pointer"
+              title="ดึงรายการวัตถุดิบที่ต่ำกว่าจุดสั่งซื้อเข้าลิสต์"
+            >
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+              <span>ดึงของใกล้หมด</span>
+              {lowStockIngredients.length > 0 && (
+                <span className="px-1.5 py-0.2 bg-amber-200/70 text-amber-900 rounded-full font-mono text-[10px] font-bold">
+                  {lowStockIngredients.length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Form Body */}
@@ -189,7 +299,7 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
             <div className="space-y-1 sm:col-span-1">
               <label className="font-semibold text-stone-900 flex items-center gap-1.5">
                 <Store className="w-3.5 h-3.5 text-stone-500" />
-                ร้าน/ตลาดเป้าหมาย:
+                ร้านค้า:
               </label>
               <input
                 type="text"
@@ -236,43 +346,48 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
             </div>
           </div>
 
-          {/* Quick Select from Stock */}
-          <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 space-y-2">
+          {/* Quick Select from Stock with Search */}
+          <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-stone-900 flex items-center gap-1.5">
+              <span className="font-semibold text-stone-900 flex items-center gap-1.5 text-xs">
+                <Package className="w-3.5 h-3.5 text-stone-500" />
                 เลือกวัตถุดิบจากคลังที่ต้องการซื้อ:
               </span>
-              <span className="text-xs text-stone-500">ในระบบมี <span className="font-mono tabular-nums">{availableIngredients.length}</span> รายการ</span>
+              <span className="text-xs text-stone-500">
+                ในระบบมี <span className="font-mono tabular-nums font-semibold text-stone-800">{availableIngredients.length}</span> รายการ
+              </span>
             </div>
 
+            {/* Searchable Dropdown */}
             <Dropdown
               options={[
-                { value: '', label: '-- คลิกเลือกวัตถุดิบเพื่อเพิ่มลงลิสต์ --' },
+                { value: '', label: '-- คลิกเพื่อเลือกวัตถุดิบ --' },
                 ...availableIngredients.map((ing) => ({
                   value: ing.id,
-                  label: `${ing.name} (ในคลังเหลือ: ${ing.quantity} ${ing.unit})`,
-                  badge: `จุดเตือน: ${ing.reorder_point} ${ing.unit}`,
+                  label: `${ing.name} (เหลือ: ${ing.quantity} ${ing.unit})`,
+                  badge: ing.package_size && Number(ing.package_size) > 1
+                    ? `1 ชิ้น = ${Number(ing.package_size).toLocaleString()} ${ing.unit}`
+                    : undefined,
                 })),
               ]}
               value={selectedIngredientId}
               onChange={(val) => {
                 if (val) handleAddIngredient(Number(val));
               }}
-              placeholder="-- คลิกเลือกวัตถุดิบเพื่อเพิ่มลงลิสต์ --"
+              placeholder="คลิกเพื่อค้นหาและเลือกวัตถุดิบ..."
+              searchable
+              searchPlaceholder="พิมพ์ค้นหาชื่อวัตถุดิบ..."
               className="w-full"
-              buttonClassName="bg-white border border-stone-200 text-xs font-medium text-stone-800 py-2 rounded-xl"
+              buttonClassName="bg-white border border-stone-200 text-xs font-medium text-stone-800 py-2 rounded-xl shadow-2xs"
               size="md"
             />
           </div>
 
-          {/* Shopping Checklist Table (Items, Qty, Unit ONLY - NO PRICE) */}
+          {/* Shopping Checklist Table */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <h4 className="font-bold text-stone-900 text-sm">
-                รายการของที่ต้องไปซื้อ (<span className="font-mono tabular-nums font-bold">{items.length}</span> รายการ)
-              </h4>
-              <span className="text-xs text-stone-400 font-medium">ระบุแค่ชื่อและจำนวนที่ต้องการ</span>
-            </div>
+            <h4 className="font-bold text-stone-900 text-sm">
+              รายการของที่ต้องไปซื้อ (<span className="font-mono tabular-nums font-bold">{items.length}</span> รายการ)
+            </h4>
 
             <div className="overflow-x-auto border border-stone-200 rounded-2xl">
               <table className="w-full text-left text-xs">
@@ -281,52 +396,94 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
                     <th className="py-2.5 px-4">รายการของที่ต้องซื้อ</th>
                     <th className="py-2.5 px-3 text-center w-28">จำนวนที่ต้องซื้อ</th>
                     <th className="py-2.5 px-3 text-center w-24">หน่วย</th>
+                    <th className="py-2.5 px-3 text-right w-32 whitespace-nowrap">ราคาประมาณ</th>
                     <th className="py-2.5 px-2 text-center w-12"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
                   {items.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="text-center py-8 text-stone-400 font-normal">
+                      <td colSpan={5} className="text-center py-8 text-stone-400 font-normal">
                         ยังไม่มีรายการซื้อ เลือกวัตถุดิบจากคลังด้านบน หรือพิมพ์เพิ่มเองด้านล่าง
                       </td>
                     </tr>
                   ) : (
-                    items.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-stone-50">
-                        <td className="py-2.5 px-4 font-semibold text-stone-900">
-                          {item.name}
-                          {item.current_stock !== undefined && (
-                            <span className="block text-xs text-stone-400 font-normal font-mono tabular-nums">
-                              (ในร้านเหลือ: {item.current_stock} {item.unit})
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-3 text-center">
-                          <input
-                            type="number"
-                            min="0.1"
-                            step="any"
-                            value={item.quantity}
-                            onChange={(e) => handleUpdateQty(idx, parseFloat(e.target.value))}
-                            className="w-24 px-2.5 py-1 text-center font-bold text-sm rounded-lg border border-stone-200 focus:outline-none focus:border-stone-400 bg-white font-mono tabular-nums"
-                          />
-                        </td>
-                        <td className="py-2.5 px-3 text-center text-stone-700 font-medium">
-                          {item.unit}
-                        </td>
-                        <td className="py-2.5 px-2 text-center">
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveItem(idx)}
-                            className="p-1 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-stone-100 transition-colors cursor-pointer"
-                            title="ลบรายการ"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                    items.map((item, idx) => {
+                      const ing = item.ingredient_id
+                        ? availableIngredients.find((i) => i.id === item.ingredient_id)
+                        : null;
+                      const stockUnit = ing?.unit || item.unit;
+                      const packInfo =
+                        ing && ing.package_size && Number(ing.package_size) > 1
+                          ? `(1 ชิ้น = ${Number(ing.package_size).toLocaleString()} ${ing.unit})`
+                          : '';
+                      const ps = ing?.package_size && Number(ing.package_size) > 1 ? Number(ing.package_size) : 1;
+                      const estimatedCost =
+                        ing && ing.cost_per_unit ? item.quantity * ing.cost_per_unit * ps : null;
+
+                      return (
+                        <tr key={idx} className="hover:bg-stone-50">
+                          <td className="py-2.5 px-4 font-semibold text-stone-900">
+                            {item.name}
+                            {packInfo && (
+                              <span className="text-xs text-stone-500 ml-1.5 font-normal">
+                                {packInfo}
+                              </span>
+                            )}
+                            {item.current_stock !== undefined && (
+                              <span className="block text-xs text-stone-400 font-normal font-mono tabular-nums">
+                                (ในร้านเหลือ: {item.current_stock} {stockUnit})
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <input
+                              type="number"
+                              min="0.1"
+                              step="any"
+                              value={item.quantity}
+                              onChange={(e) => handleUpdateQty(idx, parseFloat(e.target.value))}
+                              className="w-24 px-2.5 py-1 text-center font-bold text-sm rounded-lg border border-stone-200 focus:outline-none focus:border-stone-400 bg-white font-mono tabular-nums"
+                            />
+                          </td>
+                          <td className="py-2.5 px-3 text-center text-stone-700 font-medium">
+                            {item.unit}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-mono tabular-nums whitespace-nowrap">
+                            {estimatedCost !== null ? (
+                              <span className="text-stone-800 font-semibold">
+                                ฿{estimatedCost.toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                              </span>
+                            ) : (
+                              <span className="text-stone-400 text-xs">—</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-2 text-center">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveItem(idx)}
+                              className="p-1 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-stone-100 transition-colors cursor-pointer"
+                              title="ลบรายการ"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                  {items.length > 0 && (
+                    <tr className="bg-stone-50 border-t-2 border-stone-200">
+                      <td colSpan={3} className="py-2.5 px-4 text-xs">
+                        {hasCustom && (
+                          <span className="text-amber-600">* ไม่รวมรายการที่ไม่มีในคลัง</span>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-bold text-stone-900 font-mono tabular-nums whitespace-nowrap">
+                        ฿{catalogTotal.toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                      </td>
+                      <td />
+                    </tr>
                   )}
                 </tbody>
               </table>
