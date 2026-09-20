@@ -8,6 +8,7 @@ import { MenuItem, RecipeItem } from '@/types';
 import { MenuCard } from './components/MenuCard';
 import { MenuListView } from './components/MenuListView';
 import { MenuModal } from './components/MenuModal';
+import { DeleteConfirmModal } from './components/DeleteConfirmModal';
 import { Dropdown } from '@/components/Dropdown';
 import { Button } from '@/components/Button';
 import { Skeleton } from '@/components/Skeleton';
@@ -17,6 +18,8 @@ export default function RecipeMenuPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [deletingItem, setDeletingItem] = useState<MenuItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
 
   // Search and Filter
@@ -164,6 +167,31 @@ export default function RecipeMenuPage() {
     }
   };
 
+  // Delete Handlers
+  const handleRequestDelete = (id: number) => {
+    const target = menuItems.find((m) => m.id === id);
+    if (target) {
+      setDeletingItem(target);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingItem) return;
+    setIsDeleting(true);
+    try {
+      const ok = await deleteMenuItem(deletingItem.id);
+      if (!ok) {
+        alert('ไม่สามารถลบเมนูได้ กรุณาลองใหม่อีกครั้ง');
+      }
+    } catch (err) {
+      console.error('Delete menu failed:', err);
+      alert('เกิดข้อผิดพลาดในการลบเมนู');
+    } finally {
+      setIsDeleting(false);
+      setDeletingItem(null);
+    }
+  };
+
   // Filter items
   const categories = Array.from(new Set(menuItems.map((m) => m.category)));
   const filteredMenuItems = menuItems.filter((item) => {
@@ -288,7 +316,7 @@ export default function RecipeMenuPage() {
                 key={item.id}
                 item={item}
                 onEdit={handleOpenEdit}
-                onDelete={deleteMenuItem}
+                onDelete={handleRequestDelete}
               />
             ))}
           </div>
@@ -296,11 +324,20 @@ export default function RecipeMenuPage() {
           <MenuListView
             items={filteredMenuItems}
             onEdit={handleOpenEdit}
-            onDelete={deleteMenuItem}
+            onDelete={handleRequestDelete}
             onReorder={reorderMenuItems}
           />
         )}
       </main>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={Boolean(deletingItem)}
+        item={deletingItem}
+        isDeleting={isDeleting}
+        onClose={() => setDeletingItem(null)}
+        onConfirm={handleConfirmDelete}
+      />
 
       {/* Modular Reusable Menu Modal */}
       <MenuModal

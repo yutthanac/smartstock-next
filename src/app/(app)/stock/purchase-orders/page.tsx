@@ -191,27 +191,19 @@ export default function PurchaseOrdersPage() {
   const [uploadingReceiptPO, setUploadingReceiptPO] = useState<PurchaseOrder | null>(null);
   const [verifyingReceiptPO, setVerifyingReceiptPO] = useState<PurchaseOrder | null>(null);
 
-  // Load POs from localStorage or initialize with mock
+  // Load POs from localStorage
   useEffect(() => {
     try {
       const saved = localStorage.getItem('smartstock_shopping_orders');
-      if (saved) {
-        const parsed: PurchaseOrder[] = JSON.parse(saved);
-        // Ensure the test demo order is available
-        const hasTestPO = parsed.some((p) => p.id === 'PO-20260906-01');
-        if (!hasTestPO) {
-          const merged = [INITIAL_MOCK_SHOPPING_LISTS[0], ...parsed];
-          setPoList(merged);
-          localStorage.setItem('smartstock_shopping_orders', JSON.stringify(merged));
-        } else {
-          setPoList(parsed);
-        }
+      if (saved !== null) {
+        const parsed = JSON.parse(saved);
+        setPoList(Array.isArray(parsed) ? parsed : []);
       } else {
-        setPoList(INITIAL_MOCK_SHOPPING_LISTS);
-        localStorage.setItem('smartstock_shopping_orders', JSON.stringify(INITIAL_MOCK_SHOPPING_LISTS));
+        setPoList([]);
+        localStorage.setItem('smartstock_shopping_orders', JSON.stringify([]));
       }
     } catch {
-      setPoList(INITIAL_MOCK_SHOPPING_LISTS);
+      setPoList([]);
     }
   }, []);
 
