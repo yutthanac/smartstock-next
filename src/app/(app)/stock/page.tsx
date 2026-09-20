@@ -285,9 +285,6 @@ export default function StockPage() {
     tracking_type: 'strict',
     package_unit: 'ถุง',
     package_size: '500',
-    is_two_tier: false,
-    backstock_quantity: '',
-    bar_quantity: '',
   });
 
   const filteredIngredients = React.useMemo(() => {
@@ -361,9 +358,6 @@ export default function StockPage() {
       tracking_type: 'strict',
       package_unit: 'ถุง',
       package_size: '500',
-      is_two_tier: false,
-      backstock_quantity: '',
-      bar_quantity: '',
     });
     setIsAddModalOpen(true);
   };
@@ -382,9 +376,6 @@ export default function StockPage() {
       tracking_type: ing.tracking_type || 'strict',
       package_unit: ing.package_unit || '',
       package_size: ing.package_size ? Math.round(Number(ing.package_size)) : '',
-      is_two_tier: false,
-      backstock_quantity: '',
-      bar_quantity: '',
     });
     setIsAddModalOpen(true);
   };
@@ -430,7 +421,6 @@ export default function StockPage() {
         tracking_type: formData.tracking_type,
         package_unit: formData.package_unit?.trim() || undefined,
         package_size: packSize,
-        is_two_tier: false,
       });
     } else {
       success = await addIngredient({
@@ -445,7 +435,6 @@ export default function StockPage() {
         tracking_type: formData.tracking_type,
         package_unit: formData.package_unit?.trim() || undefined,
         package_size: packSize,
-        is_two_tier: false,
       });
     }
 

@@ -1,17 +1,20 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Sparkles, Plus, Minus, Layers, PlusCircle, Check } from 'lucide-react';
-import { MenuItem, MenuOptionIngredient } from '@/types';
+import React from 'react';
+import { ArrowLeft, Plus, Minus, PlusCircle, Check, Layers, ChevronDown, Thermometer, Droplets, Zap, Coffee, Home, StickyNote } from 'lucide-react';
+import { MenuItem } from '@/types';
 import { Button } from '@/components/Button';
 import { useStock } from '@/lib/StockContext';
-import { CartItemOption } from './ItemOptionModal';
+import { CartItemOption } from '../hooks/useItemOptions';
+import { useItemOptions } from '../hooks/useItemOptions';
 
 interface ItemOptionPanelProps {
   item: MenuItem;
   initialOptions?: CartItemOption;
   onCancel: () => void;
   onConfirm: (options: CartItemOption) => void;
+  /** When true, renders in compact touch-friendly mode (mobile/tablet bottom sheet) */
+  compact?: boolean;
 }
 
 export const ItemOptionPanel: React.FC<ItemOptionPanelProps> = ({
@@ -19,308 +22,128 @@ export const ItemOptionPanel: React.FC<ItemOptionPanelProps> = ({
   initialOptions,
   onCancel,
   onConfirm,
+  compact = false,
 }) => {
   const { ingredients, getMenuOptions } = useStock();
-  const initShots = initialOptions?.extraShots ?? (initialOptions?.isSpecial ? 1 : 0);
+  const [showBOM, setShowBOM] = React.useState(false);
 
-  const [temperature, setTemperature] = useState<string>(initialOptions?.temperature || 'เย็น');
-  const [sweetness, setSweetness] = useState<string>(initialOptions?.sweetness || 'หวาน 100%');
-  const [diningOption, setDiningOption] = useState<string>(initialOptions?.diningOption || 'ทานที่ร้าน');
-  const [extraShots, setExtraShots] = useState<number>(initShots);
-  const [customNote, setCustomNote] = useState<string>(initialOptions?.customNote || '');
-  const [availableOptions, setAvailableOptions] = useState<MenuOptionIngredient[]>([]);
-  const [selectedModifiers, setSelectedModifiers] = useState<MenuOptionIngredient[]>(
-    initialOptions?.selectedModifiers || []
-  );
-
-  useEffect(() => {
-    const shots = initialOptions?.extraShots ?? (initialOptions?.isSpecial ? 1 : 0);
-    setTemperature(initialOptions?.temperature || 'เย็น');
-    setSweetness(initialOptions?.sweetness || 'หวาน 100%');
-    setDiningOption(initialOptions?.diningOption || 'ทานที่ร้าน');
-    setExtraShots(shots);
-    setCustomNote(initialOptions?.customNote || '');
-    setSelectedModifiers(initialOptions?.selectedModifiers || []);
-  }, [item, initialOptions]);
-
-  // Load menu options / add-on modifiers
-  useEffect(() => {
-    if (item?.option_ingredients && item.option_ingredients.length > 0) {
-      setAvailableOptions(item.option_ingredients);
-    } else {
-      getMenuOptions().then((opts) => {
-        const matching = opts.filter((o) => !o.menu_item_id || o.menu_item_id === item?.id);
-        setAvailableOptions(matching);
-      });
-    }
-  }, [item]);
-
-  const quickTags = ['แยกน้ำแข็ง', 'วิปครีม'];
-
-  const handleToggleTag = (tag: string) => {
-    const currentTags = customNote
-      .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean);
-
-    if (currentTags.includes(tag)) {
-      setCustomNote(currentTags.filter((t) => t !== tag).join(', '));
-    } else {
-      setCustomNote([...currentTags, tag].join(', '));
-    }
-  };
-
-  const handleToggleModifier = (opt: MenuOptionIngredient) => {
-    setSelectedModifiers((prev) => {
-      const exists = prev.some((m) => m.id === opt.id || m.name === opt.name);
-      if (exists) {
-        return prev.filter((m) => m.id !== opt.id && m.name !== opt.name);
-      } else {
-        return [...prev, opt];
-      }
-    });
-  };
-
-  const blendExtra = temperature === 'ปั่น (+10฿)' ? 10 : 0;
-  const modifierTotal = selectedModifiers.reduce((sum, m) => sum + (Number(m.price) || 0), 0);
-  const currentPrice = item.price + extraShots * 15 + blendExtra + modifierTotal;
-
-  // Real-time BOM stock calculation based on live options
-  let sweetnessMultiplier = 1.0;
-  if (customNote.includes('ไม่ใส่ไซรัป')) {
-    sweetnessMultiplier = 0.0;
-  } else if (sweetness.includes('125%') || sweetness.includes('หวานมาก')) {
-    sweetnessMultiplier = 1.25;
-  } else if (sweetness.includes('100%')) {
-    sweetnessMultiplier = 1.0;
-  } else if (sweetness.includes('75%')) {
-    sweetnessMultiplier = 0.75;
-  } else if (sweetness.includes('50%') || sweetness.includes('หวานน้อย')) {
-    sweetnessMultiplier = 0.50;
-  } else if (sweetness.includes('25%')) {
-    sweetnessMultiplier = 0.25;
-  } else if (sweetness.includes('0%') || sweetness.includes('ไม่หวาน')) {
-    sweetnessMultiplier = 0.0;
-  }
-
-  // Comprehensive Sweetener Detection Helper
-  const checkIsSweetener = (name: string, category?: string) => {
-    const n = (name || '').toLowerCase();
-    const c = (category || '').toLowerCase();
-    return (
-      n.includes('ไซรัป') ||
-      n.includes('syrup') ||
-      n.includes('นมข้น') ||
-      n.includes('ข้นหวาน') ||
-      n.includes('น้ำตาล') ||
-      n.includes('น้ำเชื่อม') ||
-      n.includes('น้ำผึ้ง') ||
-      n.includes('honey') ||
-      n.includes('คาราเมล') ||
-      n.includes('caramel') ||
-      n.includes('วานิลลา') ||
-      n.includes('vanilla') ||
-      n.includes('มะลิ') ||
-      n.includes('mali') ||
-      n.includes('คาร์เนชัน') ||
-      n.includes('carnation') ||
-      n.includes('ทีพอท') ||
-      n.includes('teapot') ||
-      n.includes('falcon') ||
-      n.includes('นกเหยี่ยว') ||
-      n.includes('condensed') ||
-      n.includes('sweetener') ||
-      n.includes('stevia') ||
-      n.includes('หญ้าหวาน') ||
-      n.includes('หล่อฮังก๊วย') ||
-      c.includes('ไซรัป') ||
-      c.includes('syrup') ||
-      c.includes('สารให้ความหวาน') ||
-      c.includes('ความหวาน')
-    );
-  };
-
-  // Detect sweetness ingredients used in this recipe
-  const recipeSweeteners: string[] = [];
-  (item.recipes || []).forEach((r) => {
-    const ing = ingredients.find((i) => i.id === r.ingredient_id);
-    const ingName = ing ? ing.name : (r.ingredient_name || '');
-    const ingCat = ing?.category || '';
-    if (checkIsSweetener(ingName, ingCat) && !recipeSweeteners.includes(ingName)) {
-      recipeSweeteners.push(ingName);
-    }
+  const opts = useItemOptions({
+    item,
+    initialOptions,
+    ingredients,
+    getMenuOptions,
+    isActive: true,
   });
 
-  const previewDeductions = (item.recipes || []).map((r) => {
-    const ing = ingredients.find((i) => i.id === r.ingredient_id);
-    const ingName = ing ? ing.name : (r.ingredient_name || 'วัตถุดิบ');
-    const ingUnit = ing ? ing.unit : (r.ingredient_unit || 'หน่วย');
-    const ingCurrent = ing ? ing.quantity : 0;
-    const baseQty = r.quantity_used || 0;
-
-    const ingNameLower = ingName.toLowerCase();
-    const ingCatLower = (ing?.category || '').toLowerCase();
-
-    const isCoffee =
-      (ingNameLower.includes('เมล็ดกาแฟ') ||
-        ingNameLower.includes('กาแฟคั่ว') ||
-        (ingNameLower.includes('กาแฟ') && !ingNameLower.includes('แก้ว'))) ||
-      (ingCatLower.includes('เมล็ดกาแฟ') ||
-        (ingCatLower.includes('กาแฟ') && !ingCatLower.includes('แก้ว')));
-
-    const isSweetener = checkIsSweetener(ingName, ing?.category);
-
-    let mult = 1.0;
-    let badgeText = '';
-    if (isCoffee && extraShots > 0) {
-      mult = 1.0 + extraShots;
-      badgeText = `+${extraShots} ช็อต`;
-    } else if (isSweetener) {
-      mult = sweetnessMultiplier;
-      if (sweetnessMultiplier === 0) badgeText = 'ไม่หวาน';
-      else if (sweetnessMultiplier < 1) badgeText = 'หวานน้อย';
-      else if (sweetnessMultiplier > 1) badgeText = 'หวานมาก';
-    }
-
-    const ingUnitLower = (ingUnit || '').toLowerCase().trim();
-    let unitFactor = 1.0;
-    if (['กก.', 'กก', 'kg', 'กิโลกรัม'].includes(ingUnitLower) && baseQty >= 1) {
-      unitFactor = 0.001;
-    } else if (['ลิตร', 'l', 'liter', 'litre'].includes(ingUnitLower) && baseQty >= 1) {
-      unitFactor = 0.001;
-    }
-
-    const deductedQty = Number((baseQty * mult * unitFactor).toFixed(3));
-    return {
-      id: `base-${r.ingredient_id}`,
-      name: ingName,
-      unit: ingUnit,
-      baseQty,
-      deductedQty,
-      currentQty: ingCurrent,
-      remainingQty: Math.max(0, Number((ingCurrent - deductedQty).toFixed(2))),
-      isSweetener,
-      isCoffee,
-      badgeText,
-    };
-  });
-
-  // Add-on modifiers stock deductions
-  const modifierDeductions = selectedModifiers.map((mod) => {
-    const ing = ingredients.find((i) => i.id === mod.ingredient_id);
-    const ingName = ing ? ing.name : (mod.ingredient_name || 'วัตถุดิบเสริม');
-    const ingUnit = ing ? ing.unit : (mod.ingredient_unit || 'หน่วย');
-    const ingCurrent = ing ? Number(ing.quantity) : 0;
-    const deductQty = Number(mod.quantity) || 1;
-    const remaining = Math.max(0, ingCurrent - deductQty);
-
-    return {
-      id: `mod-${mod.id}-${mod.name}`,
-      name: `${ingName} (+${mod.name})`,
-      unit: ingUnit,
-      baseQty: deductQty,
-      deductedQty: deductQty,
-      currentQty: ingCurrent,
-      remainingQty: Math.round(remaining * 10) / 10,
-      badgeText: `+฿${mod.price}`,
-      isSweetener: false,
-      isCoffee: false,
-      isModifier: true,
-    };
-  });
-
-  const allPreviewDeductions = [...previewDeductions, ...modifierDeductions];
-
-  const isTakeaway = diningOption === 'กลับบ้าน' || customNote.includes('กลับบ้าน');
-  const takeawayCup = isTakeaway
-    ? ingredients.find(
-        (i) =>
-          i.name.toLowerCase().includes('แก้ว') &&
-          !i.name.toLowerCase().includes('เมล็ด')
-      )
-    : null;
+  const {
+    temperature, setTemperature,
+    sweetness, setSweetness,
+    diningOption, setDiningOption,
+    extraShots, setExtraShots,
+    customNote, setCustomNote,
+    availableOptions,
+    selectedModifiers,
+    handleToggleTag,
+    handleToggleModifier,
+    quickTags,
+    currentPrice,
+    recipeSweeteners,
+    allPreviewDeductions,
+    takeawayCup,
+    buildResult,
+  } = opts;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onConfirm({
-      temperature,
-      sweetness,
-      extraShots,
-      diningOption,
-      customNote: customNote.trim(),
-      selectedModifiers,
-    });
+    onConfirm(buildResult());
   };
+
+  // Base chip class — larger touch targets when compact
+  const chip = (selected: boolean, variant: 'default' | 'warm' = 'default') =>
+    [
+      'rounded-xl font-medium transition-all border text-center cursor-pointer select-none active:scale-95',
+      compact ? 'py-3 text-sm' : 'py-2.5 text-xs',
+      selected
+        ? variant === 'warm'
+          ? 'bg-stone-800 text-amber-50 border-stone-800 shadow-xs font-semibold'
+          : 'bg-stone-900 text-white border-stone-900 shadow-xs font-semibold'
+        : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-50 hover:border-stone-300',
+    ].join(' ');
+
+  const sectionLabel = (text: string) => (
+    <span className={`font-semibold text-stone-800 block mb-2 ${compact ? 'text-sm' : 'text-xs'}`}>
+      {text}
+    </span>
+  );
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col h-full space-y-4 text-xs">
-      {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-stone-100">
-        <div className="flex items-center gap-2">
+
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between pb-3 border-b border-stone-100 shrink-0">
+        <div className="flex items-center gap-2.5">
           <button
             type="button"
             onClick={onCancel}
-            className="p-1.5 rounded-xl bg-stone-100 border border-stone-200 text-stone-600 hover:text-stone-900 transition-colors cursor-pointer"
-            title="กลับไปที่บิล"
+            className="p-1.5 rounded-xl bg-stone-100 border border-stone-200 text-stone-600 hover:bg-stone-200 transition-colors cursor-pointer shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="min-w-0">
-            <h3 className="font-bold text-stone-900 text-sm truncate">{item.name}</h3>
-            <p className="text-xs text-stone-500 font-medium">เลือกอุณหภูมิและความหวาน</p>
+            <h3 className={`font-bold text-stone-900 truncate leading-tight ${compact ? 'text-base' : 'text-sm'}`}>
+              {item.name}
+            </h3>
+            <p className="text-[11px] text-stone-400 mt-0.5">ปรับแต่งตามความต้องการ</p>
           </div>
         </div>
-        <div className="text-right">
-          <span className="font-bold text-base text-stone-900 font-mono tabular-nums">฿{currentPrice.toFixed(2)}</span>
-        </div>
+        <span className={`font-bold text-stone-900 font-mono tabular-nums shrink-0 ${compact ? 'text-xl' : 'text-lg'}`}>
+          ฿{currentPrice.toFixed(0)}
+        </span>
       </div>
 
-      {/* Options Body */}
-      <div className="space-y-3.5 flex-1 overflow-y-auto no-scrollbar pr-0.5">
+      {/* ── Scrollable body ── */}
+      <div className="flex-1 overflow-y-auto no-scrollbar space-y-5">
+
         {/* Temperature */}
-        <div>
-          <label className="font-semibold text-stone-700 block mb-1.5">อุณหภูมิ</label>
+        <section>
+          {sectionLabel('อุณหภูมิ')}
           <div className="grid grid-cols-3 gap-2">
             {[
               { label: 'เย็น', value: 'เย็น' },
               { label: 'ร้อน', value: 'ร้อน' },
-              { label: 'ปั่น (+10฿)', value: 'ปั่น (+10฿)' },
+              { label: 'ปั่น  +฿10', value: 'ปั่น (+10฿)' },
             ].map(({ label, value }) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => setTemperature(value)}
-                className={`py-2.5 px-2 rounded-xl font-medium transition-all border text-center cursor-pointer ${
-                  temperature === value
-                    ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
-                    : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'
-                }`}
+                className={`px-2 ${chip(temperature === value)}`}
               >
                 {label}
               </button>
             ))}
           </div>
-        </div>
+        </section>
 
         {/* Sweetness */}
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label className="font-semibold text-stone-700 block">ระดับความหวาน</label>
+        <section>
+          <div className="flex items-center justify-between mb-2">
+            {sectionLabel('ความหวาน')}
             {recipeSweeteners.length > 0 ? (
-              <span className="text-[11px] text-stone-500 font-medium flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                ตัดจาก: <strong className="text-stone-800 font-medium">{recipeSweeteners.join(', ')}</strong>
+              <span className="text-[11px] text-stone-400 font-medium flex items-center gap-1 mb-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block shrink-0" />
+                {recipeSweeteners[0]}
               </span>
             ) : (
-              <span className="text-[11px] text-stone-400">สูตรไม่มีสารให้ความหวานหลัก</span>
+              <span className="text-[11px] text-stone-400 mb-2">ไม่มีสารให้ความหวาน</span>
             )}
           </div>
           <div className="grid grid-cols-4 gap-1.5">
             {[
               { label: 'ไม่หวาน', val: 'ไม่หวาน' },
-              { label: 'หวานน้อย', val: 'หวานน้อย' },
+              { label: 'น้อย', val: 'หวานน้อย' },
               { label: 'ปกติ', val: 'หวาน' },
-              { label: 'หวานมาก', val: 'หวานมาก' },
+              { label: 'มาก', val: 'หวานมาก' },
             ].map(({ label, val }) => {
               const isSelected = sweetness === val || (val === 'หวาน' && sweetness === 'หวาน 100%');
               return (
@@ -328,60 +151,58 @@ export const ItemOptionPanel: React.FC<ItemOptionPanelProps> = ({
                   key={val}
                   type="button"
                   onClick={() => setSweetness(val === 'หวาน' ? 'หวาน 100%' : val)}
-                  className={`py-2 px-1 rounded-xl font-medium text-xs transition-all border text-center cursor-pointer ${
-                    isSelected
-                      ? 'bg-stone-900 text-white border-stone-900 shadow-xs font-semibold'
-                      : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'
-                  }`}
+                  className={`px-1 ${chip(isSelected)}`}
                 >
                   {label}
                 </button>
               );
             })}
           </div>
-        </div>
+        </section>
 
         {/* Extra Shots */}
-        <div>
-          <label className="font-semibold text-stone-700 block mb-1.5 flex items-center gap-1">
-            <span>ช็อตเอสเพรสโซ่</span>
-            <span className="ml-1 text-stone-400 font-normal">(+15฿ / ช็อตเพิ่ม)</span>
-          </label>
-          <div className="flex items-center gap-3 p-2.5 bg-white rounded-xl border border-stone-200 shadow-xs w-fit">
+        <section>
+          <div className="flex items-center gap-1.5 mb-2">
+            {sectionLabel('ช็อตเอสเพรสโซ่')}
+            <span className="text-[11px] text-stone-400 font-normal mb-2">+฿15 / ช็อต</span>
+          </div>
+          <div className={`inline-flex items-center gap-4 bg-white border border-stone-200 shadow-xs rounded-xl ${compact ? 'p-2.5' : 'p-2'}`}>
             <button
               type="button"
               onClick={() => setExtraShots(Math.max(0, extraShots - 1))}
               disabled={extraShots === 0}
-              className="w-7 h-7 flex items-center justify-center rounded-lg bg-stone-100 border border-stone-200 text-stone-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer hover:bg-stone-200"
+              className={`flex items-center justify-center rounded-lg bg-stone-100 border border-stone-200 text-stone-700 disabled:opacity-30 cursor-pointer hover:bg-stone-200 transition-colors ${compact ? 'w-9 h-9' : 'w-7 h-7'}`}
             >
-              <Minus className="w-3.5 h-3.5" />
+              <Minus className={compact ? 'w-4 h-4' : 'w-3.5 h-3.5'} />
             </button>
-            <div className="text-center w-28">
-              <span className="font-bold text-stone-900 text-lg font-mono tabular-nums">{extraShots}</span>
-              <span className="text-stone-500 ml-1.5 text-xs">
-                {extraShots === 0 ? 'ปกติ' : `ช็อตเพิ่ม${extraShots > 0 ? ` +฿${extraShots * 15}` : ''}`}
+            <div className="text-center min-w-[4rem]">
+              <span className={`font-bold text-stone-900 font-mono tabular-nums ${compact ? 'text-2xl' : 'text-xl'}`}>
+                {extraShots}
+              </span>
+              <span className="text-stone-400 ml-1.5 text-xs">
+                {extraShots === 0 ? 'ปกติ' : `+฿${extraShots * 15}`}
               </span>
             </div>
             <button
               type="button"
               onClick={() => setExtraShots(Math.min(3, extraShots + 1))}
               disabled={extraShots === 3}
-              className="w-7 h-7 flex items-center justify-center rounded-lg bg-stone-100 border border-stone-200 text-stone-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer hover:bg-stone-200"
+              className={`flex items-center justify-center rounded-lg bg-stone-100 border border-stone-200 text-stone-700 disabled:opacity-30 cursor-pointer hover:bg-stone-200 transition-colors ${compact ? 'w-9 h-9' : 'w-7 h-7'}`}
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className={compact ? 'w-4 h-4' : 'w-3.5 h-3.5'} />
             </button>
           </div>
-        </div>
+        </section>
 
-        {/* Dynamic Option Modifiers (รายการสั่งเพิ่ม / ท็อปปิ้ง) */}
+        {/* Add-on Modifiers */}
         {availableOptions.length > 0 && (
-          <div className="p-3 rounded-2xl bg-white border border-stone-200 shadow-2xs space-y-2">
+          <section className="p-3 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-2.5">
             <div className="flex items-center justify-between">
-              <label className="font-semibold text-stone-800 text-xs flex items-center gap-1.5">
-                <PlusCircle className="w-3.5 h-3.5 text-stone-700" />
-                <span>รายการสั่งเพิ่ม (Add-ons)</span>
-              </label>
-              <span className="text-[11px] text-stone-400 font-medium">ตัดสต็อกอัตโนมัติ</span>
+              <span className={`font-semibold text-stone-800 flex items-center gap-1.5 ${compact ? 'text-sm' : 'text-xs'}`}>
+                <PlusCircle className="w-3.5 h-3.5 text-stone-500" />
+                รายการสั่งเพิ่ม
+              </span>
+              <span className="text-[11px] text-stone-400">ตัดสต็อกอัตโนมัติ</span>
             </div>
             <div className="grid grid-cols-2 gap-1.5">
               {availableOptions.map((opt) => {
@@ -390,13 +211,13 @@ export const ItemOptionPanel: React.FC<ItemOptionPanelProps> = ({
                 );
                 return (
                   <button
-                    key={opt.id || opt.name}
+                    key={opt.id ?? opt.name}
                     type="button"
                     onClick={() => handleToggleModifier(opt)}
-                    className={`p-2 rounded-xl text-left border transition-all cursor-pointer flex items-center justify-between ${
+                    className={`p-2.5 rounded-xl text-left border transition-all cursor-pointer flex items-center justify-between active:scale-[0.97] ${
                       isSelected
                         ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
-                        : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
+                        : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'
                     }`}
                   >
                     <div className="min-w-0 pr-1">
@@ -404,182 +225,164 @@ export const ItemOptionPanel: React.FC<ItemOptionPanelProps> = ({
                         {isSelected && <Check className="w-3 h-3 text-emerald-400 shrink-0" />}
                         <span className="truncate">{opt.name}</span>
                       </div>
-                      <div className={`text-[10px] ${isSelected ? 'text-stone-300' : 'text-stone-500'}`}>
-                        {opt.quantity} {opt.ingredient_unit || 'หน่วย'}
+                      <div className={`text-[10px] ${isSelected ? 'text-stone-400' : 'text-stone-500'}`}>
+                        {opt.quantity} {opt.ingredient_unit ?? 'หน่วย'}
                       </div>
                     </div>
-                    <span
-                      className={`text-xs font-mono font-bold shrink-0 ${
-                        isSelected ? 'text-amber-300' : 'text-stone-700'
-                      }`}
-                    >
+                    <span className={`text-xs font-mono font-bold shrink-0 ${isSelected ? 'text-amber-300' : 'text-stone-600'}`}>
                       {opt.price > 0 ? `+฿${opt.price}` : 'ฟรี'}
                     </span>
                   </button>
                 );
               })}
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Dine-in vs Takeaway */}
-        <div>
-          <label className="font-semibold text-stone-700 block mb-1.5">รูปแบบการเสิร์ฟ</label>
+        {/* Dine-in / Takeaway */}
+        <section>
+          {sectionLabel('รูปแบบการเสิร์ฟ')}
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={() => setDiningOption('ทานที่ร้าน')}
-              className={`py-2.5 px-3 rounded-xl font-medium transition-all border cursor-pointer ${
-                diningOption === 'ทานที่ร้าน'
-                  ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
-                  : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'
-              }`}
+              className={`px-3 ${chip(diningOption === 'ทานที่ร้าน')}`}
             >
               ทานที่ร้าน
             </button>
             <button
               type="button"
               onClick={() => setDiningOption('กลับบ้าน')}
-              className={`py-2.5 px-3 rounded-xl font-medium transition-all border cursor-pointer ${
-                diningOption === 'กลับบ้าน'
-                  ? 'bg-[#f5efe6] text-[#78350f] border border-[#e8ded0] shadow-xs font-semibold'
-                  : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'
-              }`}
+              className={`px-3 ${chip(diningOption === 'กลับบ้าน', 'warm')}`}
             >
               กลับบ้าน
             </button>
           </div>
           {diningOption === 'กลับบ้าน' && (
-            <p className="text-xs text-[#78350f] mt-1.5 font-medium">
-              ตัดสต็อกแก้ว Takeaway อัตโนมัติ
-            </p>
+            <p className="text-[11px] text-stone-500 mt-1.5">ตัดสต็อกแก้ว Takeaway อัตโนมัติ</p>
           )}
-        </div>
+        </section>
 
         {/* Quick Tags */}
-        <div>
-          <label className="font-semibold text-stone-700 block mb-1">ตัวเลือกเพิ่มเติม</label>
+        <section>
+          {sectionLabel('ตัวเลือกด่วน')}
           <div className="flex flex-wrap gap-1.5">
-            {quickTags.map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => handleToggleTag(tag)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
-                  customNote.split(',').map((t) => t.trim()).includes(tag)
-                    ? 'bg-stone-900 text-white border-stone-900'
-                    : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-50'
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
+            {quickTags.map((tag) => {
+              const active = customNote.split(',').map((t) => t.trim()).includes(tag);
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => handleToggleTag(tag)}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer active:scale-[0.97] ${
+                    active
+                      ? 'bg-stone-900 text-white border-stone-900'
+                      : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-50'
+                  }`}
+                >
+                  {tag}
+                </button>
+              );
+            })}
           </div>
-        </div>
+        </section>
 
         {/* Custom Note */}
-        <div>
+        <section>
           <input
             type="text"
             placeholder="หมายเหตุเพิ่มเติม..."
             value={customNote}
             onChange={(e) => setCustomNote(e.target.value)}
-            className="w-full p-2.5 bg-white border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-400 text-stone-900 text-xs"
+            className={`w-full bg-white border border-stone-200 rounded-xl focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-300 text-stone-900 placeholder:text-stone-400 transition-colors ${compact ? 'p-3 text-sm' : 'p-2.5 text-xs'}`}
           />
-        </div>
+        </section>
 
-        {/* Real-time BOM Stock Deduction Preview */}
-        <div className="p-3 rounded-xl bg-stone-50 border border-stone-200/80 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="font-semibold text-stone-800 text-xs flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-stone-600" />
-              <span>Preview</span>
+        {/* BOM Preview — collapsible */}
+        <section className="rounded-xl border border-stone-200 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowBOM((v) => !v)}
+            className="w-full flex items-center justify-between px-3 py-2.5 bg-stone-50 hover:bg-stone-100 transition-colors cursor-pointer"
+          >
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-stone-600">
+              <Layers className="w-3.5 h-3.5" />
+              ตัดสต็อกจากสูตร ({allPreviewDeductions.length + (takeawayCup ? 1 : 0)} รายการ)
             </span>
-            <span className="text-xs text-stone-500 font-medium">
-              {allPreviewDeductions.length + (takeawayCup ? 1 : 0)} รายการ
-            </span>
-          </div>
+            <ChevronDown className={`w-3.5 h-3.5 text-stone-400 transition-transform duration-150 ${showBOM ? 'rotate-180' : ''}`} />
+          </button>
 
-          <div className="space-y-1.5 max-h-48 overflow-y-auto pr-0.5">
-            {allPreviewDeductions.map((d) => (
-              <div
-                key={d.id}
-                className="flex items-center justify-between text-xs p-2 rounded-xl bg-white border border-stone-200/80 shadow-2xs"
-              >
-                <div className="min-w-0 pr-2">
-                  <div className="font-medium text-stone-900 truncate flex items-center gap-1">
-                    <span>{d.name}</span>
-                    {d.badgeText && (
-                      <span
-                        className={`text-xs px-1.5 py-0.2 rounded font-semibold ${
+          {showBOM && (
+            <div className="bg-white divide-y divide-stone-100 max-h-48 overflow-y-auto">
+              {allPreviewDeductions.map((d) => (
+                <div key={d.id} className="flex items-center justify-between px-3 py-2 text-xs">
+                  <div className="min-w-0 pr-3">
+                    <div className="font-medium text-stone-900 truncate flex items-center gap-1">
+                      <span>{d.name}</span>
+                      {d.badgeText && (
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
                           d.deductedQty === 0
-                            ? 'bg-rose-100 text-rose-700'
+                            ? 'bg-rose-50 text-rose-600'
                             : (d as any).isModifier
-                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                             : d.isSweetener && d.deductedQty < d.baseQty
-                            ? 'bg-[#f5efe6] text-[#78350f] border border-[#e8ded0]'
-                            : 'bg-stone-100 text-stone-700 border border-stone-200'
-                        }`}
-                      >
-                        {d.badgeText}
-                      </span>
-                    )}
+                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                            : 'bg-stone-100 text-stone-600'
+                        }`}>
+                          {d.badgeText}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-stone-400 font-mono tabular-nums text-[10px] mt-0.5">เดิม {d.currentQty} {d.unit}</div>
                   </div>
-                  <div className="text-xs text-stone-400 font-mono tabular-nums">
-                    เดิม {d.currentQty} {d.unit}{' '}
-                    {d.deductedQty !== d.baseQty ? `(สูตร ${d.baseQty} ${d.unit})` : ''}
-                  </div>
-                </div>
-                <div className="text-right shrink-0 font-mono tabular-nums">
-                  <div
-                    className={`font-semibold ${
-                      d.deductedQty === 0 ? 'text-stone-400 line-through' : 'text-stone-900'
-                    }`}
-                  >
-                    -{d.deductedQty} {d.unit}
-                  </div>
-                  <div className="text-xs text-stone-500 font-medium">
-                    เหลือ {d.remainingQty} {d.unit}
+                  <div className="text-right shrink-0 font-mono tabular-nums">
+                    <div className={`font-semibold ${d.deductedQty === 0 ? 'text-stone-300 line-through' : 'text-stone-900'}`}>
+                      -{d.deductedQty} {d.unit}
+                    </div>
+                    <div className="text-[10px] text-stone-400">เหลือ {d.remainingQty} {d.unit}</div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
 
-            {takeawayCup && (
-              <div className="flex items-center justify-between text-xs p-2 rounded-xl bg-white border border-stone-200/80 shadow-2xs">
-                <div className="min-w-0 pr-2">
-                  <div className="font-medium text-stone-900 truncate flex items-center gap-1">
-                    <span>{takeawayCup.name}</span>
-                    <span className="text-xs bg-stone-100 text-stone-700 px-1.5 py-0.2 rounded font-semibold border border-stone-200">
-                      🥤 บรรจุภัณฑ์กลับบ้าน
-                    </span>
+              {takeawayCup && (
+                <div className="flex items-center justify-between px-3 py-2 text-xs">
+                  <div className="min-w-0 pr-3">
+                    <div className="font-medium text-stone-900 truncate">{takeawayCup.name}</div>
+                    <div className="text-stone-400 font-mono tabular-nums text-[10px]">เดิม {takeawayCup.quantity} {takeawayCup.unit}</div>
                   </div>
-                  <div className="text-xs text-stone-400 font-mono tabular-nums">
-                    เดิม {takeawayCup.quantity} {takeawayCup.unit}
+                  <div className="text-right shrink-0 font-mono tabular-nums">
+                    <div className="font-semibold text-stone-900">-1 {takeawayCup.unit}</div>
+                    <div className="text-[10px] text-stone-400">เหลือ {Math.max(0, takeawayCup.quantity - 1)} {takeawayCup.unit}</div>
                   </div>
                 </div>
-                <div className="text-right shrink-0 font-mono tabular-nums">
-                  <div className="font-semibold text-stone-900">-1 {takeawayCup.unit}</div>
-                  <div className="text-xs text-stone-500 font-medium">
-                    เหลือ {Math.max(0, takeawayCup.quantity - 1)} {takeawayCup.unit}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+              )}
+            </div>
+          )}
+        </section>
       </div>
 
-      {/* Footer Confirm */}
-      <div className="pt-3 border-t border-stone-200/80 flex items-center justify-between gap-2">
-        <span className="text-xs text-stone-500">
-          ราคา: <span className="font-bold text-stone-900 font-mono tabular-nums text-sm">฿{currentPrice.toFixed(2)}</span>
+      {/* ── Footer ── */}
+      <div className="border-t border-stone-100 pt-3 flex items-center justify-between gap-2 shrink-0">
+        <span className="text-xs text-stone-400">
+          ราคา:{' '}
+          <span className={`font-bold text-stone-900 font-mono tabular-nums ${compact ? 'text-base' : 'text-sm'}`}>
+            ฿{currentPrice.toFixed(0)}
+          </span>
         </span>
         <div className="flex gap-2">
-          <Button type="button" variant="outline" onClick={onCancel} className="rounded-xl border-stone-300 text-stone-700 hover:bg-stone-100">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            className={`rounded-xl border-stone-200 text-stone-600 hover:bg-stone-50 ${compact ? 'h-11 px-5 text-sm' : ''}`}
+          >
             ยกเลิก
           </Button>
-          <Button type="submit" variant="primary" className="rounded-xl bg-stone-900 text-white hover:bg-stone-800">
+          <Button
+            type="submit"
+            variant="primary"
+            className={`rounded-xl bg-stone-900 text-white hover:bg-stone-800 ${compact ? 'h-11 px-5 text-sm' : ''}`}
+          >
             บันทึกลงบิล
           </Button>
         </div>
@@ -588,3 +391,4 @@ export const ItemOptionPanel: React.FC<ItemOptionPanelProps> = ({
   );
 };
 
+export default ItemOptionPanel;

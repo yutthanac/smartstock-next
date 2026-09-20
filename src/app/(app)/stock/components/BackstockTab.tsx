@@ -32,12 +32,19 @@ import {
 } from '@/components/Table';
 import { useStock } from '@/lib/StockContext';
 
+type BackstockIngredient = Ingredient & {
+  is_two_tier?: boolean;
+  backstock_quantity?: number;
+  bar_quantity?: number;
+  opened_unit_remaining?: number;
+};
+
 interface BackstockTabProps {
-  ingredients: Ingredient[];
-  onOpenEdit: (item: Ingredient) => void;
+  ingredients: BackstockIngredient[];
+  onOpenEdit: (item: BackstockIngredient) => void;
   onOpenCreate: () => void;
   onToast: (msg: string) => void;
-  onWaste?: (item: Ingredient, tier: 'bar' | 'backstock') => void;
+  onWaste?: (item: BackstockIngredient, tier: 'bar' | 'backstock') => void;
 }
 
 export function BackstockTab({
@@ -54,7 +61,7 @@ export function BackstockTab({
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
   // Receive stock modal state
-  const [receivingItem, setReceivingItem] = useState<Ingredient | null>(null);
+  const [receivingItem, setReceivingItem] = useState<BackstockIngredient | null>(null);
   const [receiveCount, setReceiveCount] = useState<number | string>(1);
   const [receivePackSize, setReceivePackSize] = useState<number | string>(1);
   const [updateDefaultPackSize, setUpdateDefaultPackSize] = useState(false);
@@ -126,7 +133,7 @@ export function BackstockTab({
   }, [backstockItems]);
 
   // Handle Transfer / Open 1 Package to Front Bar
-  const handleTransferToBar = async (item: Ingredient) => {
+  const handleTransferToBar = async (item: BackstockIngredient) => {
     const pkgUnit = item.package_unit || 'แพ็ค';
     const currentBack = Number(item.backstock_quantity ?? 0);
     if (currentBack <= 0) {

@@ -6,17 +6,8 @@ import { MenuItem, MenuOptionIngredient } from '@/types';
 import { Button } from '@/components/Button';
 import { useStock } from '@/lib/StockContext';
 
-export interface CartItemOption {
-  temperature?: string; // 'เย็น' | 'ร้อน' | 'ปั่น (+10฿)'
-  sweetness?: string;   // 'ไม่หวาน (0%)' | 'หวานน้อย (50%)' | 'หวาน 100%' | 'หวานมาก'
-  diningOption: string; // 'ทานที่ร้าน' | 'กลับบ้าน'
-  extraShots: number;   // จำนวนช็อตเพิ่ม (0 = ปกติ, 1+ = +15฿/ช็อต) — replaces isSpecial
-  /** @deprecated use extraShots instead */
-  isSpecial?: boolean;
-  spiciness?: string;
-  customNote: string;
-  selectedModifiers?: MenuOptionIngredient[];
-}
+import { CartItemOption } from '../hooks/useItemOptions';
+export type { CartItemOption } from '../hooks/useItemOptions';
 
 interface ItemOptionModalProps {
   item: MenuItem | null;

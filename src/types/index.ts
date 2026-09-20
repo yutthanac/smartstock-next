@@ -32,10 +32,6 @@ export interface Ingredient {
   supplier?: string;
   package_unit?: string; // เช่น 'ขวด', 'ลัง', 'ถุง', 'กล่อง', 'กระป๋อง'
   package_size?: number; // เช่น 2000 (มล.), 1000 (กรัม)
-  is_two_tier?: boolean; // ระบบ 2 คลัง (หลังร้าน/หน้าบาร์)
-  backstock_quantity?: number; // สต็อกหลังร้าน (ขวด/ถุง/ลัง)
-  bar_quantity?: number; // สต็อกหน้าบาร์ (มล./กรัม)
-  opened_unit_remaining?: number; // เศษที่เปิดค้างอยู่จากแพ็คปัจจุบัน (มล./กรัม)
   sort_order?: number;
   updated_at?: string;
 }

@@ -324,7 +324,6 @@ export default function SidebarCustomizer() {
         {/* Action Shortcuts */}
         <div className="pt-3 border-t border-stone-100 flex items-center gap-2 flex-wrap text-xs">
           <span className="font-medium text-stone-500 flex items-center gap-1">
-            <Sparkles className="w-3.5 h-3.5 text-[#78350f]" />
             แม่แบบ:
           </span>
           <button

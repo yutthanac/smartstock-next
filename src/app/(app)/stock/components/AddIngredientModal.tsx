@@ -24,9 +24,6 @@ export interface IngredientFormData {
   tracking_type: 'strict' | 'bulk_expense';
   package_unit?: string;
   package_size?: number | string;
-  is_two_tier?: boolean;
-  backstock_quantity?: number | string;
-  bar_quantity?: number | string;
 }
 
 export interface AddIngredientModalProps {

@@ -40,7 +40,7 @@ export default function RecipeMenuPage() {
     setPrice(65);
     setImage('');
     setDescription('');
-    setRecipes([{ ingredient_id: ingredients[0]?.id || 1, quantity_used: 0.1 }]);
+    setRecipes([{ ingredient_id: ingredients[0]?.id || 1, quantity_used: 0 }]);
     setOptionIngredients([]);
     setIsModalOpen(true);
   };
@@ -53,7 +53,7 @@ export default function RecipeMenuPage() {
     setPrice(item.price);
     setImage(item.image || '');
     setDescription(item.description || '');
-    setRecipes(item.recipes && item.recipes.length > 0 ? [...item.recipes] : [{ ingredient_id: ingredients[0]?.id || 1, quantity_used: 0.1 }]);
+    setRecipes(item.recipes && item.recipes.length > 0 ? [...item.recipes] : [{ ingredient_id: ingredients[0]?.id || 1, quantity_used: 0 }]);
     setOptionIngredients(item.option_ingredients && item.option_ingredients.length > 0 ? [...item.option_ingredients] : []);
     setIsModalOpen(true);
   };
@@ -62,7 +62,7 @@ export default function RecipeMenuPage() {
   const handleAddRecipeRow = () => {
     setRecipes((prev) => [
       ...prev,
-      { ingredient_id: ingredients[0]?.id || 1, quantity_used: 0.1 },
+      { ingredient_id: ingredients[0]?.id || 1, quantity_used: 0 },
     ]);
   };
 
@@ -116,7 +116,7 @@ export default function RecipeMenuPage() {
       .map((r) => ({
         ingredient_id: Number(r.ingredient_id),
         quantity_used: typeof r.quantity_used === 'number' ? r.quantity_used : parseFloat(r.quantity_used as any) || 0.01,
-        waste_percent: typeof r.waste_percent === 'number' ? r.waste_percent : parseFloat(r.waste_percent as any) || 0,
+        waste_percent: 0,
       }))
       .filter((r) => r.ingredient_id && r.quantity_used > 0);
 

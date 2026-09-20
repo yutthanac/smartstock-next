@@ -294,3 +294,14 @@ h1, h2, h3, h4, h5, h6 {
     break-inside: avoid;
   }
 }
+
+/* Leaflet map marker clean transparent reset */
+.leaflet-div-icon,
+.custom-leaflet-main-marker,
+.custom-leaflet-marker {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+

@@ -68,14 +68,12 @@ export const MenuModal: React.FC<MenuModalProps> = ({
     const qty = typeof r.quantity_used === 'number' ? r.quantity_used : parseFloat(r.quantity_used as any) || 0;
     const unitLower = (ing.unit || '').toLowerCase().trim();
     let unitFactor = 1.0;
-    if (['กก.', 'กก', 'kg', 'กิโลกรัม'].includes(unitLower) && qty >= 1) {
+    if (['กก.', 'กก', 'kg', 'กิโลกรัม'].includes(unitLower)) {
       unitFactor = 0.001;
-    } else if (['ลิตร', 'l', 'liter', 'litre'].includes(unitLower) && qty >= 1) {
+    } else if (['ลิตร', 'l', 'liter', 'litre'].includes(unitLower)) {
       unitFactor = 0.001;
     }
-    const wastePercent = typeof r.waste_percent === 'number' ? r.waste_percent : parseFloat(r.waste_percent as any) || 0;
-    const wasteMult = 1.0 + (wastePercent / 100);
-    return sum + (ing.cost_per_unit * qty * unitFactor * wasteMult);
+    return sum + (ing.cost_per_unit * qty * unitFactor);
   }, 0);
 
   const calculatedProfit = numPrice - calculatedCost;

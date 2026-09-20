@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layers, Edit2, Trash2, GripVertical } from 'lucide-react';
+import { Edit2, Trash2, GripVertical } from 'lucide-react';
 import { MenuItem } from '@/types';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/Table';
 import { Badge } from '@/components/Badge';
@@ -73,8 +73,12 @@ function SortableMenuRow({ item, onEdit, onDelete }: SortableMenuRowProps) {
       </TableCell>
 
       <TableCell>
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-stone-50 border border-stone-200/80 overflow-hidden shrink-0 flex items-center justify-center p-1.5 shadow-2xs">
+        <div
+          onClick={() => onEdit(item)}
+          className="flex items-center gap-3 cursor-pointer group select-none"
+          title="คลิกเพื่อดูและแก้ไขสูตรเมนู"
+        >
+          <div className="w-12 h-12 rounded-xl bg-stone-50 border border-stone-200/80 overflow-hidden shrink-0 flex items-center justify-center p-1.5 shadow-2xs group-hover:border-stone-400 transition-colors">
             <img
               src={item.image || '/images/logo_ss.png'}
               alt={item.name}
@@ -82,7 +86,7 @@ function SortableMenuRow({ item, onEdit, onDelete }: SortableMenuRowProps) {
             />
           </div>
           <div>
-            <div className="font-semibold text-stone-900 text-sm">{item.name}</div>
+            <div className="font-semibold text-stone-900 text-sm group-hover:text-amber-800 transition-colors">{item.name}</div>
             {item.description && (
               <div className="text-xs text-stone-400 line-clamp-1 max-w-xs">{item.description}</div>
             )}
@@ -112,24 +116,6 @@ function SortableMenuRow({ item, onEdit, onDelete }: SortableMenuRowProps) {
         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-stone-100 text-stone-800 border border-stone-200 font-mono tabular-nums">
           {item.margin_percent}%
         </span>
-      </TableCell>
-
-      <TableCell className="max-w-xs">
-        <div className="flex flex-wrap gap-1">
-          {item.recipes && item.recipes.length > 0 ? (
-            item.recipes.map((r, idx) => (
-              <span
-                key={idx}
-                className="inline-flex items-center gap-1 text-xs bg-stone-50 text-stone-700 px-2 py-0.5 rounded-lg border border-stone-200 whitespace-nowrap"
-              >
-                <span className="font-normal">{r.ingredient_name || `#${r.ingredient_id}`}</span>
-                <span className="font-medium text-stone-900 font-mono tabular-nums">{r.quantity_used} {r.ingredient_unit}</span>
-              </span>
-            ))
-          ) : (
-            <span className="text-stone-400 text-xs italic">ไม่มีสูตร</span>
-          )}
-        </div>
       </TableCell>
 
       <TableCell className="text-center whitespace-nowrap">
@@ -203,7 +189,6 @@ export const MenuListView: React.FC<MenuListViewProps> = ({ items, onEdit, onDel
                 <TableHead className="text-right whitespace-nowrap">ต้นทุน</TableHead>
                 <TableHead className="text-right whitespace-nowrap">กำไร</TableHead>
                 <TableHead className="text-center whitespace-nowrap">มาร์จิ้น</TableHead>
-                <TableHead className="whitespace-nowrap">วัตถุดิบ</TableHead>
                 <TableHead className="text-center whitespace-nowrap w-24">จัดการ</TableHead>
               </TableRow>
             </TableHeader>

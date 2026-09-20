@@ -240,12 +240,11 @@ export default function StoresSettingsPage() {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
+    <div className="p-6 max-w-6xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-extrabold text-stone-900 flex items-center gap-2">
-            <Store className="w-5 h-5 text-emerald-600" />
             จัดการระบบร้านค้า & สิทธิ์เมนู
           </h1>
           <p className="text-sm text-stone-500 mt-0.5">

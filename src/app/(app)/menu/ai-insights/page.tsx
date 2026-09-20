@@ -15,6 +15,19 @@ import {
   AlertTriangle,
   Check,
   Compass,
+  CloudSun,
+  Users,
+  DollarSign,
+  Activity,
+  Flame,
+  MessageSquare,
+  BarChart3,
+  Building2,
+  Smile,
+  Frown,
+  Lightbulb,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { useStock } from '@/lib/StockContext';
 import { Topbar } from '@/components/Topbar';
@@ -95,10 +108,65 @@ interface RecommendedMenuItem {
   target_customer: string;
 }
 
+export interface DataSourcesStatus {
+  google_places: { count: number; active: boolean; details: string };
+  foursquare_poi: { count: number; active: boolean; foot_traffic: string; popularity_score: number };
+  customer_sentiment: { analyzed_reviews_count: number; active: boolean; sentiment_score: number };
+  pos_internal: { active: boolean; net_sales?: number; top_sellers?: string[]; menu_count?: number };
+  external_context: {
+    active: boolean;
+    weather: { temp_c: number; condition: string; is_rainy: boolean };
+    day_type: string;
+    neighborhood_type: string;
+  };
+}
+
+export interface MarketIntelligence {
+  trending_menus: {
+    name: string;
+    category: string;
+    demand_level: 'สูงมาก' | 'เติบโตต่อเนื่อง' | 'มาแรง';
+    reason: string;
+    estimated_volume: string;
+  }[];
+  pricing_strategy: {
+    area_average_price: string;
+    recommended_sweet_spot: string;
+    budget_range: string;
+    premium_ceiling: string;
+    strategy_note: string;
+  };
+  location_intelligence: {
+    foot_traffic_level: 'หนาแน่นมาก' | 'ปานกลาง' | 'เงียบสงบ';
+    peak_hours: string;
+    primary_demographic: string;
+    mobility_summary: string;
+  };
+  customer_sentiment: {
+    overall_sentiment: 'บวกมาก' | 'บวก' | 'ผสมผสาน';
+    top_compliments: string[];
+    top_complaints: string[];
+    unmet_needs: string[];
+  };
+  competition_matrix: {
+    density_level: 'ดุเดือดมาก' | 'ปานกลาง' | 'แข่งขันต่ำ';
+    competitor_count: number;
+    our_competitive_edge: string;
+    positioning_advice: string[];
+  };
+  demand_forecast: {
+    weather_impact: string;
+    seasonal_demand: string;
+    immediate_actions: string[];
+  };
+}
+
 interface CompetitorAnalysisResult {
   location_name: string;
   lat: number;
   lng: number;
+  data_sources?: DataSourcesStatus;
+  market_intelligence?: MarketIntelligence;
   neighborhood_summary: {
     market_density: string;
     target_audience: string;
@@ -138,6 +206,21 @@ export default function AIInsightsPage() {
   const [selectedShopNames, setSelectedShopNames] = useState<string[]>([]);
   const [isNearbyLoading, setIsNearbyLoading] = useState(false);
   const [placeFilter, setPlaceFilter] = useState<'coffee' | 'all'>('coffee');
+  const [expandedDimensions, setExpandedDimensions] = useState<Record<number, boolean>>({});
+
+  const toggleDimension = (id: number) => {
+    setExpandedDimensions((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const isAllExpanded = [1, 2, 3, 4, 5, 6].every((id) => !!expandedDimensions[id]);
+
+  const toggleAllDimensions = () => {
+    if (isAllExpanded) {
+      setExpandedDimensions({});
+    } else {
+      setExpandedDimensions({ 1: true, 2: true, 3: true, 4: true, 5: true, 6: true });
+    }
+  };
 
   const fetchNearbyPlaces = async (
     lat: number,
@@ -212,7 +295,7 @@ export default function AIInsightsPage() {
       }
     }
 
-    const cachedCompetitors = localStorage.getItem('smartstock_ai_competitor_insights_v2');
+    const cachedCompetitors = localStorage.getItem('smartstock_ai_competitor_insights_v3') || localStorage.getItem('smartstock_ai_competitor_insights_v2');
     if (cachedCompetitors) {
       try {
         const parsed = JSON.parse(cachedCompetitors);
@@ -307,6 +390,11 @@ export default function AIInsightsPage() {
     }
 
     try {
+      const topMenuNames = menuItems
+        .sort((a, b) => (b.order_count || 0) - (a.order_count || 0))
+        .slice(0, 3)
+        .map((m) => m.name);
+
       const res = await fetch('/api/ai/competitors', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -318,6 +406,11 @@ export default function AIInsightsPage() {
           storeType: 'ร้านกาแฟ / คาเฟ่ (Cafe & Coffee Shop)',
           businessDetails: '',
           selectedPlaces: placesToAnalyze,
+          salesContext: {
+            netSales: dashboard?.today_sales ?? 0,
+            topSellers: topMenuNames,
+            activeMenuCount: menuItems.length,
+          },
         }),
       });
 
@@ -326,7 +419,7 @@ export default function AIInsightsPage() {
         setCompetitorData(data);
         const now = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
         setCompetitorAnalyzedTime(now);
-        localStorage.setItem('smartstock_ai_competitor_insights_v2', JSON.stringify({ data, timestamp: now }));
+        localStorage.setItem('smartstock_ai_competitor_insights_v3', JSON.stringify({ data, timestamp: now }));
       }
     } catch (err) {
       console.error('Error analyzing competitors:', err);
@@ -347,6 +440,8 @@ export default function AIInsightsPage() {
   };
 
   const handleNearbySearch = (searchLat: number, searchLng: number) => {
+    setMapLat(searchLat);
+    setMapLng(searchLng);
     fetchNearbyPlaces(searchLat, searchLng, searchRadius, locationName);
   };
 
@@ -472,20 +567,480 @@ export default function AIInsightsPage() {
               />
             </div>
 
-            {/* Strategic Overview & Neighborhood Gap (Shown when analyzed) */}
+            {/* Data Pipeline Ingestion Status Strip (5 Ingestion Sources) */}
+            {competitorData?.data_sources && (
+              <div className="p-4 rounded-2xl bg-white border border-stone-200/90 shadow-2xs space-y-2.5">
+                <div className="flex items-center justify-between text-xs flex-wrap gap-2">
+                  <div className="flex items-center gap-1.5 font-semibold text-stone-800">
+                    <Activity className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>แหล่งข้อมูล Market Intelligence (Data Pipeline Ingestion 5 ช่องทาง)</span>
+                  </div>
+                  <span className="text-[11px] text-emerald-700 font-medium flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    ประมวลผลสดแบบ Real-time
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                  {/* Google Places */}
+                  <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/80 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-medium text-stone-500 flex items-center gap-1">
+                        <Store className="w-3 h-3 text-blue-600" /> Google Places
+                      </span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    </div>
+                    <p className="text-xs font-semibold text-stone-900 truncate">
+                      {competitorData.data_sources.google_places.count} ร้านค้า
+                    </p>
+                    <span className="text-[10px] text-stone-400 block truncate">
+                      {competitorData.data_sources.google_places.details}
+                    </span>
+                  </div>
+
+                  {/* Foursquare */}
+                  <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/80 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-medium text-stone-500 flex items-center gap-1">
+                        <Compass className="w-3 h-3 text-fuchsia-600" /> Foursquare POI
+                      </span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    </div>
+                    <p className="text-xs font-semibold text-stone-900 truncate">
+                      ทราฟฟิก {competitorData.data_sources.foursquare_poi.foot_traffic}
+                    </p>
+                    <span className="text-[10px] text-stone-400 block truncate">
+                      Popularity {competitorData.data_sources.foursquare_poi.popularity_score}/100
+                    </span>
+                  </div>
+
+                  {/* Yelp / Sentiment */}
+                  <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/80 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-medium text-stone-500 flex items-center gap-1">
+                        <MessageSquare className="w-3 h-3 text-amber-600" /> Yelp & Sentiment
+                      </span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    </div>
+                    <p className="text-xs font-semibold text-stone-900 truncate">
+                      {competitorData.data_sources.customer_sentiment.analyzed_reviews_count} รีวิว
+                    </p>
+                    <span className="text-[10px] text-stone-400 block truncate">
+                      Sentiment {competitorData.data_sources.customer_sentiment.sentiment_score}% บวก
+                    </span>
+                  </div>
+
+                  {/* POS Internal */}
+                  <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/80 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-medium text-stone-500 flex items-center gap-1">
+                        <DollarSign className="w-3 h-3 text-emerald-600" /> POS ยอดขายจริง
+                      </span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    </div>
+                    <p className="text-xs font-semibold text-stone-900 truncate">
+                      ฿{(competitorData.data_sources.pos_internal.net_sales || 0).toLocaleString()}
+                    </p>
+                    <span className="text-[10px] text-stone-400 block truncate">
+                      {competitorData.data_sources.pos_internal.top_sellers?.[0] ? `Top: ${competitorData.data_sources.pos_internal.top_sellers[0]}` : 'ข้อมูลร้านของเรา'}
+                    </span>
+                  </div>
+
+                  {/* Weather & External */}
+                  <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/80 space-y-1 col-span-2 sm:col-span-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-medium text-stone-500 flex items-center gap-1">
+                        <CloudSun className="w-3 h-3 text-sky-600" /> Open-Meteo & สภาพอากาศ
+                      </span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    </div>
+                    <p className="text-xs font-semibold text-stone-900 truncate">
+                      {competitorData.data_sources.external_context.weather.temp_c}°C {competitorData.data_sources.external_context.weather.condition}
+                    </p>
+                    <span className="text-[10px] text-stone-400 block truncate">
+                      {competitorData.data_sources.external_context.day_type} ({competitorData.data_sources.external_context.neighborhood_type})
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Strategic Overview & Neighborhood Gap */}
             {competitorData?.neighborhood_summary && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="p-4 rounded-2xl bg-white border border-stone-200/90 shadow-2xs space-y-1">
-                  <span className="text-xs text-stone-500 font-medium">ระดับการแข่งขัน</span>
+                  <span className="text-xs text-stone-500 font-medium">ระดับการแข่งขันในย่าน</span>
                   <p className="text-sm font-semibold text-stone-900">{competitorData.neighborhood_summary.market_density}</p>
                 </div>
                 <div className="p-4 rounded-2xl bg-white border border-stone-200/90 shadow-2xs space-y-1">
-                  <span className="text-xs text-stone-500 font-medium">กลุ่มผู้บริโภค</span>
+                  <span className="text-xs text-stone-500 font-medium">กลุ่มผู้บริโภคหลัก</span>
                   <p className="text-sm font-semibold text-stone-900">{competitorData.neighborhood_summary.target_audience}</p>
                 </div>
                 <div className="p-4 rounded-2xl bg-white border border-emerald-200 shadow-2xs space-y-1">
                   <span className="text-xs text-emerald-700 font-medium">ช่องว่างตลาดที่น่าสนใจ</span>
                   <p className="text-sm font-semibold text-emerald-950">{competitorData.neighborhood_summary.gap_in_market}</p>
+                </div>
+              </div>
+            )}
+
+            {/* 6 Dimensions Market Intelligence Cards */}
+            {competitorData?.market_intelligence && (
+              <div className="space-y-3.5">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    <h4 className="text-sm sm:text-base font-semibold text-stone-900">
+                      การวิเคราะห์ 6 มิติเชิงลึก (Market Intelligence Engine)
+                    </h4>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-stone-400 hidden sm:inline">
+                      หลอมรวม 5 แหล่งข้อมูลโดย Gemini AI
+                    </span>
+                    <button
+                      type="button"
+                      onClick={toggleAllDimensions}
+                      className="text-xs px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium transition-all cursor-pointer flex items-center gap-1.5"
+                    >
+                      {isAllExpanded ? (
+                        <>
+                          <ChevronUp className="w-3.5 h-3.5" />
+                          <span>ยุบทั้งหมด</span>
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="w-3.5 h-3.5" />
+                          <span>ขยายทั้งหมด</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  {/* Dimension 1: Trending Menus & Demand */}
+                  <div className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs overflow-hidden transition-all hover:border-stone-300">
+                    <button
+                      type="button"
+                      onClick={() => toggleDimension(1)}
+                      className="w-full p-4 flex items-center justify-between text-left hover:bg-stone-50/80 transition-all cursor-pointer select-none"
+                    >
+                      <div className="space-y-1 min-w-0 pr-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Flame className="w-4 h-4 text-amber-600 shrink-0" />
+                          <span className="text-sm sm:text-base font-semibold text-stone-900">
+                            1. เมนูยอดนิยม & กำลังมาแรง
+                          </span>
+                        </div>
+                        <p className="text-xs text-stone-500 font-normal truncate">
+                          {competitorData.market_intelligence.trending_menus.map((m) => m.name).join(', ')}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 font-normal border border-amber-200/60">
+                          ความต้องการสูง
+                        </span>
+                        <div className="w-7 h-7 rounded-lg bg-stone-100 flex items-center justify-center text-stone-500">
+                          {expandedDimensions[1] ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </div>
+                      </div>
+                    </button>
+
+                    {expandedDimensions[1] && (
+                      <div className="p-4 pt-1 border-t border-stone-100 space-y-3 animate-in fade-in duration-200">
+                        <div className="space-y-2.5">
+                          {competitorData.market_intelligence.trending_menus.map((tm, idx) => (
+                            <div key={idx} className="p-3 rounded-xl bg-stone-50 border border-stone-200/80 space-y-1.5">
+                              <div className="flex items-center justify-between flex-wrap gap-1">
+                                <span className="text-sm sm:text-base font-semibold text-stone-900">{tm.name}</span>
+                                <span className="text-xs px-2 py-0.5 rounded-md bg-amber-100/80 text-amber-900 font-normal">
+                                  {tm.demand_level}
+                                </span>
+                              </div>
+                              <p className="text-sm font-normal text-stone-700 leading-relaxed">{tm.reason}</p>
+                              <span className="text-xs font-normal text-stone-500 block">
+                                ปริมาณคาดการณ์: <strong className="text-stone-700 font-medium">{tm.estimated_volume}</strong>
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        <Link
+                          href="/menu"
+                          className="w-full text-center text-sm font-medium text-amber-900 bg-amber-50 hover:bg-amber-100 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer border border-amber-200/60"
+                        >
+                          <PlusCircle className="w-4 h-4 text-amber-700" /> ดูสูตรและจัดการเมนูในร้าน
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Dimension 2: Pricing Strategy & Sweet Spot */}
+                  <div className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs overflow-hidden transition-all hover:border-stone-300">
+                    <button
+                      type="button"
+                      onClick={() => toggleDimension(2)}
+                      className="w-full p-4 flex items-center justify-between text-left hover:bg-stone-50/80 transition-all cursor-pointer select-none"
+                    >
+                      <div className="space-y-1 min-w-0 pr-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <DollarSign className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span className="text-sm sm:text-base font-semibold text-stone-900">
+                            2. กลยุทธ์ราคา & Sweet Spot
+                          </span>
+                        </div>
+                        <p className="text-xs text-stone-500 font-normal truncate">
+                          ราคาเฉลี่ย {competitorData.market_intelligence.pricing_strategy.area_average_price} • Sweet Spot {competitorData.market_intelligence.pricing_strategy.recommended_sweet_spot}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 font-normal border border-emerald-200/60">
+                          {competitorData.market_intelligence.pricing_strategy.recommended_sweet_spot}
+                        </span>
+                        <div className="w-7 h-7 rounded-lg bg-stone-100 flex items-center justify-center text-stone-500">
+                          {expandedDimensions[2] ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </div>
+                      </div>
+                    </button>
+
+                    {expandedDimensions[2] && (
+                      <div className="p-4 pt-1 border-t border-stone-100 space-y-3 animate-in fade-in duration-200">
+                        <div className="grid grid-cols-2 gap-2.5 text-center">
+                          <div className="p-3 rounded-xl bg-stone-50 border border-stone-200/80">
+                            <span className="text-xs text-stone-500 block font-normal">ราคาเฉลี่ยในย่าน</span>
+                            <span className="text-base sm:text-lg font-bold text-stone-800">{competitorData.market_intelligence.pricing_strategy.area_average_price}</span>
+                          </div>
+                          <div className="p-3 rounded-xl bg-emerald-50/90 border border-emerald-200">
+                            <span className="text-xs text-emerald-700 block font-normal">Sweet Spot แนะนำ</span>
+                            <span className="text-base sm:text-xl font-extrabold text-emerald-900">{competitorData.market_intelligence.pricing_strategy.recommended_sweet_spot}</span>
+                          </div>
+                        </div>
+
+                        <div className="p-3.5 rounded-xl bg-stone-50 border border-stone-200/80 space-y-2 text-sm">
+                          <div className="flex justify-between items-center text-stone-600 font-normal">
+                            <span>ช่วงราคาประหยัด:</span>
+                            <span className="font-semibold text-stone-900">{competitorData.market_intelligence.pricing_strategy.budget_range}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-stone-600 font-normal">
+                            <span>เพดานราคาพรีเมียม:</span>
+                            <span className="font-semibold text-stone-900">{competitorData.market_intelligence.pricing_strategy.premium_ceiling}</span>
+                          </div>
+                          <div className="pt-2 border-t border-stone-200/80 text-stone-700 font-normal leading-relaxed">
+                            <strong className="text-stone-900 font-semibold">คำแนะนำกลยุทธ์: </strong>
+                            {competitorData.market_intelligence.pricing_strategy.strategy_note}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Dimension 3: Foot Traffic & Location Mobility */}
+                  <div className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs overflow-hidden transition-all hover:border-stone-300">
+                    <button
+                      type="button"
+                      onClick={() => toggleDimension(3)}
+                      className="w-full p-4 flex items-center justify-between text-left hover:bg-stone-50/80 transition-all cursor-pointer select-none"
+                    >
+                      <div className="space-y-1 min-w-0 pr-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Compass className="w-4 h-4 text-blue-600 shrink-0" />
+                          <span className="text-sm sm:text-base font-semibold text-stone-900">
+                            3. ทำเล & Foot Traffic
+                          </span>
+                        </div>
+                        <p className="text-xs text-stone-500 font-normal truncate">
+                          Peak: {competitorData.market_intelligence.location_intelligence.peak_hours}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs px-2.5 py-1 rounded-lg bg-blue-50 text-blue-800 font-normal border border-blue-200/60">
+                          {competitorData.market_intelligence.location_intelligence.foot_traffic_level}
+                        </span>
+                        <div className="w-7 h-7 rounded-lg bg-stone-100 flex items-center justify-center text-stone-500">
+                          {expandedDimensions[3] ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </div>
+                      </div>
+                    </button>
+
+                    {expandedDimensions[3] && (
+                      <div className="p-4 pt-1 border-t border-stone-100 space-y-2.5 animate-in fade-in duration-200">
+                        <div className="p-3 rounded-xl bg-stone-50 border border-stone-200/80 space-y-1">
+                          <span className="text-xs text-stone-500 font-normal block">ช่วงเวลาคนแน่นที่สุด (Peak Hours)</span>
+                          <p className="text-sm font-semibold text-stone-900">{competitorData.market_intelligence.location_intelligence.peak_hours}</p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-stone-50 border border-stone-200/80 space-y-1">
+                          <span className="text-xs text-stone-500 font-normal block">กลุ่มคนเดินหลักในพื้นที่ (Demographics)</span>
+                          <p className="text-sm font-normal text-stone-800 leading-relaxed">{competitorData.market_intelligence.location_intelligence.primary_demographic}</p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-blue-50/60 border border-blue-100 text-sm font-normal text-blue-950 leading-relaxed">
+                          {competitorData.market_intelligence.location_intelligence.mobility_summary}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Dimension 4: Customer Sentiment & Unmet Needs */}
+                  <div className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs overflow-hidden transition-all hover:border-stone-300">
+                    <button
+                      type="button"
+                      onClick={() => toggleDimension(4)}
+                      className="w-full p-4 flex items-center justify-between text-left hover:bg-stone-50/80 transition-all cursor-pointer select-none"
+                    >
+                      <div className="space-y-1 min-w-0 pr-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <MessageSquare className="w-4 h-4 text-purple-600 shrink-0" />
+                          <span className="text-sm sm:text-base font-semibold text-stone-900">
+                            4. เสียงของลูกค้า (Sentiment)
+                          </span>
+                        </div>
+                        <p className="text-xs text-stone-500 font-normal truncate">
+                          คำชม, ข้อติชม และ Unmet Needs ของลูกค้าในย่าน
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs px-2.5 py-1 rounded-lg bg-purple-50 text-purple-800 font-normal border border-purple-200/60">
+                          {competitorData.market_intelligence.customer_sentiment.overall_sentiment}
+                        </span>
+                        <div className="w-7 h-7 rounded-lg bg-stone-100 flex items-center justify-center text-stone-500">
+                          {expandedDimensions[4] ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </div>
+                      </div>
+                    </button>
+
+                    {expandedDimensions[4] && (
+                      <div className="p-4 pt-1 border-t border-stone-100 space-y-2.5 animate-in fade-in duration-200">
+                        <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-100 text-sm space-y-1">
+                          <span className="font-semibold text-emerald-900 flex items-center gap-1.5">
+                            <Smile className="w-4 h-4 text-emerald-600" /> สิ่งที่ลูกค้าชอบมากที่สุด:
+                          </span>
+                          <p className="text-sm font-normal text-stone-800 leading-relaxed">
+                            {competitorData.market_intelligence.customer_sentiment.top_compliments.join(' • ')}
+                          </p>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-rose-50/70 border border-rose-100 text-sm space-y-1">
+                          <span className="font-semibold text-rose-900 flex items-center gap-1.5">
+                            <Frown className="w-4 h-4 text-rose-600" /> จุดที่ลูกค้ามักติ/บ่นร้านแถวนี้:
+                          </span>
+                          <p className="text-sm font-normal text-stone-800 leading-relaxed">
+                            {competitorData.market_intelligence.customer_sentiment.top_complaints.join(' • ')}
+                          </p>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200 text-sm space-y-1">
+                          <span className="font-semibold text-amber-950 flex items-center gap-1.5">
+                            <Lightbulb className="w-4 h-4 text-amber-600" /> โอกาสที่ยังไม่มีใครตอบสนอง (Unmet Needs):
+                          </span>
+                          <p className="text-sm font-normal text-stone-900 leading-relaxed">
+                            {competitorData.market_intelligence.customer_sentiment.unmet_needs.join(' • ')}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Dimension 5: Competition Matrix & Our Edge */}
+                  <div className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs overflow-hidden transition-all hover:border-stone-300">
+                    <button
+                      type="button"
+                      onClick={() => toggleDimension(5)}
+                      className="w-full p-4 flex items-center justify-between text-left hover:bg-stone-50/80 transition-all cursor-pointer select-none"
+                    >
+                      <div className="space-y-1 min-w-0 pr-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Target className="w-4 h-4 text-rose-600 shrink-0" />
+                          <span className="text-sm sm:text-base font-semibold text-stone-900">
+                            5. การแข่งขัน & จุดเด่นของเรา
+                          </span>
+                        </div>
+                        <p className="text-xs text-stone-500 font-normal truncate">
+                          {competitorData.market_intelligence.competition_matrix.our_competitive_edge}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs px-2.5 py-1 rounded-lg bg-rose-50 text-rose-800 font-normal border border-rose-200/60">
+                          {competitorData.market_intelligence.competition_matrix.density_level}
+                        </span>
+                        <div className="w-7 h-7 rounded-lg bg-stone-100 flex items-center justify-center text-stone-500">
+                          {expandedDimensions[5] ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </div>
+                      </div>
+                    </button>
+
+                    {expandedDimensions[5] && (
+                      <div className="p-4 pt-1 border-t border-stone-100 space-y-2.5 animate-in fade-in duration-200">
+                        <div className="p-3.5 rounded-xl bg-stone-900 text-white space-y-1.5">
+                          <span className="text-xs text-stone-400 font-normal block">จุดเด่นที่ควรชูของร้านเรา (Our Edge)</span>
+                          <p className="text-sm font-normal text-emerald-300 leading-relaxed">
+                            {competitorData.market_intelligence.competition_matrix.our_competitive_edge}
+                          </p>
+                        </div>
+
+                        <div className="p-3.5 rounded-xl bg-stone-50 border border-stone-200/80 space-y-2 text-sm">
+                          <span className="text-xs text-stone-600 font-semibold block">แนวทางวางตำแหน่งร้าน (Positioning Advice)</span>
+                          <ul className="space-y-1.5 text-sm font-normal text-stone-700 leading-relaxed">
+                            {competitorData.market_intelligence.competition_matrix.positioning_advice.map((adv, idx) => (
+                              <li key={idx} className="flex items-start gap-2">
+                                <span className="text-stone-400 font-bold">•</span>
+                                <span>{adv}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Dimension 6: Demand Forecast & Weather Impact */}
+                  <div className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs overflow-hidden transition-all hover:border-stone-300">
+                    <button
+                      type="button"
+                      onClick={() => toggleDimension(6)}
+                      className="w-full p-4 flex items-center justify-between text-left hover:bg-stone-50/80 transition-all cursor-pointer select-none"
+                    >
+                      <div className="space-y-1 min-w-0 pr-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <CloudSun className="w-4 h-4 text-sky-600 shrink-0" />
+                          <span className="text-sm sm:text-base font-semibold text-stone-900">
+                            6. คาดการณ์ Demand & สภาพแวดล้อม
+                          </span>
+                        </div>
+                        <p className="text-xs text-stone-500 font-normal truncate">
+                          ผลกระทบอากาศ & Action ด่วนวันนี้
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs px-2.5 py-1 rounded-lg bg-sky-50 text-sky-800 font-normal border border-sky-200/60">
+                          สภาพอากาศเรียลไทม์
+                        </span>
+                        <div className="w-7 h-7 rounded-lg bg-stone-100 flex items-center justify-center text-stone-500">
+                          {expandedDimensions[6] ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </div>
+                      </div>
+                    </button>
+
+                    {expandedDimensions[6] && (
+                      <div className="p-4 pt-1 border-t border-stone-100 space-y-2.5 animate-in fade-in duration-200">
+                        <div className="p-3 rounded-xl bg-stone-50 border border-stone-200/80 space-y-1">
+                          <span className="text-xs text-stone-500 font-normal block">ผลกระทบจากสภาพอากาศวันนี้</span>
+                          <p className="text-sm font-normal text-stone-800 leading-relaxed">{competitorData.market_intelligence.demand_forecast.weather_impact}</p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-stone-50 border border-stone-200/80 space-y-1">
+                          <span className="text-xs text-stone-500 font-normal block">แนวโน้มตามฤดูกาล / ช่วงสัปดาห์</span>
+                          <p className="text-sm font-normal text-stone-800 leading-relaxed">{competitorData.market_intelligence.demand_forecast.seasonal_demand}</p>
+                        </div>
+                        <div className="p-3.5 rounded-xl bg-emerald-50/80 border border-emerald-200 space-y-1.5 text-sm">
+                          <strong className="text-emerald-950 font-semibold block">Action ด่วนที่แนะนำวันนี้:</strong>
+                          <ul className="space-y-1 text-sm font-normal text-emerald-900 leading-relaxed">
+                            {competitorData.market_intelligence.demand_forecast.immediate_actions.map((act, idx) => (
+                              <li key={idx} className="flex items-start gap-1.5">
+                                <span className="font-bold">✓</span>
+                                <span>{act}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

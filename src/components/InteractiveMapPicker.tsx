@@ -26,32 +26,56 @@ L.Icon.Default.mergeOptions({
 })
 
 // Custom SVG-based modern pin icons
-const createCustomIcon = (color: string, type: 'main' | 'competitor' | 'nearby', labelText?: string) => {
+const createCustomIcon = (
+    color: string,
+    type: 'main' | 'competitor' | 'nearby',
+    labelText?: string,
+    radiusKm?: number
+) => {
     const isMain = type === 'main'
-    const width = isMain ? 42 : 30
-    const height = isMain ? 50 : 38
-    
-    // Clean modern pin: Crisp SVG pin shape
-    // When not main: sleek solid pin with dot, NO white border (stroke="none" or stroke same color)
-    const innerGlyph = isMain
-        ? `<circle cx="21" cy="19" r="7.5" fill="white" />
-           <circle cx="21" cy="19" r="4" fill="${color}" />`
-        : `<circle cx="15" cy="14.5" r="4.5" fill="white" />`
+    if (isMain) {
+        // Compact modern pin size
+        const width = 28
+        const height = 34
 
-    const strokeAttr = isMain 
-        ? 'stroke="#ffffff" stroke-width="2.5"' 
-        : 'stroke="none"'
+        const iconHtml = `
+        <div class="main-pin-wrapper" style="position: relative; display: flex; flex-direction: column; align-items: center; cursor: grab; user-select: none;">
+          <!-- Radar Pulse Effect at Pin Tip -->
+          <div class="leaflet-radar-ring" style="position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); width: 20px; height: 10px; border-radius: 50%; background: rgba(239, 68, 68, 0.4); pointer-events: none;"></div>
+          <div style="position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%); width: 8px; height: 4px; border-radius: 50%; background: #dc2626; box-shadow: 0 0 6px #ef4444; pointer-events: none;"></div>
 
+          <!-- Main Pin SVG (No white outer stroke, clean compact pin) -->
+          <svg width="${width}" height="${height}" viewBox="0 0 46 56" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 4px 8px rgba(220, 38, 38, 0.45)) drop-shadow(0 1px 3px rgba(0,0,0,0.3)); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);">
+            <defs>
+              <linearGradient id="mainPinGrad" x1="23" y1="0" x2="23" y2="56" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#EF4444" />
+                <stop offset="60%" stop-color="#DC2626" />
+                <stop offset="100%" stop-color="#B91C1C" />
+              </linearGradient>
+            </defs>
+            <path d="M23 0C10.297 0 0 10.297 0 23C0 35.703 23 56 23 56C23 56 46 35.703 46 23C46 10.297 35.703 0 23 0Z" fill="url(#mainPinGrad)" stroke="none"/>
+            <circle cx="23" cy="21" r="7.5" fill="white" />
+            <circle cx="23" cy="21" r="3.5" fill="#DC2626" />
+          </svg>
+        </div>
+        `
+
+        return L.divIcon({
+            className: 'custom-leaflet-main-marker',
+            html: iconHtml,
+            iconSize: [width, height],
+            iconAnchor: [width / 2, height],
+            popupAnchor: [0, -height - 4],
+        })
+    }
+
+    const width = 20
+    const height = 25
     const iconHtml = `
-    <div class="relative flex flex-col items-center group cursor-pointer select-none">
-      <svg width="${width}" height="${height}" viewBox="0 0 ${isMain ? '42 50' : '30 38'}" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.45)); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);">
-        <!-- Pin Base Path -->
-        <path d="${
-            isMain
-                ? 'M21 0C9.402 0 0 9.402 0 21C0 32.598 21 50 21 50C21 50 42 32.598 42 21C42 9.402 32.598 0 21 0Z'
-                : 'M15 0C6.716 0 0 6.716 0 15C0 23.5 15 38 15 38C15 38 30 23.5 30 15C30 6.716 23.284 0 15 0Z'
-        }" fill="${color}" ${strokeAttr}/>
-        ${innerGlyph}
+    <div style="position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer; user-select: none;">
+      <svg width="${width}" height="${height}" viewBox="0 0 30 38" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35)); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);">
+        <path d="M15 0C6.716 0 0 6.716 0 15C0 23.5 15 38 15 38C15 38 30 23.5 30 15C30 6.716 23.284 0 15 0Z" fill="${color}" stroke="none"/>
+        <circle cx="15" cy="14.5" r="4" fill="white" />
       </svg>
     </div>
     `
@@ -61,7 +85,7 @@ const createCustomIcon = (color: string, type: 'main' | 'competitor' | 'nearby',
         html: iconHtml,
         iconSize: [width, height],
         iconAnchor: [width / 2, height],
-        popupAnchor: [0, -height],
+        popupAnchor: [0, -height - 2],
     })
 }
 
@@ -117,7 +141,8 @@ export function InteractiveMapPicker({
 }: InteractiveMapPickerProps) {
     const mapContainerRef = useRef<HTMLDivElement>(null)
     const mapInstanceRef = useRef<L.Map | null>(null)
-    const markersLayerRef = useRef<L.LayerGroup | null>(null)
+    const mainLayerRef = useRef<L.LayerGroup | null>(null)
+    const placesLayerRef = useRef<L.LayerGroup | null>(null)
     const mainMarkerRef = useRef<L.Marker | null>(null)
     const radiusCircleRef = useRef<L.Circle | null>(null)
     const dragPreviewCircleRef = useRef<L.Circle | null>(null)
@@ -307,15 +332,25 @@ export function InteractiveMapPicker({
 
         tileLayersRef.current = { streets: osmLayer, satellite: satLayer }
 
-        // Layer group for dynamic items
-        const markersLayer = L.layerGroup().addTo(map)
-        markersLayerRef.current = markersLayer
+        // 1. Layer group for competitors and nearby places
+        const placesLayer = L.layerGroup().addTo(map)
+        placesLayerRef.current = placesLayer
+
+        // 2. Layer group for main store pin and radius circle (on top of places)
+        const mainLayer = L.layerGroup().addTo(map)
+        mainLayerRef.current = mainLayer
 
         // Zoom control in top-right
         L.control.zoom({ position: 'topright' }).addTo(map)
 
         // Click anywhere on map to instantly place/move store pin
         map.on('click', async (e: L.LeafletMouseEvent) => {
+            if (mainMarkerRef.current) {
+                mainMarkerRef.current.setLatLng(e.latlng)
+            }
+            if (radiusCircleRef.current) {
+                radiusCircleRef.current.setLatLng(e.latlng)
+            }
             await updateParentLocation(e.latlng.lat, e.latlng.lng)
             setMapPanCenter(null)
         })
@@ -344,6 +379,10 @@ export function InteractiveMapPicker({
             clearTimeout(overlayTimer)
             map.remove()
             mapInstanceRef.current = null
+            mainMarkerRef.current = null
+            radiusCircleRef.current = null
+            mainLayerRef.current = null
+            placesLayerRef.current = null
         }
     }, []) // Only on mount
 
@@ -418,53 +457,39 @@ export function InteractiveMapPicker({
         }
     }
 
-    // Update main marker and radius circle (NO setView call here!)
+    // Update main marker and radius circle (Dedicated mainLayer)
     useEffect(() => {
-        if (!mapInstanceRef.current || !markersLayerRef.current) return
+        if (!mapInstanceRef.current || !mainLayerRef.current) return
 
-        const markersLayer = markersLayerRef.current
+        const mainLayer = mainLayerRef.current
+        const icon = createCustomIcon('#DC2626', 'main', displayLocationName, radiusKm)
 
         // 1. Main draggable marker (RED PIN)
         if (mainMarkerRef.current) {
             mainMarkerRef.current.setLatLng([pinnedLat, pinnedLng])
-            // Update live tooltip on main marker
-            mainMarkerRef.current.unbindTooltip()
-            mainMarkerRef.current.bindTooltip(`
-                <div style="font-family: inherit; font-size: 11px; font-weight: 700; color: #ffffff; background: #dc2626; padding: 4px 10px; border-radius: 9999px; box-shadow: 0 4px 12px rgba(220,38,38,0.45); border: 2px solid #ffffff; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
-                    <span style="width: 7px; height: 7px; border-radius: 9999px; background: #ffffff; display: inline-block;"></span>
-                    <span>${displayLocationName || 'ตำแหน่งที่คุณปักหมุด'}</span>
-                    <span style="background: rgba(0,0,0,0.25); padding: 1px 6px; border-radius: 9999px; font-size: 10px;">รัศมี ${radiusKm} กม.</span>
-                </div>
-            `, {
-                permanent: true,
-                direction: 'top',
-                offset: [0, -42],
-                className: 'leaflet-custom-main-tooltip'
-            })
+            mainMarkerRef.current.setIcon(icon)
         } else {
             const marker = L.marker([pinnedLat, pinnedLng], {
                 draggable: true,
-                icon: createCustomIcon('#DC2626', 'main'),
-                zIndexOffset: 1000,
+                icon,
+                zIndexOffset: 10000, // Always on top of all pins
+            })
+
+            // Live radius circle movement during dragging
+            marker.on('drag', (e: any) => {
+                const position = e.target.getLatLng()
+                if (radiusCircleRef.current) {
+                    radiusCircleRef.current.setLatLng(position)
+                }
             })
 
             marker.on('dragend', async (e: any) => {
                 const position = e.target.getLatLng()
+                if (radiusCircleRef.current) {
+                    radiusCircleRef.current.setLatLng(position)
+                }
                 await updateParentLocation(position.lat, position.lng)
                 setMapPanCenter(null)
-            })
-
-            marker.bindTooltip(`
-                <div style="font-family: inherit; font-size: 11px; font-weight: 700; color: #ffffff; background: #dc2626; padding: 4px 10px; border-radius: 9999px; box-shadow: 0 4px 12px rgba(220,38,38,0.45); border: 2px solid #ffffff; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
-                    <span style="width: 7px; height: 7px; border-radius: 9999px; background: #ffffff; display: inline-block;"></span>
-                    <span>${displayLocationName || 'ตำแหน่งที่คุณปักหมุด'}</span>
-                    <span style="background: rgba(0,0,0,0.25); padding: 1px 6px; border-radius: 9999px; font-size: 10px;">รัศมี ${radiusKm} กม.</span>
-                </div>
-            `, {
-                permanent: true,
-                direction: 'top',
-                offset: [0, -42],
-                className: 'leaflet-custom-main-tooltip'
             })
 
             marker.bindPopup(`
@@ -483,7 +508,7 @@ export function InteractiveMapPicker({
                 </div>
             `)
 
-            marker.addTo(markersLayer)
+            marker.addTo(mainLayer)
             mainMarkerRef.current = marker
         }
 
@@ -499,7 +524,7 @@ export function InteractiveMapPicker({
                 weight: 2,
                 dashArray: '6, 6',
                 radius: radiusKm * 1000,
-            }).addTo(markersLayer)
+            }).addTo(mainLayer)
             radiusCircleRef.current = circle
         }
 
@@ -523,17 +548,13 @@ export function InteractiveMapPicker({
         }
     }, [pinnedLat, pinnedLng, radiusKm, displayLocationName, updateParentLocation])
 
-    // Update competitor & nearby markers whenever they change or filter changes
+    // Update competitor & nearby markers whenever they change or filter changes (Dedicated placesLayer)
     useEffect(() => {
-        if (!mapInstanceRef.current || !markersLayerRef.current) return
-        const markersLayer = markersLayerRef.current
+        if (!mapInstanceRef.current || !placesLayerRef.current) return
+        const placesLayer = placesLayerRef.current
 
-        // Clear only extra markers (keep mainMarker and radiusCircle)
-        markersLayer.eachLayer((layer) => {
-            if (layer !== mainMarkerRef.current && layer !== radiusCircleRef.current) {
-                markersLayer.removeLayer(layer)
-            }
-        })
+        // Clean clear - never touches mainMarker or radiusCircle on mainLayer
+        placesLayer.clearLayers()
 
         // Add competitor markers with hover tooltip and click popup (BLACK PIN)
         competitors.forEach((c) => {
@@ -549,7 +570,7 @@ export function InteractiveMapPicker({
                 </div>
             `, {
                 direction: 'top',
-                offset: [0, -28],
+                offset: [0, -25],
                 className: 'leaflet-custom-tooltip'
             })
 
@@ -564,7 +585,7 @@ export function InteractiveMapPicker({
                     </div>
                 </div>
             `)
-            compMarker.addTo(markersLayer)
+            compMarker.addTo(placesLayer)
         })
 
         // Filter nearby places based on activeFilter
@@ -588,7 +609,7 @@ export function InteractiveMapPicker({
                 </div>
             `, {
                 direction: 'top',
-                offset: [0, -28],
+                offset: [0, -25],
                 className: 'leaflet-custom-tooltip'
             })
 
@@ -602,10 +623,11 @@ export function InteractiveMapPicker({
                     </div>
                 </div>
             `)
-            nearbyMarker.addTo(markersLayer)
+            nearbyMarker.addTo(placesLayer)
         })
     }, [competitors, nearbyPlaces, activeFilter])
 
+    // Search places with Nominatim
     // Search places with Nominatim
     const handleSearch = async (e?: React.FormEvent) => {
         if (e) e.preventDefault()
@@ -621,6 +643,9 @@ export function InteractiveMapPicker({
             )
             const data = await res.json()
             setSearchResults(data)
+            if (e && data && data.length > 0) {
+                handleSelectResult(data[0])
+            }
         } catch (error) {
             console.error('Location search failed:', error)
             setSearchResults([])
@@ -635,6 +660,12 @@ export function InteractiveMapPicker({
         const resultLng = parseFloat(result.lon)
         const name = result.display_name.split(',')[0]
 
+        if (mainMarkerRef.current) {
+            mainMarkerRef.current.setLatLng([resultLat, resultLng])
+        }
+        if (radiusCircleRef.current) {
+            radiusCircleRef.current.setLatLng([resultLat, resultLng])
+        }
         if (mapInstanceRef.current) {
             mapInstanceRef.current.setView([resultLat, resultLng], 15, { animate: true })
         }
@@ -655,6 +686,12 @@ export function InteractiveMapPicker({
         navigator.geolocation.getCurrentPosition(
             async (pos) => {
                 const { latitude, longitude } = pos.coords
+                if (mainMarkerRef.current) {
+                    mainMarkerRef.current.setLatLng([latitude, longitude])
+                }
+                if (radiusCircleRef.current) {
+                    radiusCircleRef.current.setLatLng([latitude, longitude])
+                }
                 if (mapInstanceRef.current) {
                     mapInstanceRef.current.setView([latitude, longitude], 15, { animate: true })
                 }
@@ -671,18 +708,20 @@ export function InteractiveMapPicker({
         )
     }
 
-    // "Search this area" button action
-    const handleSearchThisArea = () => {
+    // "Search this area" button action: Moves pinned red marker to current view & searches nearby
+    const handleSearchThisArea = async () => {
         if (!mapPanCenter) return
+        const targetLat = mapPanCenter.lat
+        const targetLng = mapPanCenter.lng
+        if (mainMarkerRef.current) {
+            mainMarkerRef.current.setLatLng([targetLat, targetLng])
+        }
+        if (radiusCircleRef.current) {
+            radiusCircleRef.current.setLatLng([targetLat, targetLng])
+        }
+        await updateParentLocation(targetLat, targetLng)
         if (onNearbySearch) {
-            // Fetch nearby without moving pinned store location
-            onNearbySearch(mapPanCenter.lat, mapPanCenter.lng)
-        } else {
-            // Fallback: move pin to center
-            if (mapInstanceRef.current) {
-                mapInstanceRef.current.setView([mapPanCenter.lat, mapPanCenter.lng], 14, { animate: true })
-            }
-            updateParentLocation(mapPanCenter.lat, mapPanCenter.lng)
+            onNearbySearch(targetLat, targetLng)
         }
         setMapPanCenter(null)
     }
@@ -804,10 +843,23 @@ export function InteractiveMapPicker({
                 )}
             </div>
 
-            {/* DRAGGABLE MAP PIN BUTTON: Clean Map Pin Icon (Top-Right) */}
+            {/* DRAGGABLE & CLICKABLE MAP PIN BUTTON: Clean Map Pin Icon (Top-Right) */}
             <div className="absolute top-24 right-4 z-[1000] flex flex-col items-center gap-1.5 pointer-events-auto">
-                <div
+                <button
+                    type="button"
                     draggable
+                    onClick={() => {
+                        if (!mapInstanceRef.current) return
+                        const center = mapInstanceRef.current.getCenter()
+                        if (mainMarkerRef.current) {
+                            mainMarkerRef.current.setLatLng(center)
+                        }
+                        if (radiusCircleRef.current) {
+                            radiusCircleRef.current.setLatLng(center)
+                        }
+                        updateParentLocation(center.lat, center.lng)
+                        setMapPanCenter(null)
+                    }}
                     onDragStart={(e) => {
                         setIsDraggingPegman(true)
                         e.dataTransfer.setData('text/plain', 'pin')
@@ -821,19 +873,19 @@ export function InteractiveMapPicker({
                             dragPreviewCircleRef.current = null
                         }
                     }}
-                    title="ลากหมุดนี้ไปปักบนแผนที่ เพื่อเลือกทำเลร้านของคุณ"
-                    className="group relative flex flex-col items-center justify-center w-11 h-11 bg-rose-600 hover:bg-rose-500 active:scale-90 text-white rounded-full shadow-2xl border-2 border-white cursor-grab active:cursor-grabbing transition-all hover:shadow-rose-500/50 hover:scale-105"
+                    title="คลิกเพื่อปักหมุดที่กึ่งกลางหน้าจอ หรือลากไปวางในตำแหน่งที่ต้องการ"
+                    className="group relative flex flex-col items-center justify-center w-11 h-11 bg-red-600 hover:bg-red-500 active:scale-90 text-white rounded-full shadow-2xl border-2 border-white cursor-pointer active:cursor-grabbing transition-all hover:shadow-red-500/50 hover:scale-105"
                 >
                     {/* Clean Map Pin Icon */}
                     <MapPin className="w-6 h-6 text-white drop-shadow-md fill-white/20" />
 
                     {/* Tooltip Badge */}
-                    <span className="absolute -left-36 top-1.5 bg-stone-900/90 text-white text-[10px] font-medium px-2.5 py-1 rounded-lg backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl border border-white/10 whitespace-nowrap">
-                        ลากหมุดไปปักบนแผนที่
+                    <span className="absolute -left-40 top-1.5 bg-stone-900/95 text-white text-[10px] font-medium px-2.5 py-1 rounded-lg backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl border border-white/10 whitespace-nowrap">
+                        คลิกหรือลากเพื่อปักหมุด
                     </span>
-                </div>
-                <span className="text-[9px] font-bold text-white bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded shadow">
-                    ลากปักหมุด
+                </button>
+                <span className="text-[9px] font-bold text-white bg-black/70 backdrop-blur-md px-1.5 py-0.5 rounded shadow">
+                    ปักหมุดร้าน
                 </span>
             </div>
 
@@ -1020,6 +1072,35 @@ export function InteractiveMapPicker({
                     </div>
                 )}
             </div>
+
+            {/* Custom Styles for Leaflet Markers and Radar Pulse */}
+            <style jsx global>{`
+                @keyframes leafletRadarPulse {
+                    0% {
+                        transform: translateX(-50%) scale(0.4);
+                        opacity: 0.9;
+                    }
+                    60% {
+                        transform: translateX(-50%) scale(2.2);
+                        opacity: 0.2;
+                    }
+                    100% {
+                        transform: translateX(-50%) scale(2.8);
+                        opacity: 0;
+                    }
+                }
+                .leaflet-radar-ring {
+                    animation: leafletRadarPulse 2s cubic-bezier(0.1, 0.7, 0.1, 1) infinite !important;
+                }
+                .leaflet-div-icon,
+                .custom-leaflet-main-marker,
+                .custom-leaflet-marker {
+                    background: transparent !important;
+                    border: none !important;
+                    box-shadow: none !important;
+                    outline: none !important;
+                }
+            `}</style>
         </div>
     )
 }
