@@ -177,18 +177,18 @@ export default function RecipeMenuPage() {
 
   const handleConfirmDelete = async () => {
     if (!deletingItem) return;
-    setIsDeleting(true);
+    const targetId = deletingItem.id;
+    setDeletingItem(null);
+    setIsDeleting(false);
+
     try {
-      const ok = await deleteMenuItem(deletingItem.id);
+      const ok = await deleteMenuItem(targetId);
       if (!ok) {
         alert('ไม่สามารถลบเมนูได้ กรุณาลองใหม่อีกครั้ง');
       }
     } catch (err) {
       console.error('Delete menu failed:', err);
       alert('เกิดข้อผิดพลาดในการลบเมนู');
-    } finally {
-      setIsDeleting(false);
-      setDeletingItem(null);
     }
   };
 

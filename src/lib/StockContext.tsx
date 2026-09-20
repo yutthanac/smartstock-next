@@ -548,18 +548,22 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteMenuItem = async (id: number): Promise<boolean> => {
+    const prevItems = [...menuItems];
+    setMenuItems((prev) => prev.filter((m) => m.id !== id));
+
     try {
       const res = await fetch(`${API_BASE_URL}/menus/${id}`, {
         method: 'DELETE',
         headers: apiHeaders(),
       });
-      if (res.ok) {
-        await fetchData();
+      if (res.ok || res.status === 404) {
         return true;
       }
+      setMenuItems(prevItems);
       return false;
     } catch (e) {
       console.error('Error deleting menu:', e);
+      setMenuItems(prevItems);
       return false;
     }
   };
