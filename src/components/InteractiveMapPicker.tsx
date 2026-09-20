@@ -156,6 +156,14 @@ export function InteractiveMapPicker({
         onPlaceFilterChange?.(val)
     }
 
+    // Filtered nearby places based on activeFilter
+    const visibleNearby = React.useMemo(() => {
+        return nearbyPlaces.filter((p) => {
+            if (activeFilter === 'all') return true
+            return p.isCafe !== false
+        })
+    }, [nearbyPlaces, activeFilter])
+
     // Pinned coordinates
     const [pinnedLat, setPinnedLat] = useState<number>(lat)
     const [pinnedLng, setPinnedLng] = useState<number>(lng)
@@ -588,23 +596,18 @@ export function InteractiveMapPicker({
             compMarker.addTo(placesLayer)
         })
 
-        // Filter nearby places based on activeFilter
-        const visibleNearby = nearbyPlaces.filter((p) => {
-            if (activeFilter === 'all') return true
-            // In coffee mode, only show cafes
-            return p.isCafe !== false
-        })
-
-        // Add nearby landmark markers with hover tooltip (BLACK PIN)
+        // Add nearby landmark markers with hover tooltip (AMBER PIN for cafes, ZINC for others)
         visibleNearby.forEach((p) => {
             if (!p.lat || !p.lng) return
+            const isCafe = p.isCafe !== false
+            const pinColor = isCafe ? '#D97706' : '#71717A' // Amber-600 for coffee/cafe, zinc for others
             const nearbyMarker = L.marker([p.lat, p.lng], {
-                icon: createCustomIcon('#18181B', 'nearby'),
+                icon: createCustomIcon(pinColor, 'nearby'),
             })
             // Hover tooltip: shows place name instantly on hover
             nearbyMarker.bindTooltip(`
                 <div style="font-family: inherit; font-size: 12px; font-weight: 600; color: #18181b; display: flex; align-items: center; gap: 5px;">
-                    <span style="display: inline-block; width: 6px; height: 6px; border-radius: 9999px; background: #18181b;"></span>
+                    <span style="display: inline-block; width: 7px; height: 7px; border-radius: 9999px; background: ${pinColor};"></span>
                     <span>${p.name}</span>
                 </div>
             `, {
@@ -615,17 +618,18 @@ export function InteractiveMapPicker({
 
             // Click popup: shows full details
             nearbyMarker.bindPopup(`
-                <div style="font-family: inherit; min-width: 170px; padding: 2px;">
+                <div style="font-family: inherit; min-width: 180px; padding: 2px;">
                     <div style="color: #18181b; font-size: 13px; font-weight: 700; margin-bottom: 4px;">${p.name}</div>
                     <div style="font-size: 11px; color: #475569; display: flex; flex-direction: column; gap: 3px;">
-                        <div>${p.category || (p.isCafe !== false ? 'ร้านกาแฟ / คาเฟ่' : 'ร้านอาหาร / สถานที่ใกล้เคียง')}</div>
-                        ${p.vicinity ? `<div>${p.vicinity}</div>` : ''}
+                        <div style="color: #b45309; font-weight: 600;">${p.category || (isCafe ? 'ร้านกาแฟ / คาเฟ่' : 'ร้านอาหาร / สถานที่ใกล้เคียง')}</div>
+                        ${p.distanceKm !== undefined ? `<div>ระยะห่าง: ~${p.distanceKm} กม.</div>` : (p.vicinity ? `<div>${p.vicinity}</div>` : '')}
+                        ${p.rating ? `<div style="font-weight: 600; color: #d97706;">★ ${p.rating} ${p.userRatingCount ? `(${p.userRatingCount.toLocaleString()} รีวิว)` : ''}</div>` : ''}
                     </div>
                 </div>
             `)
             nearbyMarker.addTo(placesLayer)
         })
-    }, [competitors, nearbyPlaces, activeFilter])
+    }, [competitors, visibleNearby])
 
     // Search places with Nominatim
     // Search places with Nominatim
@@ -975,7 +979,16 @@ export function InteractiveMapPicker({
                             </div>
                             <div className="text-[10px] text-stone-400 font-mono flex items-center gap-2">
                                 <span>{pinnedLat.toFixed(4)}, {pinnedLng.toFixed(4)}</span>
-                                <span className="hidden sm:inline text-stone-500">• พบร้านรอบข้าง ({competitors.length + nearbyPlaces.length})</span>
+                                <span className="hidden sm:inline text-stone-500">
+                                    • {isNearbyLoading ? (
+                                        <span className="inline-flex items-center gap-1 text-orange-600 dark:text-orange-400 font-sans font-medium">
+                                            <span className="w-2 h-2 rounded-full bg-orange-500 animate-ping inline-block" />
+                                            กำลังค้นหาร้านรอบข้าง...
+                                        </span>
+                                    ) : (
+                                        `พบร้าน${activeFilter === 'coffee' ? 'กาแฟ/คาเฟ่' : 'รอบข้าง'} (${visibleNearby.length})`
+                                    )}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -1054,12 +1067,12 @@ export function InteractiveMapPicker({
                                 </div>
                                 <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-stone-900 dark:text-stone-100 font-medium">
                                     <span className="w-2.5 h-2.5 rounded-full bg-zinc-900" />
-                                    ร้านคู่แข่ง ({competitors.length})
+                                    ร้านคู่แข่งที่วิเคราะห์ ({competitors.length})
                                 </div>
-                                {nearbyPlaces.length > 0 && (
-                                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-stone-900 dark:text-stone-100 font-medium">
-                                        <span className="w-2.5 h-2.5 rounded-full bg-zinc-900" />
-                                        ร้านจริงรอบข้าง ({nearbyPlaces.length})
+                                {visibleNearby.length > 0 && (
+                                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 font-medium">
+                                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                                        {activeFilter === 'coffee' ? 'ร้านกาแฟจริงรอบข้าง' : 'ร้านจริงรอบข้าง'} ({visibleNearby.length})
                                     </div>
                                 )}
                             </div>

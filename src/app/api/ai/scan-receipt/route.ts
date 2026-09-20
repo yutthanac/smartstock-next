@@ -88,8 +88,8 @@ Respond ONLY with pure JSON matching this structure without Markdown formatting 
       },
     };
 
-    // Try primary model (gemini-3.5-flash), fallback to gemini-3.5-flash-lite if unavailable
-    const modelsToTry = ['gemini-3.5-flash', 'gemini-3.5-flash-lite'];
+    // Try primary model (gemini-2.5-flash), fallback to gemini-flash-latest, gemini-3.5-flash if unavailable
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-3.5-flash', 'gemini-3.5-flash-lite'];
     let lastError = '';
     let responseData: any = null;
 

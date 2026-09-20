@@ -232,7 +232,7 @@ export default function AIInsightsPage() {
     setIsNearbyLoading(true);
     try {
       const res = await fetch(
-        `/api/places/nearby?lat=${lat}&lng=${lng}&radius=${radius}&locationName=${encodeURIComponent(locName || '')}`
+        `/api/places/nearby?lat=${lat}&lng=${lng}&radius=${radius}&locationName=${encodeURIComponent(locName || '')}&filter=${currentFilter}`
       );
       if (res.ok) {
         const data = await res.json();
@@ -253,12 +253,7 @@ export default function AIInsightsPage() {
 
   const handlePlaceFilterChange = (newFilter: 'coffee' | 'all') => {
     setPlaceFilter(newFilter);
-    if (newFilter === 'coffee') {
-      const cafeNames = new Set(
-        nearbyPlaces.filter((p) => p.isCafe !== false).map((p) => p.name)
-      );
-      setSelectedShopNames((prev) => prev.filter((name) => cafeNames.has(name)));
-    }
+    fetchNearbyPlaces(mapLat, mapLng, searchRadius, locationName, newFilter);
   };
 
   const toggleSelectShop = (shopName: string) => {

@@ -273,6 +273,55 @@ ${JSON.stringify(realPlacesList, null, 2)}`;
       }
     }
 
+    // Fallback to Foursquare POI if no places from Google
+    if (realPlacesList.length === 0 && fsqVenues && fsqVenues.length > 0) {
+      realPlacesList = fsqVenues.map((v: any) => ({
+        name: v.name,
+        lat: v.lat || lat,
+        lng: v.lng || lng,
+        rating: 4.5,
+        address: v.address || resolvedLocationName,
+        type: v.category || 'Coffee Shop',
+      }));
+      realPlacesContext = `รายชื่อร้านจริงจาก Foursquare POI รอบพิกัดนี้ (${realPlacesList.length} ร้าน):
+${JSON.stringify(realPlacesList, null, 2)}`;
+    }
+
+    // Fallback to OpenStreetMap if still empty
+    if (realPlacesList.length === 0) {
+      try {
+        const radiusKmNum = radius / 1000;
+        const latDelta = radiusKmNum / 111;
+        const lngDelta = radiusKmNum / (111 * Math.cos((lat * Math.PI) / 180));
+        const minLng = (lng - lngDelta).toFixed(4);
+        const minLat = (lat - latDelta).toFixed(4);
+        const maxLng = (lng + lngDelta).toFixed(4);
+        const maxLat = (lat + latDelta).toFixed(4);
+
+        const osmRes = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=cafe&viewbox=${minLng},${maxLat},${maxLng},${minLat}&bounded=1&limit=15&addressdetails=1`,
+          { headers: { 'User-Agent': 'SmartStockApp/2.0' } }
+        );
+        if (osmRes.ok) {
+          const osmData = await osmRes.json();
+          if (Array.isArray(osmData) && osmData.length > 0) {
+            realPlacesList = osmData.map((item: any) => ({
+              name: item.name || item.display_name?.split(',')?.[0],
+              lat: parseFloat(item.lat),
+              lng: parseFloat(item.lon),
+              rating: 4.3,
+              address: item.display_name,
+              type: 'cafe',
+            })).filter((p: any) => p.name && !isNaN(p.lat) && !isNaN(p.lng));
+            if (realPlacesList.length > 0) {
+              realPlacesContext = `รายชื่อร้านจริงจาก OpenStreetMap รอบพิกัดนี้ (${realPlacesList.length} ร้าน):
+${JSON.stringify(realPlacesList, null, 2)}`;
+            }
+          }
+        }
+      } catch { /* fallback */ }
+    }
+
     // Foot traffic index & popularity modeling (powered by live Foursquare Places API)
     const placeCount = realPlacesList.length || 6;
     const fsqCount = fsqVenues && fsqVenues.length > 0 ? fsqVenues.length : placeCount;
@@ -424,10 +473,10 @@ ${realPlacesContext || 'ค้นหาร้านกาแฟ/คาเฟ่�
     };
 
     const modelsToTry = [
-      'gemini-3.6-flash',
-      'gemini-3.5-flash',
-      'gemini-3.5-flash-lite',
+      'gemini-2.5-flash',
       'gemini-flash-latest',
+      'gemini-3.5-flash',
+      'gemini-2.0-flash',
     ];
 
     let responseData: any = null;
