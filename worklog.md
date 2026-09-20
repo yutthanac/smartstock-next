@@ -413,7 +413,126 @@
     - หน้า `sales/orders`: แสดง 3 บิล ยอด ฿585.00 ครบถ้วน
     - หน้า `dashboard`: แสดง 3 บิล ยอด ฿585.00 ครบถ้วนตรงกัน
 
+---
 
+### [2026-09-20 - 2026-09-21] AI Competitors Map Analytics & User Role Multi-Store Hierarchy Fix
 
+1. **ระบบ AI วิเคราะห์คู่แข่งรอบร้านผ่าน OpenStreetMap & Overpass API ([/menu/ai-insights](file:///c:/meeting/smartStock/src/app/(app)/menu/ai-insights/page.tsx))**:
+   - เชื่อมต่อ OpenStreetMap / Overpass Turbo API และ Nominatim สำหรับค้นหาร้านกาแฟและร้านอาหารคู่แข่งในรัศมีรอบพิกัดร้านจริง
+   - แก้ปัญหา Render/Deployment ไม่พบคู่แข่งเนื่องจาก Rate Limit หรือ External API Policy โดยเพิ่มระบบสำรอง (Multi-Engine Places Search & Fallback Scraper)
+   - นำข้อมูลคู่แข่งรอบข้างส่งให้ Google Gemini Flash ประมวลผลเปรียบเทียบจุดแข็ง จุดอ่อน ราคา และแนะนำเมนูชูโรง
 
+2. **แก้ไขบัคการสร้างและกำหนดสิทธิ์ผู้จัดการร้าน (Store Manager & Owner Role Fix)**:
+   - **ต้นตอของปัญหา (Root Cause)**:
+     - ใน [UserController.php](file:///c:/meeting/smartsotck-backend/app/Http/Controllers/Api/UserController.php) ตอนสร้างผู้ใช้ใหม่ มีการฮาร์ดโค้ดฟิลด์ `role` ในตาราง `users` เป็น `'staff'` สำหรับทุกคนที่ไม่ใช่ admin
+     - เมื่อล็อกอินเข้ามา [AuthController.php](file:///c:/meeting/smartsotck-backend/app/Http/Controllers/Api/AuthController.php) อ่านค่า `users.role` ส่งผลให้ได้รับสิทธิ์พนักงานทั่วไป และ [Sidebar.tsx](file:///c:/meeting/smartStock/src/components/Sidebar.tsx) ซ่อนเมนูผู้บริหารทั้งหมด
+   - **การแก้ไข**:
+     - ปรับให้บันทึกบทบาทจริง (`owner`, `manager`, `chef`, `cashier`, `staff`) ลงในตาราง `users` และ `store_user` อย่างถูกต้อง
+     - เพิ่มตัวเลือก **"เจ้าของร้าน (Owner)"** ใน Dropdown สร้างพนักงาน
+     - ปรับ `AuthController` และ `Sidebar.tsx` ให้อ่านและให้ความสำคัญกับสิทธิ์ตามร้านค้าที่สังกัด (`my_role`)
+     - สร้าง Migration `2026_09_21_000000_sync_user_roles_with_store_roles.php` ซิงก์ผู้ใช้เก่าทั้งหมดให้สิทธิ์ตรงกับตำแหน่งในร้านทันที
 
+---
+
+## 🚀 แผนการพัฒนารอบถัดไป (Upcoming Roadmap) — 🛠️ Phase: Bug Fixes, Database Sync & Performance Optimization
+
+> **🎯 เป้าหมายหลักของเฟสนี้**: แก้ไขบัคการทำงานในฟังก์ชันพื้นฐานที่ผู้ใช้พบเจอ, วางสถาปัตยกรรมจัดการฐานข้อมูลให้สอดคล้องกันระหว่าง Local และ Production, และยกระดับความเร็วในการโหลดและการตอบสนองของระบบให้ไหลลื่น ไม่หน่วง ไม่ช้า
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│              SmartStock Next Phase: Bug Fixes & Performance Optimization               │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ 1. 🐛 แก้บัค: แก้ราคาที่ซื้อมาในวัตถุดิบต่างๆ กดบันทึกแล้วค่าไม่เปลี่ยน (Purchase Price) │
+│ 2. 🗄️ จัดการฐานข้อมูล: แยก/รวม ระหว่าง Local Environment กับ เว็บจริง (Database Sync)    │
+│ 3. ⚡ เพิ่มความเร็วเว็บ: แก้ไขปัญหาเว็บโหลดช้า, Render Cold Start, Caching & SWR Data   │
+│ 4. 🧹 ตรวจสอบและเก็บบัคย่อยในส่วนต่างๆ ของระบบ (System-wide Polish & Quality Control) │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 📋 รายละเอียดแผนงานและแนวทางแก้ไข (Action Items)
+
+#### จุดที่ 1: 🐛 แก้ไขบัค "เข้าไปแก้ราคาที่ซื้อมาในวัตถุดิบต่างๆ กดบันทึกแล้วไม่แก้ให้"
+> **อาการของปัญหา**: เมื่อผู้ใช้เข้าไปแก้ไขข้อมูลวัตถุดิบในหน้า `/stock` (ผ่าน Modal แก้ไข) แล้วพิมพ์แก้ไขช่องราคาที่ซื้อมา หรือต้นทุน เมื่อกดบันทึกแล้วพบว่าราคาเดิมยังคงอยู่ หรือไม่ได้รับการอัปเดตลงฐานข้อมูล
+
+* **การวิเคราะห์หาสาเหตุเชิงลึก (Deep Root Cause Analysis)**:
+  1. **เงื่อนไขสต็อกเป็นศูนย์ (`quantity = 0`) ใน [AddIngredientModal.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/components/AddIngredientModal.tsx)**:
+     - ในฟังก์ชัน `handlePurchasePriceChange`: มีเงื่อนไข `if (!isNaN(priceNum) && !isNaN(qtyNum) && qtyNum > 0)` 
+     - หากวัตถุดิบนั้น **สต็อกคงเหลือเป็น 0 (ของหมด)** ตัวแปร `qtyNum` จะมีค่าเป็น `0` ทำให้ระบบ**ข้ามการคำนวณและไม่อัปเดตค่า `cost_per_unit` ใน `formData`** ส่งผลให้ตอนกด Submit ข้อมูลต้นทุนเดิมจึงถูกส่งไปบันทึกแทน!
+  2. **ความสับสนของช่อง "ราคารวมซื้อทั้งหมด" vs "ราคาซื้อต่อหน่วยบรรจุภัณฑ์"**:
+     - ช่องปัจจุบันชื่อว่า *"ราคารวมซื้อทั้งหมด (บาท)"* ซึ่งถูกคำนวณจาก `cost_per_unit * quantity รวมทั้งร้าน`
+     - ในชีวิตจริง เมื่อเจ้าของร้านซื้อของ เช่น เมล็ดกาแฟ 1 ถุง ราคา 250 บาท (ขนาดบรรจุ 500g) แต่ในร้านมีสต็อกอยู่ 5,000g ช่องนี้จะขึ้นเป็น `2,500 บาท`
+     - เมื่อผู้ใช้เห็นตัวเลขแล้วอยากแก้ราคาเป็น `260 บาท` (หมายถึงถุงละ 260) แต่ระบบนำ 260 ไปหาร 5,000 ทำให้ต้นทุนต่อกรัมกลายเป็น `0.052 บาท` แทนที่จะเป็น `0.52 บาท` หรือไม่เปลี่ยนเลย
+  3. **การส่งข้อมูลใน [page.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/page.tsx) และ [IngredientController.php](file:///c:/meeting/smartsotck-backend/app/Http/Controllers/Api/IngredientController.php)**:
+     - ใน `handleSaveIngredient` มีการแปลงค่า `cost_per_unit` เป็น float แต่หากมีทศนิยมหลายตำแหน่ง หรือส่ง `NaN` จะ fallback เป็น 0
+     - ต้องตรวจสอบให้แน่ใจว่า API `/api/ingredients/{id}` รับค่า `cost_per_unit` และบันทึกลงคอลัมน์ `cost_per_unit` ใน PostgreSQL อย่างแม่นยำ
+
+* **แผนปฏิบัติการแก้ไขในรอบหน้า (Action Items)**:
+  - [ ] **ปรับปรุง UI Modal แก้ไขวัตถุดิบ**:
+    - เพิ่มช่องกรอก **"ราคาซื้อต่อหน่วยบรรจุภัณฑ์ (บาท/{package_unit})"** เช่น `250 บาท / ถุง` ให้ชัดเจน แทนการให้กรอกราคารวมสต็อกทั้งหมด
+    - มีตัวช่วยคำนวณ: `ราคาต่อถุง 250 บาท ÷ 500 กรัม = ต้นทุน 0.50 บาท/กรัม` พร้อมแสดงพรีวิวแบบเรียลไทม์
+  - [ ] **แก้ไขเงื่อนไขดักบัคกรณีของหมด (`quantity = 0`)**:
+    - แก้ไข `handlePurchasePriceChange` และ `handleCostPerUnitChange` ให้สามารถอัปเดตต้นทุนต่อหน่วยได้ตลอดเวลา แม้สต็อกปัจจุบันจะเป็น 0 ก็ตาม
+  - [ ] **เพิ่มระบบ Quick Edit ราคาต้นทุนในตารางสต็อก (Inline Cost Editor)**:
+    - ให้คลิกที่ช่องราคาต้นทุนในตารางหน้า `/stock` แล้วแก้ไขได้ทันทีโดยไม่ต้องเปิด Modal เต็มรูปแบบ
+
+---
+
+#### จุดที่ 2: 🗄️ การจัดการฐานข้อมูลแยกระหว่าง Local กับ Production (Database Architecture & Sync Strategy)
+> **อาการของปัญหา**: ข้อมูลที่คีย์ในเครื่อง Local (คอมพิวเตอร์ตัวเอง) กับข้อมูลบนเว็บจริงที่ Deploy ไว้ (Vercel + Render) แยกฐานข้อมูลกัน ทำให้เวลาทดสอบใน Local แล้วพอเปิดดูบนเว็บจริง ข้อมูลไม่ตรงกัน หรือไม่ซิงก์กัน
+
+* **การวิเคราะห์โครงสร้างปัจจุบัน (Architecture Overview)**:
+  - **Local Backend (`smartsotck-backend/.env`)**: ปัจจุบันชี้ไปที่ Supabase PostgreSQL (`aws-0-ap-south-1.pooler.supabase.com`)
+  - **Production Backend บน Render**: ตั้งค่า Environment Variables แยกต่างหากใน Render Dashboard
+  - **Frontend Local (`smartStock/.env.local`)**: ชี้ `NEXT_PUBLIC_API_URL=http://localhost:8000/api` (Local Laravel)
+  - **Frontend Production บน Vercel**: ชี้ `NEXT_PUBLIC_API_URL=https://smartsotck-backend.onrender.com/api` (Render Laravel)
+
+* **แผนปฏิบัติการและทางเลือกในการจัดการ (Action Items & Strategic Choice)**:
+  - [ ] **แนวทางที่ 1 (แนะนำ): รวมศูนย์ฐานข้อมูลบน Cloud เดียวกัน (Single Source of Truth - Shared Supabase)**:
+    - ตั้งค่า Environment Variables บน Render Dashboard ให้ใช้ `DB_HOST`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` เดียวกันกับ Supabase
+    - เมื่อตั้งค่าตรงกัน ไม่ว่าจะคีย์ข้อมูลจากหน้าเว็บจริง (Vercel) หรือทดสอบจากหน้าเว็บ Local (`localhost:3000`) ข้อมูลจะเข้าสู่ฐานข้อมูล Supabase เดียวกันแบบเรียลไทม์ 100%
+  - [ ] **แนวทางที่ 2: แยก Database เพื่อความปลอดภัย แต่ทำระบบ Sync อัตโนมัติ (Isolated Staging & Prod Sync)**:
+    - หากต้องการแยก Database ระหว่างข้อมูลทดสอบ (Dev) กับข้อมูลร้านจริง (Prod) เพื่อป้องกันข้อมูลมั่ว:
+      - สร้างคำสั่ง Artisan Command เช่น `php artisan db:pull-production` หรือ Script ส่งออก/นำเข้าข้อมูลจาก Cloud มาทับ Local ในคลิกเดียว
+  - [ ] **จัดทำตารางตรวจสอบ Environment Variables (Master Config Checklist)**:
+    - จัดทำเอกสารระบุ Key-Value ที่จำเป็นทั้งหมดระหว่าง `.env.local` (Vercel), `.env` (Render), และ Local Dev
+
+---
+
+#### จุดที่ 3: ⚡ การปรับปรุงความเร็วเว็บให้โหลดไวทันใจ (Performance Optimization Plan)
+> **อาการของปัญหา**: เว็บไซต์โหลดช้ามาก มีอาการหมุนติ้วนานเมื่อเปิดหน้าต่างๆ หรือเมื่อกลับมาใช้งานหลังจากทิ้งช่วงไว้
+
+* **การวิเคราะห์สาเหตุความล่าช้า (Why is it slow?)**:
+  1. **Render Free Tier Cold Start (การหลับของเซิร์ฟเวอร์)**:
+     - Render แบบ Free Plan จะ **"Sleep (ปิดการทำงาน)"** เมื่อไม่มี Request นานเกิน 15 นาที
+     - เมื่อมีคนกดเปิดเว็บครั้งแรกหลังจากช่วงพัก เซิร์ฟเวอร์ต้องบูต Container และรัน PHP ใหม่ทั้งหมด ทำให้เกิดอาการรอ **30 - 50 วินาที** ก่อนหน้าเว็บจะเริ่มตอบสนอง
+  2. **Network Latency ระหว่างไทย - Supabase มุมไบ (aws-0-ap-south-1)**:
+     - การยิงคำสั่ง Query ฐานข้อมูลแต่ละรอบมีเวลาเดินทางไป-กลับ (Round Trip Time) ประมาณ 150-250ms หาก 1 หน้าเว็บยิงเรียก API ซ้ำกันหลาย Query จะสะสมความช้าหลายวินาที
+  3. **การยิง API ซ้ำซ้อนและขาดระบบ Caching ฝั่ง Frontend (Request Waterfall)**:
+     - ใน [StockContext.tsx](file:///c:/meeting/smartStock/src/lib/StockContext.tsx) ทุกครั้งที่เข้าหน้าเว็บหรือสลับหน้า มีการยิง `fetchData()` ที่ดึงพร้อมกัน 5 endpoints (`/ingredients`, `/menus`, `/dashboard`, `/stock-movements`, `/reports/waste-stats`) แม้บางหน้าจะไม่ได้ใช้ข้อมูลเหล่านั้นก็ตาม
+     - ยังไม่มีระบบ Stale-While-Revalidate (SWR) ทำให้ทุกครั้งที่เปิดหน้า ต้องรอหน้าจอหมุนโหลดใหม่ตั้งแต่ศูนย์ แทนที่จะแสดงข้อมูลเดิมที่แคชไว้ทันที
+
+* **แผนปฏิบัติการเพิ่มความเร็วระดับ Enterprise (Action Items)**:
+  - [ ] **แก้ปัญหา Render Cold Start (Keep-Alive Cron)**:
+    - ตั้งระบบ Heartbeat / Ping ทุกๆ 10-12 นาที (ผ่าน Cron-job.org หรือ UptimeRobot ฟรี) ให้ส่ง Request ไปที่ `GET /api/health` บน Render ตลอด 24 ชม. ป้องกันไม่ให้ Render ปิดตัวเอง
+  - [ ] **ยกระดับ Frontend Data Caching ด้วย SWR / React Query**:
+    - ติดตั้งระบบ **SWR (Stale-While-Revalidate)**:
+      - *หลักการ*: เมื่อเปิดหน้าเว็บ ดึงข้อมูลจาก Cache ในเครื่องขึ้นมาแสดงผลทันที (0.1 วินาที!) จากนั้นระบบจะแอบเช็คข้อมูลใหม่จาก Server เบื้องหลัง และอัปเดตตัวเลขเงียบๆ โดยหน้าจอไม่กระตุกหรือหมุนติ้ว
+  - [ ] **ทำ Code Splitting & Dynamic Imports**:
+    - ใช้ `next/dynamic` โหลด Library ใหญ่เฉพาะเมื่อถูกเรียกใช้งาน เช่น:
+      - Leaflet / OpenStreetMap ใน [InteractiveMapPicker.tsx](file:///c:/meeting/smartStock/src/components/InteractiveMapPicker.tsx)
+      - Recharts กราฟต่างๆ ใน Dashboard และหน้ารายงาน
+  - [ ] **Backend Database Optimization & Caching**:
+    - ปรับแต่ง Query ใน `DashboardController.php` และ `MenuController.php` เพิ่ม ETag / Cache Header
+    - เพิ่ม Index ในฐานข้อมูล PostgreSQL สำหรับคอลัมน์ที่ค้นหาบ่อย (`store_id`, `category`, `status`, `created_at`)
+
+---
+
+#### จุดที่ 4: 🧹 รายการเก็บบัคย่อยเพิ่มเติมที่ต้องเช็คในรอบถัดไป (Secondary Bug Checklist)
+- [ ] **ระบบพิมพ์ใบเสร็จและขนาดตัวอักษร**: ตรวจสอบการจัดหน้าใบเสร็จขนาด 58mm / 80mm ให้รองรับเครื่องพิมพ์เทอร์มอลหน้าร้าน
+- [ ] **การสลับหน่วยวัตถุดิบอัตโนมัติ**: ตรวจสอบกรณีเปลี่ยนหน่วยจาก กิโลกรัม -> กรัม ให้สอดคล้องกับขนาดแพ็คเกจ
+- [ ] **ตรวจเช็คการปักหมุดแผนที่ในมือถือ**: ปรับ Touch gesture บนมือถือในหน้าวิเคราะห์คู่แข่งแผนที่ไม่ให้ชนกับ Scroll หน้าจอ
+- [ ] **ระบบแจ้งเตือน Toast / Feedback**: ปรับให้แสดงผลสม่ำเสมอทุกครั้งที่บันทึกข้อมูลสำเร็จในทุกหน้า
+
+---
