@@ -152,8 +152,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
   };
 
   // Determine Effective Role
-  const actualRole = (user?.roles?.[0] as string) || activeStore?.my_role || 'owner';
-  const effectiveRole = actualRole;
+  const isSystemAdmin = user?.role === 'admin' || user?.roles?.includes('admin') || user?.username === 'admin';
+  const effectiveRole = isSystemAdmin
+    ? 'admin'
+    : (activeStore?.my_role || (user?.roles?.[0] as string) || user?.role || 'owner');
 
   const isRoleAllowed = (allowedRoles: string[]): boolean => {
     // Admin (system administrator) has master access to everything
