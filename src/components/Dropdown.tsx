@@ -146,9 +146,9 @@ export const Dropdown: React.FC<DropdownProps> = ({
         type="button"
         disabled={disabled}
         onClick={handleToggle}
-        className={`w-full flex items-center justify-between gap-2 bg-white border border-stone-200/90 text-stone-800 rounded-xl hover:bg-stone-50/80 focus:outline-none focus:ring-2 focus:ring-stone-900/10 transition-all cursor-pointer font-normal disabled:opacity-50 disabled:cursor-not-allowed ${sizeClasses[size]} ${
-          isOpen ? 'border-stone-400 ring-2 ring-stone-900/10' : ''
-        } ${buttonClassName}`}
+        className={`w-full flex items-center justify-between gap-2 bg-white border border-stone-200/90 text-stone-800 rounded-xl hover:bg-stone-50/80 focus:outline-none focus:ring-2 focus:ring-stone-900/10 transition-all cursor-pointer font-normal disabled:opacity-50 disabled:cursor-not-allowed ${
+          sizeClasses[size]
+        } ${isOpen ? 'border-stone-400 ring-2 ring-stone-900/10' : ''} ${buttonClassName}`}
       >
         <div className="flex items-center gap-2 truncate">
           {selectedOption?.icon && <span className="shrink-0">{selectedOption.icon}</span>}

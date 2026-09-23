@@ -469,13 +469,13 @@
      - ต้องตรวจสอบให้แน่ใจว่า API `/api/ingredients/{id}` รับค่า `cost_per_unit` และบันทึกลงคอลัมน์ `cost_per_unit` ใน PostgreSQL อย่างแม่นยำ
 
 * **แผนปฏิบัติการแก้ไขในรอบหน้า (Action Items)**:
-  - [ ] **ปรับปรุง UI Modal แก้ไขวัตถุดิบ**:
+  - [x] **ปรับปรุง UI Modal แก้ไขวัตถุดิบ**:
     - เพิ่มช่องกรอก **"ราคาซื้อต่อหน่วยบรรจุภัณฑ์ (บาท/{package_unit})"** เช่น `250 บาท / ถุง` ให้ชัดเจน แทนการให้กรอกราคารวมสต็อกทั้งหมด
     - มีตัวช่วยคำนวณ: `ราคาต่อถุง 250 บาท ÷ 500 กรัม = ต้นทุน 0.50 บาท/กรัม` พร้อมแสดงพรีวิวแบบเรียลไทม์
-  - [ ] **แก้ไขเงื่อนไขดักบัคกรณีของหมด (`quantity = 0`)**:
+  - [x] **แก้ไขเงื่อนไขดักบัคกรณีของหมด (`quantity = 0`)**:
     - แก้ไข `handlePurchasePriceChange` และ `handleCostPerUnitChange` ให้สามารถอัปเดตต้นทุนต่อหน่วยได้ตลอดเวลา แม้สต็อกปัจจุบันจะเป็น 0 ก็ตาม
-  - [ ] **เพิ่มระบบ Quick Edit ราคาต้นทุนในตารางสต็อก (Inline Cost Editor)**:
-    - ให้คลิกที่ช่องราคาต้นทุนในตารางหน้า `/stock` แล้วแก้ไขได้ทันทีโดยไม่ต้องเปิด Modal เต็มรูปแบบ
+  - [x] **เพิ่มระบบ Quick Edit ราคาต้นทุนในตารางสต็อก (Inline Cost Editor)**:
+    - ให้คลิกที่ช่องราคาต้นทุนในตารางหน้า `/stock` แล้วแก้ไขได้ทันทีโดยไม่ต้องเปิด Modal เต็มรูปแบบ พร้อมปุ่ม Check / Cancel หรือกด Enter/Esc บันทึกลงฐานข้อมูลทันที
 
 ---
 
@@ -514,7 +514,8 @@
      - ยังไม่มีระบบ Stale-While-Revalidate (SWR) ทำให้ทุกครั้งที่เปิดหน้า ต้องรอหน้าจอหมุนโหลดใหม่ตั้งแต่ศูนย์ แทนที่จะแสดงข้อมูลเดิมที่แคชไว้ทันที
 
 * **แผนปฏิบัติการเพิ่มความเร็วระดับ Enterprise (Action Items)**:
-  - [ ] **แก้ปัญหา Render Cold Start (Keep-Alive Cron)**:
+  - [x] **แก้ปัญหา Render Cold Start (Keep-Alive Cron)**:
+    - เพิ่ม endpoint `GET /api/health` ใน Laravel Backend ([routes/api.php](file:///c:/meeting/smartsotck-backend/routes/api.php)) ตอบกลับรวดเร็วและใช้ทรัพยากรต่ำ
     - ตั้งระบบ Heartbeat / Ping ทุกๆ 10-12 นาที (ผ่าน Cron-job.org หรือ UptimeRobot ฟรี) ให้ส่ง Request ไปที่ `GET /api/health` บน Render ตลอด 24 ชม. ป้องกันไม่ให้ Render ปิดตัวเอง
   - [ ] **ยกระดับ Frontend Data Caching ด้วย SWR / React Query**:
     - ติดตั้งระบบ **SWR (Stale-While-Revalidate)**:
@@ -536,3 +537,34 @@
 - [ ] **ระบบแจ้งเตือน Toast / Feedback**: ปรับให้แสดงผลสม่ำเสมอทุกครั้งที่บันทึกข้อมูลสำเร็จในทุกหน้า
 
 ---
+
+### [2026-09-24] ยกระดับสถาปัตยกรรมสู่ Server-Side Rendering (SSR) เต็มรูปแบบ & Database Optimization
+1. **การแปลง Client-Side Rendering (CSR) เป็น Server-Side Rendering (SSR)**:
+   - สลับหน้าทั้งหมดใน `src/app/(app)` และ `src/app/` จากเดิมที่เป็น Client Components (`'use client'`) มาเป็น **Next.js 16 React Server Components (RSC)** ที่ดึงข้อมูลบนเซิร์ฟเวอร์แบบ Dynamic บนความต้องการ (`ƒ (Dynamic)`):
+     - `(app)/dashboard/page.tsx` + `DashboardClientView.tsx`
+     - `(app)/sales/pos/page.tsx` + `POSClientView.tsx`
+     - `(app)/sales/orders/page.tsx` + `OrdersClientView.tsx`
+     - `(app)/menu/page.tsx` + `MenuClientView.tsx`
+     - `(app)/menu/ai-insights/page.tsx` + `AIInsightsClientView.tsx`
+     - `(app)/stock/page.tsx` + `StockClientView.tsx`
+     - `(app)/stock/purchase-orders/page.tsx` + `PurchaseOrdersClientView.tsx`
+     - `(app)/reports/sales/page.tsx` + `SalesReportClientView.tsx`
+     - `(app)/reports/profit/page.tsx` + `ProfitReportClientView.tsx`
+     - `(app)/staff/page.tsx` + `StaffClientView.tsx`
+     - `(app)/roles/page.tsx` + `RolesClientView.tsx`
+     - `(app)/settings/page.tsx` + `SettingsClientView.tsx`
+     - `(app)/settings/stores/page.tsx` + `StoresSettingsClientView.tsx`
+     - `store-picker/page.tsx` + `StorePickerClientView.tsx`
+     - `login/page.tsx` + `LoginClientView.tsx`
+   - **ผลลัพธ์**: หน้าเว็บส่งโครงสร้าง HTML พร้อมข้อมูลจริงจากฐานข้อมูลตรงถึงเบราว์เซอร์ทันทีตั้งแต่รอบแรก กำจัดปัญหาหน้าจอขาวและกะพริบ Skeleton Loading ตอนเปลี่ยนหน้า
+2. **ระบบการส่งต่อ Session ผ่านคุกกี้ (Cookie-based Auth Forwarding for SSR)**:
+   - สร้างโมดูล [src/lib/cookies.ts](file:///c:/meeting/smartStock/src/lib/cookies.ts) ซิงค์ `smartstock_auth_token` และ `smartstock_active_store_id` อัตโนมัติระหว่าง `localStorage` และ HTTP Cookie
+   - สร้าง [src/lib/server-api.ts](file:///c:/meeting/smartStock/src/lib/server-api.ts) สำหรับให้ Server Components เรียกใช้ `cookies()` จาก Next.js ดึงข้อมูลสดจาก Laravel Backend พร้อมแนบ Headers `Authorization` และ `X-Store-ID` อย่างถูกต้องและปลอดภัย
+   - เพิ่มฟังก์ชัน `hydrateData()` ใน [StockContext.tsx](file:///c:/meeting/smartStock/src/lib/StockContext.tsx) เพื่อให้ Client State ซิงค์ต่อจาก SSR ทันทีโดยไม่ต้องยิง Request ซ้ำสอง
+3. **การทำความสะอาดและ Optimize Database (Database Cleanup & Refactoring)**:
+   - สำรวจตารางทั้งหมด 21 ตารางในระบบ พบว่า `password_reset_tokens` ไม่มีการใช้งาน เนื่องจากระบบ POS บริหารจัดการผู้ใช้งานผ่าน Admin/Manager โดยตรง
+   - สร้าง Migration `2026_09_24_000000_drop_unused_tables.php` และทำการ Drop ตาราง `password_reset_tokens` ออกอย่างปลอดภัย
+   - ปรับแต่ง Eager Loading ใน `OrderController.php` และ `MenuController.php` ป้องกันปัญหา N+1 Query
+4. **การตรวจสอบคุณภาพ (Quality Assurance & Verification)**:
+   - ตรวจสอบความถูกต้อง TypeScript ด้วย `npx tsc --noEmit` ผ่าน 100% ปราศจาก Error
+   - รันคำสั่ง `npm run build` ตรวจสอบสถานะการเรนเดอร์ พบว่าทุก Route ได้รับการคอมไพล์เป็น `ƒ (Dynamic)` อย่างสมบูรณ์แบบ

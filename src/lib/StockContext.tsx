@@ -37,6 +37,7 @@ interface StockContextType {
   createOrder: (tableNo: string, items: { menu_item_id: number; quantity: number; note?: string; options?: any }[], paymentMethod: 'cash' | 'qr_promptpay' | 'credit_card') => Promise<Order | null>;
   cancelOrder: (orderId: number, refundReason?: string) => Promise<boolean>;
   updateOrder: (orderId: number, data: { table_no?: string; payment_method?: 'cash' | 'qr_promptpay' | 'credit_card'; status?: 'completed' | 'cancelled' | 'pending'; items?: { id: number; note?: string }[] }) => Promise<boolean>;
+  hydrateData: (data: Partial<{ ingredients: Ingredient[]; menuItems: MenuItem[]; orders: Order[]; movements: StockMovement[]; dashboard: DashboardKPI; units: UnitSetting[] }>) => void;
 }
 
 const StockContext = createContext<StockContextType | undefined>(undefined);
@@ -242,14 +243,30 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const hydrateData = useCallback(
+    (data: Partial<{
+      ingredients: Ingredient[];
+      menuItems: MenuItem[];
+      orders: Order[];
+      movements: StockMovement[];
+      dashboard: DashboardKPI;
+      units: UnitSetting[];
+    }>) => {
+      if (data.ingredients) setIngredients(data.ingredients);
+      if (data.menuItems) setMenuItems(data.menuItems);
+      if (data.orders) setOrders(data.orders);
+      if (data.movements) setMovements(data.movements);
+      if (data.dashboard) setDashboard(data.dashboard);
+      if (data.units && data.units.length > 0) setUnits(data.units);
+      setIsLoading(false);
+    },
+    []
+  );
+
   // Re-fetch whenever token or active store changes
   useEffect(() => {
-    // Reset data first to prevent flash of stale data from previous store
-    setOrders([]);
-    setIngredients([]);
-    setMenuItems([]);
-    setMovements([]);
-    setDashboard(defaultDashboard);
+    // Only refetch if activeStore changes or token changes
+    if (!token) return;
     fetchData();
   }, [token, activeStore?.id]);
 
@@ -737,6 +754,7 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
         createOrder,
         cancelOrder,
         updateOrder,
+        hydrateData,
       }}
     >
       {children}

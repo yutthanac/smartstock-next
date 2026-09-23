@@ -45,6 +45,7 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
 }) => {
   const { units } = useStock();
   const [purchasePrice, setPurchasePrice] = useState<string>('');
+  const [packagePurchasePrice, setPackagePurchasePrice] = useState<string>('');
   const [presetSearch, setPresetSearch] = useState<string>('');
   const [showPresetPicker, setShowPresetPicker] = useState<boolean>(!editingTarget);
   const [packCountInput, setPackCountInput] = useState<string>('');
@@ -54,13 +55,20 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
     if (editingTarget) {
       const qty = parseFloat(String(editingTarget.quantity));
       const cost = parseFloat(String(editingTarget.cost_per_unit));
+      const pSize = Number(editingTarget.package_size || 0);
+
       if (!isNaN(qty) && !isNaN(cost) && qty > 0 && cost > 0) {
         setPurchasePrice(String(Math.round(qty * cost)));
       } else {
         setPurchasePrice('');
       }
 
-      const pSize = Number(editingTarget.package_size || 0);
+      if (pSize > 0 && !isNaN(cost) && cost > 0) {
+        setPackagePurchasePrice(String(Math.round(cost * pSize * 100) / 100));
+      } else {
+        setPackagePurchasePrice('');
+      }
+
       if (pSize > 0 && !isNaN(qty)) {
         setPackCountInput(String(Math.round(qty / pSize)));
       } else {
@@ -69,6 +77,7 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
       setShowPresetPicker(false);
     } else {
       setPurchasePrice('');
+      setPackagePurchasePrice('');
       setPackCountInput('');
       setShowPresetPicker(true);
     }
@@ -79,6 +88,7 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
     const defaultPacks = 5;
     const totalQty = preset.package_size * defaultPacks;
     const estTotalPrice = Math.round(totalQty * preset.cost_per_unit);
+    const estPackagePrice = Math.round(preset.package_size * preset.cost_per_unit * 100) / 100;
 
     setFormData((prev) => ({
       ...prev,
@@ -98,6 +108,7 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
 
     setPackCountInput(String(defaultPacks));
     setPurchasePrice(String(estTotalPrice));
+    setPackagePurchasePrice(String(estPackagePrice));
     setShowPresetPicker(false);
   };
 
@@ -109,17 +120,15 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
       const pSize = parseFloat(String(formData.package_size || 0)) || 0;
       if (!isNaN(packs) && packs >= 0 && pSize > 0) {
         const calculatedQty = packs * pSize;
-        setFormData((prev) => {
-          const cost = parseFloat(String(prev.cost_per_unit || 0)) || 0;
-          if (cost > 0) {
-            setPurchasePrice(String(Math.round(calculatedQty * cost)));
-          }
-          return {
-            ...prev,
-            quantity: calculatedQty,
-            max_stock: prev.max_stock ? prev.max_stock : calculatedQty * 2,
-          };
-        });
+        const cost = parseFloat(String(formData.cost_per_unit || 0)) || 0;
+        if (cost > 0) {
+          setPurchasePrice(String(Math.round(calculatedQty * cost)));
+        }
+        setFormData((prev) => ({
+          ...prev,
+          quantity: calculatedQty,
+          max_stock: prev.max_stock ? prev.max_stock : calculatedQty * 2,
+        }));
       } else if (val === '') {
         setFormData((prev) => ({ ...prev, quantity: '' }));
       }
@@ -137,38 +146,70 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
         setPackCountInput('');
       }
 
-      const priceNum = parseFloat(purchasePrice);
-      let newCost = formData.cost_per_unit;
-      if (!isNaN(priceNum) && priceNum > 0 && !isNaN(qtyNum) && qtyNum > 0) {
-        newCost = Math.round((priceNum / qtyNum) * 10000) / 10000;
+      const currentCost = parseFloat(String(formData.cost_per_unit || 0)) || 0;
+      if (!isNaN(qtyNum) && qtyNum > 0 && currentCost > 0) {
+        setPurchasePrice(String(Math.round(currentCost * qtyNum)));
       }
 
       setFormData((prev) => ({
         ...prev,
         quantity: val === '' ? '' : qtyNum,
-        cost_per_unit: newCost,
       }));
     }
   };
 
+  // Handle Package Purchase Price change (e.g. 250 baht per bag)
+  const handlePackagePurchasePriceChange = (val: string) => {
+    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+      setPackagePurchasePrice(val);
+      const pkgPrice = parseFloat(val);
+      const pSize = parseFloat(String(formData.package_size || 0)) || 0;
+
+      if (!isNaN(pkgPrice) && pkgPrice >= 0 && pSize > 0) {
+        const unitCost = Math.round((pkgPrice / pSize) * 10000) / 10000;
+        const qtyNum = parseFloat(String(formData.quantity || 0)) || 0;
+        if (qtyNum > 0) {
+          setPurchasePrice(String(Math.round(unitCost * qtyNum)));
+        }
+        setFormData((prev) => ({ ...prev, cost_per_unit: unitCost }));
+      } else if (val === '') {
+        // If cleared, don't force cost to 0 unless desired
+      }
+    }
+  };
+
+  // Handle Total Purchase Price change (e.g. 2500 baht total stock)
   const handlePurchasePriceChange = (val: string) => {
     if (val === '' || /^\d*$/.test(val)) {
       setPurchasePrice(val);
       const priceNum = parseFloat(val);
-      const qtyNum = parseFloat(String(formData.quantity));
-      if (!isNaN(priceNum) && !isNaN(qtyNum) && qtyNum > 0) {
+      const qtyNum = parseFloat(String(formData.quantity || 0)) || 0;
+      const pSize = parseFloat(String(formData.package_size || 0)) || 0;
+
+      if (!isNaN(priceNum) && priceNum >= 0 && qtyNum > 0) {
         const unitCost = Math.round((priceNum / qtyNum) * 10000) / 10000;
+        if (pSize > 0) {
+          setPackagePurchasePrice(String(Math.round(unitCost * pSize * 100) / 100));
+        }
         setFormData((prev) => ({ ...prev, cost_per_unit: unitCost }));
       }
     }
   };
 
+  // Handle Cost Per Unit change (e.g. 0.50 baht/gram)
   const handleCostPerUnitChange = (val: string) => {
     if (val === '' || /^\d*\.?\d*$/.test(val)) {
       const unitCost = parseFloat(val);
-      const qtyNum = parseFloat(String(formData.quantity));
-      if (!isNaN(unitCost) && !isNaN(qtyNum) && qtyNum > 0) {
-        setPurchasePrice(String(Math.round(unitCost * qtyNum)));
+      const qtyNum = parseFloat(String(formData.quantity || 0)) || 0;
+      const pSize = parseFloat(String(formData.package_size || 0)) || 0;
+
+      if (!isNaN(unitCost) && unitCost >= 0) {
+        if (qtyNum > 0) {
+          setPurchasePrice(String(Math.round(unitCost * qtyNum)));
+        }
+        if (pSize > 0) {
+          setPackagePurchasePrice(String(Math.round(unitCost * pSize * 100) / 100));
+        }
       }
       setFormData((prev) => ({ ...prev, cost_per_unit: val === '' ? '' : val }));
     }
@@ -466,38 +507,70 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
               )}
             </div>
 
-            {/* Cost per unit */}
-            <div>
-              <label className="font-semibold text-stone-800 block mb-1">
-                ต้นทุนต่อหน่วย (บาท/{formData.unit})
-              </label>
-              <input
-                type="text"
-                inputMode="decimal"
-                required
-                placeholder="เช่น 0.055"
-                value={formData.cost_per_unit === '' ? '' : formData.cost_per_unit}
-                onChange={(e) => handleCostPerUnitChange(e.target.value)}
-                className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl font-mono tabular-nums text-stone-900 focus:bg-white focus:outline-none focus:border-stone-400"
-              />
-              {packSizeNum > 0 && formData.package_unit && (
-                <p className="text-[11px] text-stone-500 mt-1 font-mono">
-                  ≈ {Math.round((parseFloat(String(formData.cost_per_unit || 0)) || 0) * packSizeNum).toLocaleString()} บาท/{formData.package_unit}
-                </p>
-              )}
-            </div>
+            {/* Pricing Section (Unified Card) */}
+            <div className="sm:col-span-2 p-4 bg-stone-50 border border-stone-200 rounded-2xl space-y-3">
+              <span className="font-bold text-stone-900 text-xs block">
+                💰 ราคาและต้นทุนวัตถุดิบ (กรอกช่องใดช่องหนึ่ง ระบบคำนวณเชื่อมโยงให้อัตโนมัติ)
+              </span>
 
-            {/* Total Purchase Price */}
-            <div>
-              <label className="font-normal text-stone-700 block mb-1">ราคารวมซื้อทั้งหมด (บาท)</label>
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="เช่น 550"
-                value={purchasePrice}
-                onChange={(e) => handlePurchasePriceChange(e.target.value)}
-                className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl font-mono tabular-nums text-stone-900 focus:bg-white focus:outline-none focus:border-stone-400"
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* 1. Price Per Package (Best for Cafe Owners) */}
+                <div>
+                  <label className="font-semibold text-stone-800 block mb-1">
+                    ราคาซื้อต่อ 1 {formData.package_unit || 'แพ็ค/ถุง/ขวด'} (บาท)
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="เช่น 250"
+                    value={packagePurchasePrice}
+                    onChange={(e) => handlePackagePurchasePriceChange(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-stone-200 rounded-xl font-mono tabular-nums text-stone-900 text-xs focus:outline-none focus:border-stone-400 font-semibold"
+                  />
+                  {packSizeNum > 0 && (
+                    <p className="text-[11px] text-stone-500 mt-1 font-mono">
+                      ขนาด {packSizeNum.toLocaleString()} {formData.unit}/{formData.package_unit || 'แพ็ค'}
+                    </p>
+                  )}
+                </div>
+
+                {/* 2. Cost Per Base Unit (Used in Recipe BOM) */}
+                <div>
+                  <label className="font-semibold text-stone-800 block mb-1">
+                    ต้นทุนต่อหน่วยตัดสูตร (บาท/{formData.unit}) <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    required
+                    placeholder="เช่น 0.50"
+                    value={formData.cost_per_unit === '' ? '' : formData.cost_per_unit}
+                    onChange={(e) => handleCostPerUnitChange(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-stone-200 rounded-xl font-mono tabular-nums text-stone-900 text-xs focus:outline-none focus:border-stone-400 font-semibold"
+                  />
+                  <p className="text-[11px] text-stone-500 mt-1">
+                    ใช้ตัดต้นทุนในเมนู POS
+                  </p>
+                </div>
+
+                {/* 3. Total Current Stock Value */}
+                <div>
+                  <label className="font-normal text-stone-700 block mb-1">
+                    มูลค่ารวมสต็อกปัจจุบัน (บาท)
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="เช่น 2500"
+                    value={purchasePrice}
+                    onChange={(e) => handlePurchasePriceChange(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-stone-200 rounded-xl font-mono tabular-nums text-stone-700 text-xs focus:outline-none focus:border-stone-400"
+                  />
+                  <p className="text-[11px] text-stone-400 mt-1">
+                    คำนวณจากยอดรวมในร้าน
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* Supplier */}

@@ -35,6 +35,7 @@ export function checkIsSweetener(name: string, category?: string): boolean {
   const c = (category || '').toLowerCase();
   return (
     n.includes('ไซรัป') || n.includes('syrup') ||
+    n.includes('นมผสม') ||
     n.includes('นมข้น') || n.includes('ข้นหวาน') ||
     n.includes('น้ำตาล') || n.includes('น้ำเชื่อม') ||
     n.includes('น้ำผึ้ง') || n.includes('honey') ||
@@ -52,6 +53,24 @@ export function checkIsSweetener(name: string, category?: string): boolean {
   );
 }
 
+// Shared milk & liquid base detector
+export function checkIsMilk(name: string, category?: string): boolean {
+  if (checkIsSweetener(name, category)) return false;
+  const n = (name || '').toLowerCase();
+  const c = (category || '').toLowerCase();
+  if (n.includes('วิปครีม') || n.includes('whipping') || n.includes('ผง')) return false;
+  return (
+    n.includes('นมสด') || n.includes('นมจืด') ||
+    n.includes('นมโอ๊ต') || n.includes('oat') ||
+    n.includes('อัลมอนด์') || n.includes('almond') ||
+    n.includes('ถั่วเหลือง') || n.includes('soy') ||
+    n.includes('พาสเจอร์') || n.includes('meiji') || n.includes('เมจิ') ||
+    n.includes('fresh milk') ||
+    (n.includes('นม') && !n.includes('ข้น')) ||
+    (c.includes('นม') && !c.includes('ข้น'))
+  );
+}
+
 export function checkIsCoffee(name: string, category?: string): boolean {
   const n = (name || '').toLowerCase();
   const c = (category || '').toLowerCase();
@@ -64,14 +83,16 @@ export function checkIsCoffee(name: string, category?: string): boolean {
   );
 }
 
-export function getSweetnessMultiplier(sweetness: string, customNote: string): number {
-  if (customNote.includes('ไม่ใส่ไซรัป')) return 0.0;
-  if (sweetness.includes('125%') || sweetness.includes('หวานมาก')) return 1.25;
-  if (sweetness.includes('100%') || sweetness === 'หวาน') return 1.0;
-  if (sweetness.includes('75%')) return 0.75;
-  if (sweetness.includes('50%') || sweetness.includes('หวานน้อย')) return 0.5;
-  if (sweetness.includes('25%')) return 0.25;
-  if (sweetness.includes('0%') || sweetness.includes('ไม่หวาน')) return 0.0;
+export function getSweetnessMultiplier(sweetness: string, customNote: string = ''): number {
+  const combined = `${sweetness || ''} ${customNote || ''}`;
+  if (combined.includes('ไม่ใส่ไซรัป')) return 0.0;
+  if (combined.includes('125%') || combined.includes('หวานมาก') || combined === 'มาก') return 1.25;
+  if (combined.includes('100%')) return 1.0;
+  if (combined.includes('75%')) return 0.75;
+  if (combined.includes('50%') || combined.includes('หวานน้อย') || combined === 'น้อย') return 0.50;
+  if (combined.includes('25%')) return 0.25;
+  if (combined.includes('0%') || combined.includes('ไม่หวาน')) return 0.0;
+  if (combined.includes('หวาน') || combined.includes('ปกติ')) return 1.0;
   return 1.0;
 }
 
@@ -156,47 +177,74 @@ export function useItemOptions({
   // Sweetness multiplier
   const sweetnessMultiplier = getSweetnessMultiplier(sweetness, customNote);
 
-  // Sweeteners in recipe
+  // 1. Calculate total sweetener volume reduction & find primary milk ingredient
+  let totalSweetenerReduction = 0;
+  let primaryMilkRecipeId: number | null = null;
+  let maxMilkQty = 0;
   const recipeSweeteners: string[] = [];
+
   (item?.recipes || []).forEach((r) => {
-    const ing = ingredients.find((i) => i.id === r.ingredient_id);
-    const ingName = ing?.name ?? r.ingredient_name ?? '';
-    const ingCat = ing?.category ?? '';
-    if (checkIsSweetener(ingName, ingCat) && !recipeSweeteners.includes(ingName)) {
-      recipeSweeteners.push(ingName);
+    const ing = ingredients.find((i) => String(i.id) === String(r.ingredient_id));
+    const ingName = ing?.name || (r as any).ingredient?.name || r.ingredient_name || '';
+    const ingCat = ing?.category || (r as any).ingredient?.category || '';
+    const baseQty = Number(r.quantity_used) || 0;
+
+    if (checkIsSweetener(ingName, ingCat)) {
+      if (!recipeSweeteners.includes(ingName)) {
+        recipeSweeteners.push(ingName);
+      }
+      totalSweetenerReduction += baseQty * (1.0 - sweetnessMultiplier);
+    } else if (checkIsMilk(ingName, ingCat)) {
+      if (baseQty > maxMilkQty) {
+        maxMilkQty = baseQty;
+        primaryMilkRecipeId = Number(r.ingredient_id);
+      }
     }
   });
 
-  // BOM preview deductions
+  // 2. BOM preview deductions
   const previewDeductions: ItemPreviewDeduction[] = (item?.recipes || []).map((r) => {
-    const ing = ingredients.find((i) => i.id === r.ingredient_id);
-    const ingName = ing?.name ?? r.ingredient_name ?? 'วัตถุดิบ';
-    const ingUnit = ing?.unit ?? r.ingredient_unit ?? 'หน่วย';
-    const ingCurrent = ing?.quantity ?? 0;
-    const baseQty = r.quantity_used || 0;
+    const ing = ingredients.find((i) => String(i.id) === String(r.ingredient_id));
+    const ingName = ing?.name || (r as any).ingredient?.name || r.ingredient_name || 'วัตถุดิบ';
+    const ingUnit = ing?.unit || (r as any).ingredient?.unit || r.ingredient_unit || 'หน่วย';
+    const ingCat = ing?.category || (r as any).ingredient?.category || '';
+    const ingCurrent = ing?.quantity ?? (r as any).ingredient?.quantity ?? 0;
+    const baseQty = Number(r.quantity_used) || 0;
 
-    const isCoffee = checkIsCoffee(ingName, ing?.category);
-    const isSweetener = checkIsSweetener(ingName, ing?.category);
+    const isCoffee = checkIsCoffee(ingName, ingCat);
+    const isSweetener = checkIsSweetener(ingName, ingCat);
+    const isPrimaryMilk = (Number(r.ingredient_id) === primaryMilkRecipeId);
 
     let mult = 1.0;
     let badgeText = '';
+    let effectiveQty = baseQty;
+
     if (isCoffee && extraShots > 0) {
       mult = 1.0 + extraShots;
+      effectiveQty = baseQty * mult;
       badgeText = `+${extraShots} ช็อต`;
     } else if (isSweetener) {
       mult = sweetnessMultiplier;
-      if (mult === 0) badgeText = 'ไม่หวาน';
-      else if (mult < 1) badgeText = 'หวานน้อย';
-      else if (mult > 1) badgeText = 'หวานมาก';
+      effectiveQty = baseQty * mult;
+      if (mult === 0) badgeText = 'ไม่หวาน (0%)';
+      else if (mult < 1) badgeText = `หวานน้อย (${Math.round(mult * 100)}%)`;
+      else if (mult > 1) badgeText = `หวานมาก (${Math.round(mult * 100)}%)`;
+    } else if (isPrimaryMilk && Math.abs(totalSweetenerReduction) > 0.001) {
+      effectiveQty = Math.max(0, baseQty + totalSweetenerReduction);
+      const diffSign = totalSweetenerReduction > 0 ? '+' : '';
+      const diffRound = Math.round(totalSweetenerReduction * 10) / 10;
+      badgeText = totalSweetenerReduction > 0
+        ? `เติมนมสด ${diffSign}${diffRound} ${ingUnit}`
+        : `ลดนมสด ${diffRound} ${ingUnit}`;
     }
 
     // Unit conversion guard
     const ingUnitLower = ingUnit.toLowerCase().trim();
     let unitFactor = 1.0;
-    if (['กก.', 'กก', 'kg', 'กิโลกรัม'].includes(ingUnitLower) && baseQty >= 1) unitFactor = 0.001;
-    else if (['ลิตร', 'l', 'liter', 'litre'].includes(ingUnitLower) && baseQty >= 1) unitFactor = 0.001;
+    if (['กก.', 'กก', 'kg', 'กิโลกรัม'].includes(ingUnitLower) && effectiveQty >= 1) unitFactor = 0.001;
+    else if (['ลิตร', 'l', 'liter', 'litre'].includes(ingUnitLower) && effectiveQty >= 1) unitFactor = 0.001;
 
-    const deductedQty = Number((baseQty * mult * unitFactor).toFixed(3));
+    const deductedQty = Number((effectiveQty * unitFactor).toFixed(3));
 
     return {
       id: `base-${r.ingredient_id}`,
@@ -211,6 +259,36 @@ export function useItemOptions({
       badgeText,
     };
   });
+
+  // If no milk in recipe but drink has milky sweetener (e.g. นมผสม) and sweetener was reduced,
+  // compensate with store's primary fresh milk so user sees milk added!
+  if (!primaryMilkRecipeId && Math.abs(totalSweetenerReduction) > 0.001) {
+    const hasMilkySweetener = (item?.recipes || []).some((r) => {
+      const ing = ingredients.find((i) => String(i.id) === String(r.ingredient_id));
+      const n = (ing?.name || (r as any).ingredient?.name || r.ingredient_name || '').toLowerCase();
+      return n.includes('นมผสม') || n.includes('นมข้น');
+    });
+    if (hasMilkySweetener) {
+      const fallbackMilk = ingredients.find((i) => checkIsMilk(i.name, i.category));
+      if (fallbackMilk) {
+        const diffSign = totalSweetenerReduction > 0 ? '+' : '';
+        const diffRound = Math.round(totalSweetenerReduction * 10) / 10;
+        const deductQty = Number((Math.abs(totalSweetenerReduction)).toFixed(3));
+        previewDeductions.push({
+          id: `fallback-milk-${fallbackMilk.id}`,
+          name: fallbackMilk.name,
+          unit: fallbackMilk.unit,
+          baseQty: 0,
+          deductedQty: totalSweetenerReduction > 0 ? deductQty : 0,
+          currentQty: fallbackMilk.quantity,
+          remainingQty: Math.max(0, Number((fallbackMilk.quantity - deductQty).toFixed(2))),
+          isSweetener: false,
+          isCoffee: false,
+          badgeText: `ชดเชยเติมนมสด ${diffSign}${diffRound} ${fallbackMilk.unit}`,
+        });
+      }
+    }
+  }
 
   const modifierDeductions: ItemPreviewDeduction[] = selectedModifiers.map((mod) => {
     const ing = ingredients.find((i) => i.id === mod.ingredient_id);

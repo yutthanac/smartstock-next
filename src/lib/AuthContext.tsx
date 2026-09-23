@@ -3,6 +3,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { UserProfile } from '@/types';
+import {
+  AUTH_COOKIE_NAME,
+  ACTIVE_STORE_COOKIE_NAME,
+  setClientCookie,
+  deleteClientCookie,
+} from './cookies';
 
 export interface StoreInfo {
   id: number;
@@ -92,8 +98,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (storedToken && storedUser) {
           setToken(storedToken);
           setUser(JSON.parse(storedUser));
+          setClientCookie(AUTH_COOKIE_NAME, storedToken);
           if (storedStores)      setStores(JSON.parse(storedStores));
-          if (storedActiveStore) setActiveStoreState(JSON.parse(storedActiveStore));
+          if (storedActiveStore) {
+            const parsed = JSON.parse(storedActiveStore);
+            setActiveStoreState(parsed);
+            setClientCookie(ACTIVE_STORE_COOKIE_NAME, String(parsed.id));
+          }
 
           // Verify token with backend — also refreshes stores list
           try {
@@ -121,11 +132,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   setActiveStoreState(freshActive);
                   localStorage.setItem(ACTIVE_STORE_KEY, JSON.stringify(freshActive));
                   localStorage.setItem('active_store_id', String(freshActive.id));
+                  setClientCookie(ACTIVE_STORE_COOKIE_NAME, String(freshActive.id));
                 } else if (sList.length > 0) {
                   const defaultCafe = sList.find((s) => s.type === 'cafe' || s.name.includes('คาเฟ่') || s.name.toLowerCase().includes('cafe')) || sList[0];
                   setActiveStoreState(defaultCafe);
                   localStorage.setItem(ACTIVE_STORE_KEY, JSON.stringify(defaultCafe));
                   localStorage.setItem('active_store_id', String(defaultCafe.id));
+                  setClientCookie(ACTIVE_STORE_COOKIE_NAME, String(defaultCafe.id));
                 }
               }
             } else if (res.status === 401) {
@@ -201,6 +214,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(TOKEN_KEY,  data.access_token);
       localStorage.setItem(USER_KEY,   JSON.stringify(data.user));
       localStorage.setItem(STORES_KEY, JSON.stringify(storeList));
+      setClientCookie(AUTH_COOKIE_NAME, data.access_token);
 
       // Prioritize Cafe store as default
       const cafeStore = storeList.find((s) => s.type === 'cafe' || s.name.includes('คาเฟ่') || s.name.toLowerCase().includes('cafe')) || storeList[0];
@@ -208,6 +222,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (cafeStore) {
         setActiveStoreState(cafeStore);
         localStorage.setItem(ACTIVE_STORE_KEY, JSON.stringify(cafeStore));
+        localStorage.setItem('active_store_id', String(cafeStore.id));
+        setClientCookie(ACTIVE_STORE_COOKIE_NAME, String(cafeStore.id));
         router.push('/dashboard');
       } else {
         router.push('/store-picker');
@@ -226,6 +242,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setActiveStoreState(store);
     localStorage.setItem(ACTIVE_STORE_KEY, JSON.stringify(store));
     localStorage.setItem('active_store_id', String(store.id));
+    setClientCookie(ACTIVE_STORE_COOKIE_NAME, String(store.id));
   };
 
   const clearAuth = () => {
@@ -234,6 +251,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem(STORES_KEY);
     localStorage.removeItem(ACTIVE_STORE_KEY);
     localStorage.removeItem('active_store_id');
+    deleteClientCookie(AUTH_COOKIE_NAME);
+    deleteClientCookie(ACTIVE_STORE_COOKIE_NAME);
     setToken(null);
     setUser(null);
     setStores([]);

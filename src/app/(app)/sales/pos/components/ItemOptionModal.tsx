@@ -6,7 +6,7 @@ import { MenuItem, MenuOptionIngredient } from '@/types';
 import { Button } from '@/components/Button';
 import { useStock } from '@/lib/StockContext';
 
-import { CartItemOption } from '../hooks/useItemOptions';
+import { CartItemOption, checkIsCoffee, checkIsSweetener, checkIsMilk } from '../hooks/useItemOptions';
 export type { CartItemOption } from '../hooks/useItemOptions';
 
 interface ItemOptionModalProps {
@@ -88,51 +88,72 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
     sweetnessMultiplier = 0.0;
   }
 
+  // 1. Calculate total sweetener volume reduction & find primary milk ingredient
+  let totalSweetenerReduction = 0;
+  let primaryMilkRecipeId: number | null = null;
+  let maxMilkQty = 0;
+
+  (item.recipes || []).forEach((r) => {
+    const ing = ingredients.find((i) => i.id === r.ingredient_id);
+    const ingName = ing ? ing.name : (r.ingredient_name || '');
+    const ingCat = ing?.category || '';
+    const baseQty = r.quantity_used || 0;
+
+    if (checkIsSweetener(ingName, ingCat)) {
+      totalSweetenerReduction += baseQty * (1.0 - sweetnessMultiplier);
+    } else if (checkIsMilk(ingName, ingCat)) {
+      if (baseQty > maxMilkQty) {
+        maxMilkQty = baseQty;
+        primaryMilkRecipeId = r.ingredient_id;
+      }
+    }
+  });
+
+  // 2. Map preview deductions
   const previewDeductions = (item.recipes || []).map((r) => {
     const ing = ingredients.find((i) => i.id === r.ingredient_id);
     const ingName = ing ? ing.name : (r.ingredient_name || 'วัตถุดิบ');
     const ingUnit = ing ? ing.unit : (r.ingredient_unit || 'หน่วย');
+    const ingCat = ing?.category || '';
     const ingCurrent = ing ? ing.quantity : 0;
     const baseQty = r.quantity_used || 0;
 
-    const ingNameLower = ingName.toLowerCase();
-    const ingCatLower = (ing?.category || '').toLowerCase();
-
-    const isCoffee =
-      (ingNameLower.includes('เมล็ดกาแฟ') ||
-        ingNameLower.includes('กาแฟคั่ว') ||
-        (ingNameLower.includes('กาแฟ') && !ingNameLower.includes('แก้ว'))) ||
-      (ingCatLower.includes('เมล็ดกาแฟ') ||
-        (ingCatLower.includes('กาแฟ') && !ingCatLower.includes('แก้ว')));
-    const isSweetener =
-      ingNameLower.includes('ไซรัป') ||
-      ingNameLower.includes('syrup') ||
-      ingNameLower.includes('นมข้นหวาน') ||
-      ingNameLower.includes('น้ำผึ้ง') ||
-      ingNameLower.includes('น้ำเชื่อม') ||
-      ingCatLower.includes('ไซรัป');
+    const isCoffee = checkIsCoffee(ingName, ingCat);
+    const isSweetener = checkIsSweetener(ingName, ingCat);
+    const isPrimaryMilk = (r.ingredient_id === primaryMilkRecipeId);
 
     let mult = 1.0;
     let badgeText = '';
+    let effectiveQty = baseQty;
+
     if (isCoffee && extraShots > 0) {
       mult = 1.0 + extraShots;
+      effectiveQty = baseQty * mult;
       badgeText = `+${extraShots} ช็อต`;
     } else if (isSweetener) {
       mult = sweetnessMultiplier;
-      if (sweetnessMultiplier === 0) badgeText = 'ไม่หวาน';
-      else if (sweetnessMultiplier < 1) badgeText = 'หวานน้อย';
-      else if (sweetnessMultiplier > 1) badgeText = 'หวานมาก';
+      effectiveQty = baseQty * mult;
+      if (sweetnessMultiplier === 0) badgeText = 'ไม่หวาน (0%)';
+      else if (sweetnessMultiplier < 1) badgeText = `หวานน้อย (${Math.round(sweetnessMultiplier * 100)}%)`;
+      else if (sweetnessMultiplier > 1) badgeText = `หวานมาก (${Math.round(sweetnessMultiplier * 100)}%)`;
+    } else if (isPrimaryMilk && Math.abs(totalSweetenerReduction) > 0.001) {
+      effectiveQty = Math.max(0, baseQty + totalSweetenerReduction);
+      const diffSign = totalSweetenerReduction > 0 ? '+' : '';
+      const diffRound = Math.round(totalSweetenerReduction * 10) / 10;
+      badgeText = totalSweetenerReduction > 0
+        ? `เติมนมสด ${diffSign}${diffRound} ${ingUnit}`
+        : `ลดนมสด ${diffRound} ${ingUnit}`;
     }
 
     const ingUnitLower = (ingUnit || '').toLowerCase().trim();
     let unitFactor = 1.0;
-    if (['กก.', 'กก', 'kg', 'กิโลกรัม'].includes(ingUnitLower) && baseQty >= 1) {
+    if (['กก.', 'กก', 'kg', 'กิโลกรัม'].includes(ingUnitLower) && effectiveQty >= 1) {
       unitFactor = 0.001;
-    } else if (['ลิตร', 'l', 'liter', 'litre'].includes(ingUnitLower) && baseQty >= 1) {
+    } else if (['ลิตร', 'l', 'liter', 'litre'].includes(ingUnitLower) && effectiveQty >= 1) {
       unitFactor = 0.001;
     }
 
-    const deductedQty = Number((baseQty * mult * unitFactor).toFixed(3));
+    const deductedQty = Number((effectiveQty * unitFactor).toFixed(3));
     return {
       id: r.ingredient_id,
       name: ingName,
