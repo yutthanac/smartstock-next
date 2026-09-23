@@ -499,6 +499,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
                     <Link
                       key={item.href}
                       href={item.href}
+                      prefetch={false}
                       title={isCollapsed ? displayLabel : undefined}
                       className={`flex items-center text-sm transition-all duration-150 group relative ${
                         isCollapsed

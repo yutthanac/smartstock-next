@@ -13,10 +13,12 @@ import {
 } from '@/types';
 import { StoreInfo } from './AuthContext';
 
-const INTERNAL_API_URL =
+const rawApiUrl =
   process.env.INTERNAL_API_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
   'http://127.0.0.1:8000/api';
+// Resolve localhost to 127.0.0.1 to avoid Windows IPv6 (::1) lookup latency
+const INTERNAL_API_URL = rawApiUrl.replace('://localhost:', '://127.0.0.1:');
 
 export interface ServerSession {
   token: string | null;
@@ -60,9 +62,13 @@ export async function fetchServerApi<T>(
   }
 
   try {
+    // 3.5s timeout prevents SSR page transition from freezing
+    const signal = options.signal || AbortSignal.timeout(3500);
+
     const res = await fetch(`${INTERNAL_API_URL}${endpoint}`, {
       ...options,
       headers,
+      signal,
       cache: 'no-store', // Always fetch fresh data on SSR
     });
 

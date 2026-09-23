@@ -75,14 +75,38 @@ export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
       }
     }
 
+    const unitCost =
+      item.cost_per_unit != null
+        ? item.cost_per_unit
+        : ing && ing.cost_per_unit
+        ? ing.cost_per_unit * (packSize > 1 ? packSize : 1)
+        : undefined;
+
+    const totalPrice =
+      item.total_price != null
+        ? item.total_price
+        : unitCost !== undefined
+        ? displayQty * unitCost
+        : undefined;
+
     return {
       ...item,
       displayQty,
       displayUnit,
       packageInfo,
       stockUnit: ing?.unit || item.unit,
+      unitCost,
+      totalPrice,
     };
   };
+
+  const poTotalAmount =
+    po.totalAmount && po.totalAmount > 0
+      ? po.totalAmount
+      : po.items.reduce((sum, rawItem) => {
+          const item = getDisplayItem(rawItem);
+          return sum + (item.totalPrice || 0);
+        }, 0);
 
   const handlePrint = () => {
     window.print();
@@ -99,14 +123,14 @@ export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
         `"${(rawItem.name || '').replace(/"/g, '""')}"`,
         item.displayQty,
         `"${item.displayUnit}"`,
-        rawItem.cost_per_unit != null ? rawItem.cost_per_unit.toFixed(2) : '-',
-        rawItem.total_price != null ? rawItem.total_price.toFixed(2) : '-',
+        item.unitCost != null ? item.unitCost.toFixed(2) : '-',
+        item.totalPrice != null ? item.totalPrice.toFixed(2) : '-',
       ];
     });
 
     const summaryRows = [
       [],
-      ['', '', '', '', '', 'ยอดงบประมาณจัดซื้อรวม', (po.totalAmount ?? 0) > 0 ? (po.totalAmount ?? 0).toFixed(2) : '-'],
+      ['', '', '', '', '', 'ยอดงบประมาณจัดซื้อรวม', poTotalAmount > 0 ? poTotalAmount.toFixed(2) : '-'],
       [],
       ['เลขที่ใบรายการ:', po.id],
       ['ไปซื้อที่ร้าน/ตลาด:', `"${po.store_name}"`],
@@ -243,8 +267,8 @@ export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
             <div className="text-right">
               <span className="text-stone-500 block text-xs">งบประมาณโดยประมาณ:</span>
               <span className="font-black text-[#78350f] text-sm sm:text-base block mt-0.5 font-mono tabular-nums print:text-black">
-                {(po.totalAmount ?? 0) > 0
-                  ? `฿${(po.totalAmount ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                {poTotalAmount > 0
+                  ? `฿${poTotalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                   : 'ยังไม่ระบุราคา'}
               </span>
             </div>
@@ -296,18 +320,30 @@ export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
                         {item.displayUnit}
                       </td>
                       <td className="py-2.5 px-3 text-right text-stone-600 font-mono tabular-nums whitespace-nowrap">
-                        {rawItem.cost_per_unit != null && rawItem.cost_per_unit > 0
-                          ? `฿${rawItem.cost_per_unit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        {item.unitCost != null && item.unitCost > 0
+                          ? `฿${item.unitCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                           : '-'}
                       </td>
                       <td className="py-2.5 px-4 text-right font-bold text-stone-900 font-mono tabular-nums whitespace-nowrap">
-                        {rawItem.total_price != null && rawItem.total_price > 0
-                          ? `฿${rawItem.total_price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        {item.totalPrice != null && item.totalPrice > 0
+                          ? `฿${item.totalPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                           : '-'}
                       </td>
                     </tr>
                   );
                 })}
+
+                {/* Total Summary Row */}
+                {poTotalAmount > 0 && (
+                  <tr className="bg-stone-50 font-bold border-t-2 border-stone-300 print:bg-stone-100">
+                    <td colSpan={5} className="py-2.5 px-4 text-right text-stone-700 font-semibold">
+                      ยอดงบประมาณจัดซื้อรวม:
+                    </td>
+                    <td colSpan={2} className="py-2.5 px-4 text-right text-[#78350f] print:text-black font-mono tabular-nums text-sm font-black">
+                      ฿{poTotalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                  </tr>
+                )}
 
                 {/* Blank filler rows to fill A4 sheet proportionally */}
                 {blankRows.map((rowNum) => (
@@ -325,27 +361,6 @@ export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
                 ))}
               </tbody>
             </table>
-          </div>
-
-          {/* Footer Notes & Signatures for Print */}
-          <div className="grid grid-cols-2 gap-4 pt-4 text-xs">
-            <div className="p-3 border border-stone-200 rounded-xl bg-stone-50/50 print:bg-white">
-              <span className="font-bold text-stone-800 block mb-1">หมายเหตุเพิ่มเติม / ข้อความถึงผู้ไปซื้อ:</span>
-              <p className="text-stone-600 whitespace-pre-line leading-relaxed">
-                {po.note || 'ไม่มีหมายเหตุเพิ่มเติม'}
-              </p>
-            </div>
-
-            <div className="border border-stone-200 rounded-xl p-3 flex flex-col justify-between print:border-stone-400">
-              <div className="text-stone-500 flex justify-between">
-                <span>ลายเซ็นผู้ไปซื้อ: _______________________</span>
-                <span>วันที่: ____/____/______</span>
-              </div>
-              <div className="text-stone-500 flex justify-between pt-2 border-t border-dashed border-stone-200">
-                <span>ผู้รับของเข้าคลัง: _____________________</span>
-                <span>ตรวจนับถูกต้องครบถ้วน [  ]</span>
-              </div>
-            </div>
           </div>
 
         </div>

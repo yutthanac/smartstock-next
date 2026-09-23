@@ -70,16 +70,27 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
   const [customItemName, setCustomItemName] = useState('');
   const [customItemQty, setCustomItemQty] = useState<number>(1);
   const [customItemUnit, setCustomItemUnit] = useState(units[0]?.name || 'ชิ้น');
+  const [customItemCost, setCustomItemCost] = useState<string>('');
 
   useEffect(() => {
     if (isOpen) {
       if (initialItems && initialItems.length > 0) {
         setItems(
-          initialItems.map((it) => ({
-            ...it,
-            cost_per_unit: undefined,
-            total_price: undefined,
-          }))
+          initialItems.map((it) => {
+            const ing = it.ingredient_id
+              ? availableIngredients.find((i) => i.id === it.ingredient_id)
+              : null;
+            const ps = ing?.package_size && Number(ing.package_size) > 1 ? Number(ing.package_size) : 1;
+            const unitCost =
+              it.cost_per_unit ?? (ing?.cost_per_unit ? ing.cost_per_unit * ps : undefined);
+            const totalPrice =
+              it.total_price ?? (unitCost !== undefined ? it.quantity * unitCost : undefined);
+            return {
+              ...it,
+              cost_per_unit: unitCost,
+              total_price: totalPrice,
+            };
+          })
         );
       } else {
         setItems([]);
@@ -89,8 +100,9 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
       setDate(new Date().toISOString().split('T')[0]);
       setNote('');
       setSelectedIngredientId('');
+      setCustomItemCost('');
     }
-  }, [isOpen, initialItems, defaultStore]);
+  }, [isOpen, initialItems, defaultStore, availableIngredients]);
 
   if (!isOpen) return null;
 
@@ -119,11 +131,16 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
       }
     }
 
+    const unitCost = ing.cost_per_unit ? ing.cost_per_unit * (packSize > 1 ? packSize : 1) : undefined;
+    const totalPrice = unitCost !== undefined ? quantity * unitCost : undefined;
+
     const newItem: PurchaseOrderItem = {
       ingredient_id: ing.id,
       name: ing.name,
       quantity,
       unit,
+      cost_per_unit: unitCost,
+      total_price: totalPrice,
       current_stock: ing.quantity,
       reorder_point: ing.reorder_point,
       checked: false,
@@ -140,22 +157,46 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
       return;
     }
 
+    const qty = customItemQty > 0 ? customItemQty : 1;
+    const parsedCost = customItemCost ? parseFloat(customItemCost) : undefined;
+    const unitCost = parsedCost !== undefined && !isNaN(parsedCost) ? parsedCost : undefined;
+    const totalPrice = unitCost !== undefined ? qty * unitCost : undefined;
+
     const newItem: PurchaseOrderItem = {
       name: customItemName.trim(),
-      quantity: customItemQty > 0 ? customItemQty : 1,
+      quantity: qty,
       unit: customItemUnit,
+      cost_per_unit: unitCost,
+      total_price: totalPrice,
       checked: false,
     };
 
     setItems([...items, newItem]);
     setCustomItemName('');
     setCustomItemQty(1);
+    setCustomItemCost('');
   };
 
   // Update quantity
   const handleUpdateQty = (index: number, newQty: number) => {
     const updated = [...items];
-    updated[index].quantity = Math.max(0.1, isNaN(newQty) ? 1 : newQty);
+    const qty = Math.max(0.1, isNaN(newQty) ? 1 : newQty);
+    updated[index].quantity = qty;
+    if (updated[index].cost_per_unit !== undefined) {
+      updated[index].total_price = qty * updated[index].cost_per_unit!;
+    }
+    setItems(updated);
+  };
+
+  // Update price per unit
+  const handleUpdateUnitCost = (index: number, newCost: number | undefined) => {
+    const updated = [...items];
+    updated[index].cost_per_unit = newCost;
+    if (newCost !== undefined && !isNaN(newCost)) {
+      updated[index].total_price = updated[index].quantity * newCost;
+    } else {
+      updated[index].total_price = undefined;
+    }
     setItems(updated);
   };
 
@@ -176,6 +217,7 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
       return;
     }
 
+    const estimatedTotal = items.reduce((sum, it) => sum + (it.total_price || 0), 0);
     const poId = `PO-${date.replace(/-/g, '')}-${String(Math.floor(10 + Math.random() * 90))}`;
     const newPO: PurchaseOrder = {
       id: poId,
@@ -184,6 +226,7 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
       date,
       status: 'pending',
       items,
+      totalAmount: estimatedTotal > 0 ? estimatedTotal : undefined,
       note: note.trim() || undefined,
     };
 
@@ -199,19 +242,7 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
   ];
 
   // Compute estimated totals for the checklist table
-  let catalogTotal = 0;
-  let hasCustom = false;
-  for (const item of items) {
-    const ing = item.ingredient_id
-      ? availableIngredients.find((i) => i.id === item.ingredient_id)
-      : null;
-    if (ing && ing.cost_per_unit) {
-      const ps = ing.package_size && Number(ing.package_size) > 1 ? Number(ing.package_size) : 1;
-      catalogTotal += item.quantity * ing.cost_per_unit * ps;
-    } else if (!item.ingredient_id) {
-      hasCustom = true;
-    }
-  }
+  const estimatedTotal = items.reduce((sum, item) => sum + (item.total_price || 0), 0);
 
   // Pull all low-stock items into checklist
   const lowStockIngredients = availableIngredients.filter(
@@ -240,11 +271,16 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
         }
       }
 
+      const unitCost = ing.cost_per_unit ? ing.cost_per_unit * (packSize > 1 ? packSize : 1) : undefined;
+      const totalPrice = unitCost !== undefined ? quantity * unitCost : undefined;
+
       return {
         ingredient_id: ing.id,
         name: ing.name,
         quantity,
         unit,
+        cost_per_unit: unitCost,
+        total_price: totalPrice,
         current_stock: ing.quantity,
         reorder_point: ing.reorder_point,
         checked: false,
@@ -256,7 +292,7 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[90vh] animate-scale-in">
+      <div className="bg-white rounded-2xl max-w-3xl w-full shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[90vh] animate-scale-in">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 bg-stone-50 border-b border-stone-200 gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -394,16 +430,17 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
                 <thead>
                   <tr className="bg-stone-100 text-stone-700 font-semibold border-b border-stone-200 uppercase text-xs">
                     <th className="py-2.5 px-4">รายการของที่ต้องซื้อ</th>
-                    <th className="py-2.5 px-3 text-center w-28">จำนวนที่ต้องซื้อ</th>
-                    <th className="py-2.5 px-3 text-center w-24">หน่วย</th>
-                    <th className="py-2.5 px-3 text-right w-32 whitespace-nowrap">ราคาประมาณ</th>
-                    <th className="py-2.5 px-2 text-center w-12"></th>
+                    <th className="py-2.5 px-2 text-center w-24">จำนวน</th>
+                    <th className="py-2.5 px-2 text-center w-20">หน่วย</th>
+                    <th className="py-2.5 px-2 text-center w-28">ราคา/หน่วย</th>
+                    <th className="py-2.5 px-3 text-right w-28 whitespace-nowrap">ยอดรวม</th>
+                    <th className="py-2.5 px-2 text-center w-10"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
                   {items.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="text-center py-8 text-stone-400 font-normal">
+                      <td colSpan={6} className="text-center py-8 text-stone-400 font-normal">
                         ยังไม่มีรายการซื้อ เลือกวัตถุดิบจากคลังด้านบน หรือพิมพ์เพิ่มเองด้านล่าง
                       </td>
                     </tr>
@@ -417,9 +454,6 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
                         ing && ing.package_size && Number(ing.package_size) > 1
                           ? `(1 ชิ้น = ${Number(ing.package_size).toLocaleString()} ${ing.unit})`
                           : '';
-                      const ps = ing?.package_size && Number(ing.package_size) > 1 ? Number(ing.package_size) : 1;
-                      const estimatedCost =
-                        ing && ing.cost_per_unit ? item.quantity * ing.cost_per_unit * ps : null;
 
                       return (
                         <tr key={idx} className="hover:bg-stone-50">
@@ -436,23 +470,40 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
                               </span>
                             )}
                           </td>
-                          <td className="py-2.5 px-3 text-center">
+                          <td className="py-2.5 px-2 text-center">
                             <input
                               type="number"
                               min="0.1"
                               step="any"
                               value={item.quantity}
                               onChange={(e) => handleUpdateQty(idx, parseFloat(e.target.value))}
-                              className="w-24 px-2.5 py-1 text-center font-bold text-sm rounded-lg border border-stone-200 focus:outline-none focus:border-stone-400 bg-white font-mono tabular-nums"
+                              className="w-20 px-2 py-1 text-center font-bold text-xs rounded-lg border border-stone-200 focus:outline-none focus:border-stone-400 bg-white font-mono tabular-nums text-stone-900"
                             />
                           </td>
-                          <td className="py-2.5 px-3 text-center text-stone-700 font-medium">
+                          <td className="py-2.5 px-2 text-center text-stone-700 font-medium">
                             {item.unit}
                           </td>
+                          <td className="py-2.5 px-2 text-center">
+                            <div className="relative inline-flex items-center">
+                              <span className="absolute left-2 text-stone-400 text-xs">฿</span>
+                              <input
+                                type="number"
+                                min="0"
+                                step="any"
+                                placeholder="0"
+                                value={item.cost_per_unit !== undefined ? item.cost_per_unit : ''}
+                                onChange={(e) => {
+                                  const val = e.target.value === '' ? undefined : parseFloat(e.target.value);
+                                  handleUpdateUnitCost(idx, val);
+                                }}
+                                className="w-24 pl-5 pr-2 py-1 text-right font-medium text-xs rounded-lg border border-stone-200 focus:outline-none focus:border-stone-400 bg-white font-mono tabular-nums text-stone-800"
+                              />
+                            </div>
+                          </td>
                           <td className="py-2.5 px-3 text-right font-mono tabular-nums whitespace-nowrap">
-                            {estimatedCost !== null ? (
-                              <span className="text-stone-800 font-semibold">
-                                ฿{estimatedCost.toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                            {item.total_price !== undefined ? (
+                              <span className="text-stone-900 font-bold text-xs">
+                                ฿{item.total_price.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </span>
                             ) : (
                               <span className="text-stone-400 text-xs">—</span>
@@ -473,14 +524,12 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
                     })
                   )}
                   {items.length > 0 && (
-                    <tr className="bg-stone-50 border-t-2 border-stone-200">
-                      <td colSpan={3} className="py-2.5 px-4 text-xs">
-                        {hasCustom && (
-                          <span className="text-amber-600">* ไม่รวมรายการที่ไม่มีในคลัง</span>
-                        )}
+                    <tr className="bg-stone-50 border-t-2 border-stone-200 font-bold">
+                      <td colSpan={4} className="py-2.5 px-4 text-right text-stone-700 text-xs font-semibold">
+                        ยอดงบประมาณจัดซื้อโดยประมาณ:
                       </td>
-                      <td className="py-2.5 px-3 text-right font-bold text-stone-900 font-mono tabular-nums whitespace-nowrap">
-                        ฿{catalogTotal.toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                      <td className="py-2.5 px-3 text-right font-black text-stone-900 font-mono tabular-nums whitespace-nowrap text-sm">
+                        ฿{estimatedTotal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       <td />
                     </tr>
@@ -493,10 +542,10 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
           {/* Quick Add Custom Item */}
           <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 space-y-2">
             <span className="font-semibold text-stone-800 text-xs">+ เพิ่มของใช้อื่นๆ (ไม่ได้อยู่ในคลัง เช่น แก้ว/หลอด/ทิชชู่):</span>
-            <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-6 gap-2">
               <input
                 type="text"
-                placeholder="ชื่อของที่ต้องซื้อ เช่น แก้ว 16oz, กระดาษทิชชู่..."
+                placeholder="ชื่อของ เช่น แก้ว 16oz, กระดาษทิชชู่..."
                 value={customItemName}
                 onChange={(e) => setCustomItemName(e.target.value)}
                 className="sm:col-span-2 px-3 py-1.5 rounded-xl bg-white border border-stone-200 text-xs font-normal text-stone-900 focus:outline-none focus:border-stone-400"
@@ -523,6 +572,15 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
                   size="sm"
                 />
               </div>
+              <input
+                type="number"
+                placeholder="ราคา/หน่วย"
+                min="0"
+                step="any"
+                value={customItemCost}
+                onChange={(e) => setCustomItemCost(e.target.value)}
+                className="px-2 py-1.5 rounded-xl bg-white border border-stone-200 text-right text-xs font-mono tabular-nums text-stone-900 focus:outline-none focus:border-stone-400"
+              />
               <button
                 type="button"
                 onClick={handleAddCustomItem}
@@ -547,9 +605,19 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
 
           {/* Modal Footer Actions */}
           <div className="pt-3 border-t border-stone-200 flex items-center justify-between">
-            <span className="text-stone-500 font-medium text-xs">
-              รวมทั้งหมด <span className="font-bold text-stone-900 font-mono tabular-nums">{items.length}</span> รายการ
-            </span>
+            <div className="text-xs">
+              <span className="text-stone-500 font-medium">รวมทั้งหมด </span>
+              <span className="font-bold text-stone-900 font-mono tabular-nums">{items.length}</span>
+              <span className="text-stone-500 font-medium"> รายการ</span>
+              {estimatedTotal > 0 && (
+                <span className="ml-2 text-stone-600 font-medium">
+                  • งบประมาณ:{' '}
+                  <span className="font-bold text-stone-900 font-mono tabular-nums">
+                    ฿{estimatedTotal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </span>
+              )}
+            </div>
             <div className="flex gap-2">
               <Button
                 type="button"

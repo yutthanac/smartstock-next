@@ -286,11 +286,16 @@ export function PurchaseOrdersClientView({
         }
       }
 
+      const unitCost = ing.cost_per_unit ? ing.cost_per_unit * (packSize > 1 ? packSize : 1) : undefined;
+      const totalPrice = unitCost !== undefined ? quantity * unitCost : undefined;
+
       return {
         ingredient_id: ing.id,
         name: ing.name,
         quantity,
         unit,
+        cost_per_unit: unitCost,
+        total_price: totalPrice,
         current_stock: ing.quantity,
         reorder_point: ing.reorder_point,
         checked: false,
@@ -638,14 +643,32 @@ export function PurchaseOrdersClientView({
                           <span className="font-mono tabular-nums font-semibold">{po.items?.length || 0}</span> รายการ
                         </TableCell>
                         <TableCell className="text-right font-mono tabular-nums font-semibold text-stone-900 text-xs whitespace-nowrap py-3.5 px-4">
-                          {(po.totalAmount ?? 0) > 0 ? (
-                            `฿${(po.totalAmount ?? 0).toLocaleString(undefined, {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}`
-                          ) : (
-                            <span className="text-stone-400 text-xs font-normal">รอราคาจากบิล</span>
-                          )}
+                          {(() => {
+                            const calculatedTotal =
+                              (po.totalAmount ?? 0) > 0
+                                ? po.totalAmount!
+                                : po.items?.reduce((sum, it) => {
+                                    if (it.total_price != null && it.total_price > 0) return sum + it.total_price;
+                                    const ing = ingredients.find(
+                                      (i) => i.id === it.ingredient_id || i.name === it.name
+                                    );
+                                    const ps =
+                                      ing?.package_size && Number(ing.package_size) > 1
+                                        ? Number(ing.package_size)
+                                        : 1;
+                                    const unitCost = it.cost_per_unit ?? (ing?.cost_per_unit ? ing.cost_per_unit * ps : 0);
+                                    return sum + (it.quantity * unitCost);
+                                  }, 0) || 0;
+
+                            return calculatedTotal > 0 ? (
+                              `฿${calculatedTotal.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}`
+                            ) : (
+                              <span className="text-stone-400 text-xs font-normal">รอราคาจากบิล</span>
+                            );
+                          })()}
                         </TableCell>
                         <TableCell className="text-center whitespace-nowrap py-3.5 px-4">
                           {isCompleted && (
