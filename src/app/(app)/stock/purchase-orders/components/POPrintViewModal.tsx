@@ -11,19 +11,23 @@ import {
 import { PurchaseOrder } from '../types';
 import { Button } from '@/components/Button';
 import { useStock } from '@/lib/StockContext';
+import { Ingredient } from '@/types';
 
 interface POPrintViewModalProps {
   po: PurchaseOrder | null;
+  ingredients?: Ingredient[];
   onClose: () => void;
   onMarkCompleted?: (id: string) => void;
 }
 
 export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
   po,
+  ingredients: propIngredients,
   onClose,
   onMarkCompleted,
 }) => {
-  const { ingredients } = useStock();
+  const { ingredients: ctxIngredients } = useStock();
+  const ingredients = (propIngredients && propIngredients.length > 0) ? propIngredients : ctxIngredients;
 
   if (!po) return null;
 

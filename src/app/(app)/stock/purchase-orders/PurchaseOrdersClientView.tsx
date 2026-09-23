@@ -780,6 +780,7 @@ export function PurchaseOrdersClientView({
       {/* Modal: Print & Checklist View */}
       <POPrintViewModal
         po={viewingPO}
+        ingredients={ingredients}
         onClose={() => setViewingPO(null)}
         onMarkCompleted={handleMarkCompleted}
       />

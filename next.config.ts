@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
+const nextConfig = {
   eslint: {
     // ESLint warnings/errors are checked separately via `npm run lint`.
     // Disabling here so Vercel build doesn't fail on lint issues.
@@ -11,6 +11,6 @@ const nextConfig: NextConfig = {
     // avoid duplicate checks and any version mismatch on the build server.
     ignoreBuildErrors: true,
   },
-};
+} as NextConfig;
 
 export default nextConfig;
