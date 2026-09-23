@@ -584,3 +584,37 @@
 3. **ตารางประวัติรายการไปซื้อของ (`PurchaseOrdersClientView`)**:
    - ปุ่มดึงของใกล้หมดคำนวณต้นทุนและยอดเงินประมาณการเข้าสู่ Modal ทันที
    - ตารางประวัติรายการไปซื้อของแสดงยอดเงินงบประมาณจัดซื้อทันทีโดยไม่ต้องรอตรวจบิล
+
+---
+
+### [2026-09-24] วิเคราะห์ปัญหาการโหลดช้า/500 บน Production & แผนการปรับปรุงรอบหน้า
+
+#### 🔍 การวิเคราะห์ปัญหาที่พบ (Root Cause Analysis):
+1. **ปัญหา HTTP 500 ชั่วคราวบน Render Backend (`smartsotck-backend.onrender.com`)**:
+   - **Render Free Tier Cold Start**: เมื่อไม่มี Request เกิน 15 นาที เครื่องจะเข้าสู่ Sleep Mode เมื่อผู้ใช้เข้าเว็บ เครื่องต้องบูตใหม่ใช้เวลา 30-50 วินาที คำขอแรกๆ จะติด Timeout/500
+   - **PHP-FPM Concurrency Limit**: หน้าแรกยิง Request พร้อมกัน 4-5 API (`/menus`, `/units`, `/dashboard`, `/auth/me`) ในเสี้ยววินาทีเดียว ทำให้ PHP-FPM pool เต็ม และตัดเป็น 500
+   - **React Error #418 (Hydration Mismatch)**: เกิดจาก Component ฝั่ง Client อ่าน Token/LocalStorage ในจังหวะแรกที่ Render ไม่ตรงกับ HTML ที่ SSR ส่งมา
+2. **ปัญหากดเมนู Sidebar แล้วหน่วง/ค้างกว่าจะเปลี่ยนหน้า**:
+   - **ปิด Prefetching ใน Sidebar**: มีการตั้งค่า `prefetch={false}` ใน `<Link>` ของ Sidebar ทำให้ Next.js ไม่ดึงข้อมูลหน้านั้นมารอล่วงหน้า ต้องรอคลิกแล้วถึงเริ่มโหลดสด
+   - **ระยะทาง Network ข้ามภูมิภาค (Cross-region Latency)**: Vercel SSR อยู่ Global/US ต้องยิง Request ข้ามทวีปมายัง Render (Singapore) ทุกครั้งที่เปลี่ยนหน้าเพื่อรอข้อมูลให้ครบก่อนส่ง HTML
+   - **ไม่มี Visual Feedback / Top Progress Bar**: เมื่อคลิกเมนูแล้วไม่มีแถบ Loading Bar วิ่งด้านบน ทำให้ผู้ใช้รู้สึกว่าระบบค้าง
+
+---
+
+## 🚀 แผนการแก้ไขและเพิ่มประสิทธิภาพในรอบหน้า (Roadmap for Next Session)
+
+### 📌 ภารกิจที่ 1: แก้ไขให้กด Sidebar แล้วเปลี่ยนหน้าเร็วขึ้นทันตาเห็น (Instant Navigation)
+- [ ] **เปิดใช้งาน Prefetching ใน Sidebar**:
+  - เปลี่ยน `<Link prefetch={false}>` ใน `src/components/Sidebar.tsx` ให้เป็น `prefetch={true}` หรือเปิดเฉพาะ Route สำคัญ เพื่อให้ Next.js พรีโหลดเพจล่วงหน้าทันทีที่เมาส์ Hover
+- [ ] **ติดตั้ง Top Progress Bar (Navigation Indicator)**:
+  - เพิ่ม `nextjs-toploader` หรือ Custom Progress Bar ที่ Topbar เพื่อให้มีแถบวิ่งทันที 0.05 วินาทีที่ผู้ใช้คลิกเมนู มอบ Visual Feedback ทันที
+- [ ] **ใช้ React Suspense + `loading.tsx` (Streaming SSR)**:
+  - เพิ่มไฟล์ `loading.tsx` หรือครอบ Client View ด้วย `<Suspense fallback={<PageSkeleton />}>` ให้โครงหน้าเว็บเปลี่ยนทันที แล้วข้อมูลจาก Render ค่อยสตรีมเข้ามาหยอด ไม่บล็อกการเปลี่ยนหน้า
+
+### 📌 ภารกิจที่ 2: ป้องกัน Backend Render 500 & Cold Start ให้เสถียร 100%
+- [ ] **ปรับแต่ง PHP-FPM Configuration ใน Dockerfile**:
+  - แก้ไข `Dockerfile` และ Nginx config ของ Backend ปรับแต่ง `pm = ondemand` หรือ `pm.max_children = 10` เพื่อให้รับ Concurrent Requests พร้อมกันได้สบายๆ ภายใต้แรม 512MB
+- [ ] **ตั้งค่า Keep-Alive Ping (Free Tier Sleepless)**:
+  - ตั้ง Ping อัตโนมัติ (เช่น Cron-job.org / UptimeRobot) ทุก 10 นาที ไปที่ `https://smartsotck-backend.onrender.com/api/health` เพื่อไม่ให้ Render เข้าสู่ Sleep Mode
+- [ ] **แก้ไข React Error #418 (Hydration Mismatch)**:
+  - เพิ่ม `mounted` guard (`useState(false)` + `useEffect`) ในส่วนที่มีการอ่าน `localStorage` หรือ Client Cookie ก่อน Render เพื่อกำจัดข้อผิดพลาด Hydration ให้หายขาด
