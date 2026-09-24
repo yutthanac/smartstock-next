@@ -307,15 +307,6 @@ export function RolesClientView({ initialRolesData }: RolesClientViewProps) {
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2.5">
-                        <div
-                          className={`w-9 h-9 rounded-xl flex items-center justify-center font-normal text-sm ${
-                            isSelected
-                              ? 'bg-stone-800 text-white'
-                              : 'bg-stone-100 text-stone-600 border border-stone-200/60'
-                          }`}
-                        >
-                          <Shield className="w-4 h-4" />
-                        </div>
                         <div>
                           <div className="font-medium text-sm">{role.display_name}</div>
                           <div className={`text-xs ${isSelected ? 'text-stone-300' : 'text-stone-400'}`}>
@@ -333,26 +324,9 @@ export function RolesClientView({ initialRolesData }: RolesClientViewProps) {
                         {role.permissions.length} สิทธิ์
                       </span>
                     </div>
-
-                    {role.description && (
-                      <p className={`text-xs mt-3 line-clamp-2 leading-relaxed ${isSelected ? 'text-stone-300' : 'text-stone-500'}`}>
-                        {role.description}
-                      </p>
-                    )}
                   </button>
                 );
               })}
-            </div>
-
-            {/* Info Box */}
-            <div className="p-4 rounded-2xl bg-[#f5efe6] border border-[#e8ded0] text-[#78350f] text-xs space-y-1.5">
-              <div className="flex items-center gap-1.5 font-bold text-[#78350f]">
-                <Info className="w-4 h-4 text-[#92400e] shrink-0" />
-                <span>คำแนะนำการตั้งค่า</span>
-              </div>
-              <p className="text-xs text-[#92400e]/90 leading-relaxed">
-                เมื่อบันทึกการแก้ไขสิทธิ์ พนักงานทุกคนที่มีบทบาทนี้จะถูกปรับสิทธิ์ตามการตั้งค่าใหม่โดยอัตโนมัติ
-              </p>
             </div>
           </div>
 

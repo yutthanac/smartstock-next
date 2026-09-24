@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { Ingredient, MenuItem, Order, StockMovement, DashboardKPI, UnitSetting, MenuOptionIngredient, WasteStatsResponse } from '@/types';
 import { useAuth } from './AuthContext';
 
@@ -81,6 +81,8 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [dashboard, setDashboard] = useState<DashboardKPI>(defaultDashboard);
   const [isLoading, setIsLoading] = useState(true);
+  const lastFetchedRef = useRef<number>(0);
+  const prevStoreIdRef = useRef<number | null>(null);
 
   // Units state persisted in localStorage
   const [units, setUnits] = useState<UnitSetting[]>(DEFAULT_UNITS);
@@ -196,6 +198,7 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
   // Fetch all real database records
   const fetchData = async () => {
     setIsLoading(true);
+    lastFetchedRef.current = Date.now();
     try {
       const headers: Record<string, string> = { Accept: 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -259,14 +262,30 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
       if (data.dashboard) setDashboard(data.dashboard);
       if (data.units && data.units.length > 0) setUnits(data.units);
       setIsLoading(false);
+      lastFetchedRef.current = Date.now();
     },
     []
   );
 
   // Re-fetch whenever token or active store changes
   useEffect(() => {
-    // Only refetch if activeStore changes or token changes
     if (!token) return;
+
+    const currentStoreId = activeStore?.id ?? null;
+    const storeChanged = prevStoreIdRef.current !== currentStoreId;
+    prevStoreIdRef.current = currentStoreId;
+
+    if (storeChanged) {
+      fetchData();
+      return;
+    }
+
+    // Skip redundant 6-endpoint fetch if data was hydrated or fetched within the last 15 seconds
+    if (Date.now() - lastFetchedRef.current < 15000) {
+      setIsLoading(false);
+      return;
+    }
+
     fetchData();
   }, [token, activeStore?.id]);
 

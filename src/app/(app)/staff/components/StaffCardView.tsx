@@ -1,11 +1,14 @@
 import React from 'react';
 import { Shield, Mail, Edit2, Trash2, Store } from 'lucide-react';
 import { StaffUser } from './types';
+import { getCleanRoleName } from './StaffModal';
 
 interface StaffCardViewProps {
   staffList: StaffUser[];
   currentUserId?: string;
   currentUserRole?: string;
+  activeStoreType?: string;
+  canManage?: boolean;
   onEdit: (staff: StaffUser) => void;
   onDelete: (id: string, name: string) => void;
 }
@@ -14,6 +17,8 @@ export const StaffCardView: React.FC<StaffCardViewProps> = ({
   staffList,
   currentUserId,
   currentUserRole,
+  activeStoreType,
+  canManage = true,
   onEdit,
   onDelete,
 }) => {
@@ -78,13 +83,13 @@ export const StaffCardView: React.FC<StaffCardViewProps> = ({
                     className={`text-xs font-normal px-2.5 py-1 rounded-xl flex items-center gap-1 ${
                       r.name === 'admin'
                         ? 'bg-stone-100 text-stone-800 border border-stone-200'
-                        : r.name === 'manager'
+                        : r.name === 'manager' || r.name === 'owner'
                         ? 'bg-[#f5efe6] text-[#78350f] border border-[#e8ded0]'
                         : 'bg-stone-50 text-stone-700 border border-stone-200/70'
                     }`}
                   >
                     <Shield className="w-3 h-3" />
-                    {r.display_name}
+                    {getCleanRoleName(r.name, r.display_name, activeStoreType || staff.stores?.[0]?.type)}
                   </span>
                 ))}
               </div>
@@ -108,32 +113,34 @@ export const StaffCardView: React.FC<StaffCardViewProps> = ({
             </div>
 
             {/* Actions */}
-            <div className="pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
-              {canEdit ? (
-                <button
-                  onClick={() => onEdit(staff)}
-                  className="flex-1 py-2 px-3 rounded-xl bg-stone-100 hover:bg-stone-200/80 text-stone-800 font-medium text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  <Edit2 className="w-3.5 h-3.5" />
-                  แก้ไขสิทธิ์
-                </button>
-              ) : (
-                <div className="flex-1 py-2 px-3 rounded-xl bg-stone-50 text-stone-400 font-normal text-xs flex items-center justify-center gap-1.5 border border-stone-200/60">
-                  <Shield className="w-3.5 h-3.5 text-stone-400" />
-                  System Admin (สงวนสิทธิ์)
-                </div>
-              )}
+            {canManage && (
+              <div className="pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
+                {canEdit ? (
+                  <button
+                    onClick={() => onEdit(staff)}
+                    className="flex-1 py-2 px-3 rounded-xl bg-stone-100 hover:bg-stone-200/80 text-stone-800 font-medium text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                    แก้ไขสิทธิ์
+                  </button>
+                ) : (
+                  <div className="flex-1 py-2 px-3 rounded-xl bg-stone-50 text-stone-400 font-normal text-xs flex items-center justify-center gap-1.5 border border-stone-200/60">
+                    <Shield className="w-3.5 h-3.5 text-stone-400" />
+                    System Admin (สงวนสิทธิ์)
+                  </div>
+                )}
 
-              {!isMe && !isAdminTarget && (
-                <button
-                  onClick={() => onDelete(staff.id, staff.name)}
-                  className="p-2 rounded-xl text-stone-400 hover:text-rose-600 hover:bg-stone-100 transition-colors cursor-pointer"
-                  title="ลบผู้ใช้"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              )}
-            </div>
+                {!isMe && !isAdminTarget && (
+                  <button
+                    onClick={() => onDelete(staff.id, staff.name)}
+                    className="p-2 rounded-xl text-stone-400 hover:text-rose-600 hover:bg-stone-100 transition-colors cursor-pointer"
+                    title="ลบผู้ใช้"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         );
       })}

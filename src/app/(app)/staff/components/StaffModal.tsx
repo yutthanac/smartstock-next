@@ -3,11 +3,45 @@ import { UserPlus, ShieldCheck, X, Check, Store as StoreIcon, Camera, User as Us
 import { Dropdown } from '@/components/Dropdown';
 import { RoleOption, StaffStoreOption } from './types';
 
+export const getCleanRoleName = (
+  name: string,
+  displayName?: string,
+  storeType?: string
+): string => {
+  if (name === 'manager' || name === 'owner') {
+    return 'เจ้าของร้าน';
+  }
+
+  if (name === 'chef' || name === 'barista') {
+    if (storeType === 'bakery') return 'เชฟเบเกอรี่';
+    if (storeType === 'restaurant') return 'หัวหน้าครัว';
+    return 'บาริสต้า';
+  }
+
+  const isBakery = storeType === 'bakery';
+  const isRestaurant = storeType === 'restaurant';
+  const chefTitle = isBakery ? 'เชฟเบเกอรี่' : isRestaurant ? 'หัวหน้าครัว' : 'บาริสต้า';
+
+  const thaiMap: Record<string, string> = {
+    admin: 'ผู้ดูแลระบบ',
+    owner: 'เจ้าของร้าน',
+    manager: 'เจ้าของร้าน',
+    chef: chefTitle,
+    barista: 'บาริสต้า',
+    baker: 'เชฟเบเกอรี่',
+    cashier: 'พนักงานแคชเชียร์',
+    staff: 'พนักงานทั่วไป',
+  };
+  if (thaiMap[name]) return thaiMap[name];
+  return displayName ? displayName.replace(/\s*\([^)]*\)/g, '').trim() : name;
+};
+
 interface StaffModalProps {
   isOpen: boolean;
   mode: 'create' | 'edit';
   isSystemAdmin?: boolean;
   activeStoreName?: string;
+  activeStoreType?: string;
   formData: {
     name: string;
     email: string;
@@ -29,6 +63,7 @@ export const StaffModal: React.FC<StaffModalProps> = ({
   mode,
   isSystemAdmin = false,
   activeStoreName,
+  activeStoreType,
   formData,
   roles,
   stores,
@@ -123,7 +158,7 @@ export const StaffModal: React.FC<StaffModalProps> = ({
               )}
             </div>
             <span className="text-[11px] font-medium text-stone-700 mt-2">
-              {formData.avatar ? 'คลิกที่รูปเพื่อเปลี่ยน' : 'คลิกเพื่อเลือกรูปโปรไฟล์'}
+              {formData.avatar ? 'คลิกที่รูปเพื่อเปลี่ยน' : 'คลิกเพื่อเลือกรูป'}
             </span>
           </div>
 
@@ -132,7 +167,7 @@ export const StaffModal: React.FC<StaffModalProps> = ({
             <input
               type="text"
               required
-              placeholder="เช่น สมชาย ใจดี"
+              placeholder="ชื่อ-นามสกุล"
               value={formData.name}
               onChange={(e) => onChange('name', e.target.value)}
               className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 font-medium transition-all"
@@ -144,7 +179,7 @@ export const StaffModal: React.FC<StaffModalProps> = ({
             <input
               type="email"
               required
-              placeholder="staff@smartstock.local"
+              placeholder="ชื่ออีเมลของพนักงาน"
               value={formData.email}
               onChange={(e) => onChange('email', e.target.value)}
               className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 font-medium transition-all"
@@ -153,12 +188,12 @@ export const StaffModal: React.FC<StaffModalProps> = ({
 
           <div>
             <label className="block text-xs font-semibold text-stone-800 mb-1.5">
-              {mode === 'create' ? 'รหัสผ่าน (Password) *' : 'เปลี่ยนรหัสผ่านใหม่ (เว้นว่างไว้ถ้าไม่เปลี่ยน)'}
+              {mode === 'create' ? 'รหัสผ่าน (Password) *' : 'เปลี่ยนรหัสผ่านใหม่'}
             </label>
             <input
               type="password"
               required={mode === 'create'}
-              placeholder={mode === 'create' ? 'ขั้นต่ำ 6 ตัวอักษร' : '••••••••'}
+              placeholder={mode === 'create' ? 'รหัสผ่าน' : 'เปลี่ยนรหัสผ่านใหม่'}
               value={formData.password || ''}
               onChange={(e) => onChange('password', e.target.value)}
               className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 font-medium transition-all"
@@ -193,7 +228,7 @@ export const StaffModal: React.FC<StaffModalProps> = ({
           <div className="pb-1">
             <label className="block text-xs font-semibold text-stone-800 mb-1.5 flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-stone-600" />
-              Role:
+              ตำแหน่ง / บทบาท:
             </label>
             <Dropdown
               value={formData.roles[0] || ''}
@@ -202,12 +237,14 @@ export const StaffModal: React.FC<StaffModalProps> = ({
                   onChange('roles', [val]);
                 }
               }}
-              options={roles.map((r) => ({
-                value: r.name,
-                label: `${r.display_name} (${r.name})`,
-              }))}
+              options={roles
+                .filter((r) => r.name !== 'manager')
+                .map((r) => ({
+                  value: r.name,
+                  label: getCleanRoleName(r.name, r.display_name, activeStoreType),
+                }))}
               className="w-full"
-              placement="bottom"
+              placement="top"
               buttonClassName="w-full bg-stone-50 border border-stone-200 text-stone-900 rounded-xl py-2.5 text-xs font-semibold"
             />
           </div>

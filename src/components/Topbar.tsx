@@ -21,6 +21,7 @@ import { useStock } from '@/lib/StockContext';
 import { useAuth } from '@/lib/AuthContext';
 import { useSidebar } from '@/lib/SidebarContext';
 import { Button } from '@/components/Button';
+import { getUserRoleBadge } from '@/lib/role-utils';
 
 interface TopbarProps {
   title: string;
@@ -29,7 +30,7 @@ interface TopbarProps {
 
 export const Topbar: React.FC<TopbarProps> = ({ title }) => {
   const { dashboard } = useStock();
-  const { user, logout, updateProfile } = useAuth();
+  const { user, logout, updateProfile, activeStore } = useAuth();
   const { toggleMobileSidebar } = useSidebar();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -67,14 +68,8 @@ export const Topbar: React.FC<TopbarProps> = ({ title }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isDropdownOpen]);
 
-  const getRoleBadge = (roles?: string[]) => {
-    if (!roles || roles.length === 0) return 'ผู้ใช้งานทั่วไป';
-    if (roles.includes('admin')) return 'ผู้ดูแลระบบ (Admin)';
-    if (roles.includes('owner')) return 'เจ้าของร้าน (Owner)';
-    if (roles.includes('manager')) return 'ผู้จัดการร้าน (Manager)';
-    if (roles.includes('chef')) return 'หัวหน้าครัว (Chef)';
-    if (roles.includes('cashier')) return 'พนักงาน POS (Cashier)';
-    return roles.join(', ');
+  const getRoleBadge = (roles?: string[], singleRole?: string) => {
+    return getUserRoleBadge(roles, singleRole, activeStore?.type);
   };
 
   const getInitials = (name?: string) => {
@@ -146,7 +141,7 @@ export const Topbar: React.FC<TopbarProps> = ({ title }) => {
 
   return (
     <>
-      <header className="bg-white sticky top-0 z-20 border-b border-stone-200/90 px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between">
+      <header className="bg-white sticky top-0 z-20 border-b border-stone-200/90 px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between print:hidden">
         {/* Left: Mobile Toggle & Breadcrumb */}
         <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
           <button
@@ -237,7 +232,7 @@ export const Topbar: React.FC<TopbarProps> = ({ title }) => {
                     </div>
                     <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 text-xs font-medium border border-stone-200/70">
                       <Shield className="w-3 h-3 text-stone-500" />
-                      <span>{getRoleBadge(user?.roles)}</span>
+                      <span>{getRoleBadge(user?.roles, user?.role)}</span>
                     </div>
                   </div>
                 </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, Search, Filter, Coffee, LayoutGrid, List as ListIcon } from 'lucide-react';
 import { useStock } from '@/lib/StockContext';
 import { Topbar } from '@/components/Topbar';
@@ -222,14 +222,17 @@ export function MenuClientView({
   };
 
   // Filter items
-  const categories = Array.from(new Set(menuItems.map((m) => m.category)));
-  const filteredMenuItems = menuItems.filter((item) => {
-    const matchesSearch =
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const categories = useMemo(() => Array.from(new Set(menuItems.map((m) => m.category))), [menuItems]);
+  const filteredMenuItems = useMemo(() => {
+    return menuItems.filter((item) => {
+      const matchesSearch =
+        !searchQuery.trim() ||
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [menuItems, searchQuery, selectedCategory]);
 
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">

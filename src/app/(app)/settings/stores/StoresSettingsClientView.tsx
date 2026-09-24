@@ -495,9 +495,8 @@ export function StoresSettingsClientView({ initialStores }: StoresSettingsClient
                               value={memberRole}
                               onChange={(val) => setMemberRole(val as any)}
                               options={[
-                                { value: 'owner', label: 'เจ้าของ (Owner)' },
-                                { value: 'manager', label: 'ผู้จัดการ (Manager)' },
-                                { value: 'staff', label: 'พนักงาน (Staff)' },
+                                { value: 'owner', label: 'เจ้าของร้าน' },
+                                { value: 'staff', label: 'พนักงานทั่วไป' },
                               ]}
                               size="sm"
                               buttonClassName="bg-white border-stone-200 text-stone-800 rounded-xl font-normal"

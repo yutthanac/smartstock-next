@@ -40,7 +40,13 @@ export const Dropdown: React.FC<DropdownProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{
+    top?: number;
+    bottom?: number;
+    left: number;
+    width: number;
+    maxHeight: number;
+  } | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -55,28 +61,55 @@ export const Dropdown: React.FC<DropdownProps> = ({
 
   const selectedOption = normalizedOptions.find((opt) => String(opt.value) === String(value));
 
-  // Compute fixed popover coordinates based on button's bounding box
+  // Compute fixed popover coordinates based on button's bounding box and viewport space
   const updatePosition = () => {
     if (!triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
     const availableBelow = window.innerHeight - rect.bottom;
-    const dropdownHeight = 240; // Estimated max height
+    const availableAbove = rect.top;
 
-    let top = rect.bottom + 6;
-    // If not forced to bottom and not enough room below, open upwards
+    let direction: 'up' | 'down' = 'down';
     if (placement === 'top') {
-      top = rect.top - dropdownHeight - 6;
-    } else if (placement === 'auto') {
-      if (availableBelow < dropdownHeight && rect.top > dropdownHeight) {
-        top = rect.top - dropdownHeight - 6;
+      direction = 'up';
+    } else if (placement === 'bottom') {
+      // If there is not enough room below (< 220px) and more room above, flip upward to prevent cutting off
+      if (availableBelow < 220 && availableAbove > availableBelow) {
+        direction = 'up';
+      } else {
+        direction = 'down';
+      }
+    } else {
+      // 'auto'
+      if (availableBelow < 250 && availableAbove > availableBelow) {
+        direction = 'up';
+      } else {
+        direction = 'down';
       }
     }
 
-    setMenuPosition({
-      top: Math.max(8, top),
-      left: rect.left,
-      width: Math.max(rect.width, 180),
-    });
+    const width = Math.max(rect.width, 180);
+    const maxLeft = Math.max(8, window.innerWidth - width - 8);
+    const left = Math.min(Math.max(8, rect.left), maxLeft);
+
+    if (direction === 'up') {
+      const bottom = Math.max(8, window.innerHeight - rect.top + 6);
+      const maxHeight = Math.max(120, Math.min(288, availableAbove - 16));
+      setMenuPosition({
+        bottom,
+        left,
+        width,
+        maxHeight,
+      });
+    } else {
+      const top = Math.max(8, rect.bottom + 6);
+      const maxHeight = Math.max(120, Math.min(288, availableBelow - 16));
+      setMenuPosition({
+        top,
+        left,
+        width,
+        maxHeight,
+      });
+    }
   };
 
   const handleToggle = () => {
@@ -170,12 +203,14 @@ export const Dropdown: React.FC<DropdownProps> = ({
             ref={menuRef}
             style={{
               position: 'fixed',
-              top: `${menuPosition.top}px`,
+              ...(menuPosition.top !== undefined ? { top: `${menuPosition.top}px` } : {}),
+              ...(menuPosition.bottom !== undefined ? { bottom: `${menuPosition.bottom}px` } : {}),
               left: `${menuPosition.left}px`,
               width: `${menuPosition.width}px`,
+              maxHeight: `${menuPosition.maxHeight}px`,
               zIndex: 99999,
             }}
-        className="rounded-2xl py-1.5 animate-in fade-in zoom-in-95 duration-100 max-h-72 flex flex-col shadow-[0_16px_36px_rgba(28,25,23,0.12)] border border-stone-200/90 bg-white"
+            className="rounded-2xl py-1.5 animate-in fade-in zoom-in-95 duration-100 flex flex-col shadow-[0_16px_36px_rgba(28,25,23,0.12)] border border-stone-200/90 bg-white"
           >
             {searchable && (
               <div className="px-2.5 pt-2 pb-1.5 border-b border-stone-100 shrink-0">

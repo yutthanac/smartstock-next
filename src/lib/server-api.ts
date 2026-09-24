@@ -39,6 +39,14 @@ export async function getServerSession(): Promise<ServerSession> {
   }
 }
 
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+const ssrCache = new Map<string, CacheEntry<any>>();
+const SSR_CACHE_TTL_MS = 4000; // 4s TTL connects hover prefetch with instant click
+
 /**
  * Authenticated Server-Side Fetch helper.
  * Attaches Authorization and X-Store-ID headers to communicate with Laravel backend.
@@ -48,6 +56,18 @@ export async function fetchServerApi<T>(
   options: RequestInit = {}
 ): Promise<T | null> {
   const { token, storeId } = await getServerSession();
+
+  // Check short-lived SSR cache (fast prefetch-to-click transition)
+  const isGet = !options.method || options.method.toUpperCase() === 'GET';
+  const cacheKey = `${storeId || 'default'}:${token ? token.slice(-8) : 'anon'}:${endpoint}`;
+
+  if (isGet && ssrCache.has(cacheKey)) {
+    const entry = ssrCache.get(cacheKey)!;
+    if (Date.now() - entry.timestamp < SSR_CACHE_TTL_MS) {
+      return entry.data as T;
+    }
+    ssrCache.delete(cacheKey);
+  }
 
   const headers: Record<string, string> = {
     Accept: 'application/json',
@@ -69,7 +89,7 @@ export async function fetchServerApi<T>(
       ...options,
       headers,
       signal,
-      cache: 'no-store', // Always fetch fresh data on SSR
+      cache: 'no-store', // Always request fresh data from upstream
     });
 
     if (!res.ok) {
@@ -77,7 +97,17 @@ export async function fetchServerApi<T>(
       return null;
     }
 
-    return (await res.json()) as T;
+    const data = (await res.json()) as T;
+
+    if (isGet) {
+      ssrCache.set(cacheKey, { data, timestamp: Date.now() });
+      if (ssrCache.size > 150) {
+        const oldest = ssrCache.keys().next().value;
+        if (oldest) ssrCache.delete(oldest);
+      }
+    }
+
+    return data;
   } catch (error) {
     console.error(`[SSR Fetch Error] Failed to fetch ${endpoint}:`, error);
     return null;
@@ -125,12 +155,18 @@ export async function getServerStores(): Promise<StoreInfo[]> {
 }
 
 export async function getServerUsers(): Promise<UserProfile[]> {
-  const data = await fetchServerApi<UserProfile[]>('/users');
+  const data = await fetchServerApi<any>('/users');
+  if (data && Array.isArray(data.users)) {
+    return data.users;
+  }
   return Array.isArray(data) ? data : [];
 }
 
 export async function getServerRoles(): Promise<any[]> {
-  const data = await fetchServerApi<any[]>('/roles-permissions');
+  const data = await fetchServerApi<any>('/roles-permissions');
+  if (data && Array.isArray(data.roles)) {
+    return data.roles;
+  }
   return Array.isArray(data) ? data : [];
 }
 

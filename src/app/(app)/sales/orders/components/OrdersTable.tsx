@@ -59,18 +59,24 @@ export function OrdersTable({
     <div className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs p-5 sm:p-6 space-y-4">
       {/* Status Filter Tabs & Search / Filter Controls */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-100 pb-4">
-        <div className="flex items-center gap-1.5 p-1 bg-stone-100 rounded-xl">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
             onClick={() => onStatusTabChange('all')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 border ${
               statusTab === 'all'
-                ? 'bg-white text-stone-900 shadow-2xs'
-                : 'text-stone-600 hover:text-stone-900'
+                ? 'bg-stone-900 text-white border-stone-900 shadow-xs ring-2 ring-stone-900/10'
+                : 'bg-stone-100 text-stone-700 border-stone-200/80 hover:bg-stone-200/70 hover:text-stone-900'
             }`}
           >
             <span>บิลทั้งหมด</span>
-            <span className="text-[11px] px-1.5 py-0.2 rounded-full font-mono bg-stone-200/70 text-stone-700">
+            <span
+              className={`text-[11px] px-1.5 py-0.5 rounded-full font-mono tabular-nums ${
+                statusTab === 'all'
+                  ? 'bg-white/20 text-white'
+                  : 'bg-stone-200/80 text-stone-700'
+              }`}
+            >
               {tabCounts.totalCount}
             </span>
           </button>
@@ -78,15 +84,25 @@ export function OrdersTable({
           <button
             type="button"
             onClick={() => onStatusTabChange('completed')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 border ${
               statusTab === 'completed'
-                ? 'bg-white text-emerald-800 shadow-2xs'
-                : 'text-stone-600 hover:text-stone-900'
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs ring-2 ring-emerald-600/20'
+                : 'bg-emerald-50 text-emerald-800 border-emerald-200/80 hover:bg-emerald-100/70 hover:border-emerald-300/80'
             }`}
           >
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            <CheckCircle2
+              className={`w-3.5 h-3.5 ${
+                statusTab === 'completed' ? 'text-white' : 'text-emerald-600'
+              }`}
+            />
             <span>ชำระแล้ว</span>
-            <span className="text-[11px] px-1.5 py-0.2 rounded-full font-mono bg-emerald-100/70 text-emerald-800">
+            <span
+              className={`text-[11px] px-1.5 py-0.5 rounded-full font-mono tabular-nums font-semibold border ${
+                statusTab === 'completed'
+                  ? 'bg-white/20 text-white border-transparent'
+                  : 'bg-emerald-100/80 text-emerald-800 border-emerald-200/60'
+              }`}
+            >
               {tabCounts.completedCount}
             </span>
           </button>
@@ -94,19 +110,27 @@ export function OrdersTable({
           <button
             type="button"
             onClick={() => onStatusTabChange('cancelled')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 border ${
               statusTab === 'cancelled'
-                ? 'bg-white text-rose-700 shadow-2xs'
-                : 'text-stone-600 hover:text-rose-700'
+                ? 'bg-rose-600 text-white border-rose-600 shadow-xs ring-2 ring-rose-600/20'
+                : 'bg-rose-50 text-rose-700 border-rose-200/80 hover:bg-rose-100/70 hover:border-rose-300/80'
             }`}
           >
-            <XCircle className="w-3.5 h-3.5 text-rose-500" />
+            <XCircle
+              className={`w-3.5 h-3.5 ${
+                statusTab === 'cancelled' ? 'text-white' : 'text-rose-500'
+              }`}
+            />
             <span>ยกเลิกแล้ว</span>
-            {tabCounts.cancelledCount > 0 && (
-              <span className="text-[11px] px-1.5 py-0.2 rounded-full font-mono bg-rose-100 text-rose-700 font-bold">
-                {tabCounts.cancelledCount}
-              </span>
-            )}
+            <span
+              className={`text-[11px] px-1.5 py-0.5 rounded-full font-mono tabular-nums font-semibold border ${
+                statusTab === 'cancelled'
+                  ? 'bg-white/20 text-white border-transparent'
+                  : 'bg-rose-100/80 text-rose-700 border-rose-200/60'
+              }`}
+            >
+              {tabCounts.cancelledCount}
+            </span>
           </button>
         </div>
 

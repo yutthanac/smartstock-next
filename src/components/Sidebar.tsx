@@ -59,14 +59,7 @@ interface NavSection {
   items: NavItem[];
 }
 
-const ROLE_DISPLAY_NAMES: Record<string, string> = {
-  admin:   'ผู้ดูแลระบบ (Admin)',
-  owner:   'เจ้าของร้าน (Owner)',
-  manager: 'ผู้จัดการร้าน (Manager)',
-  chef:    'หัวหน้าครัว (Chef)',
-  cashier: 'แคชเชียร์ (Cashier)',
-  staff:   'พนักงานทั่วไป (Staff)',
-};
+import { getRoleDisplayName } from '@/lib/role-utils';
 
 export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) => {
   const pathname = usePathname();
@@ -166,7 +159,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
   const themeColor = activeStore?.theme_color || '#059669';
 
   // Complete Menu Hierarchy with Role Mapping & Store Module Keys
-  const menuSections: NavSection[] = [
+  const menuSections: NavSection[] = React.useMemo(() => [
     {
       title: 'ภาพรวม',
       items: [
@@ -266,7 +259,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
           href: '/staff',
           icon: Users,
           moduleKey: 'staff',
-          allowedRoles: ['admin', 'owner', 'manager'],
+          allowedRoles: ['admin', 'owner', 'manager', 'chef', 'cashier', 'staff'],
         },
         {
           label: 'กำหนดสิทธิ์บทบาท',
@@ -284,7 +277,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
         },
       ],
     },
-  ];
+  ], [dashboard.low_stock_count]);
 
   // Store switching is restricted to admin only
   const canSwitchStore = Boolean(
@@ -298,7 +291,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
       <aside
         className={`${
           isCollapsed ? 'w-20' : 'w-64'
-        } shrink-0 hidden md:flex flex-col bg-slate-50 border-r border-slate-200/80 transition-[width] duration-300 ease-in-out sticky top-0 h-screen z-30 select-none`}
+        } shrink-0 hidden md:flex flex-col bg-slate-50 border-r border-slate-200/80 transition-[width] duration-300 ease-in-out sticky top-0 h-screen z-30 select-none print:hidden`}
       >
       {/* Top brand header & Store Switcher */}
       <div
@@ -499,7 +492,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
                     <Link
                       key={item.href}
                       href={item.href}
-                      prefetch={false}
+                      prefetch={true}
                       title={isCollapsed ? displayLabel : undefined}
                       className={`flex items-center text-sm transition-all duration-150 group relative ${
                         isCollapsed
@@ -589,7 +582,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
                   {user?.name || 'ผู้ใช้'}
                 </div>
                 <div className="text-xs text-slate-400 truncate font-normal">
-                  {ROLE_DISPLAY_NAMES[effectiveRole] ?? effectiveRole}
+                  {getRoleDisplayName(effectiveRole, undefined, activeStore?.type)}
                 </div>
               </div>
             </div>
@@ -604,7 +597,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
         ) : (
           <div className="flex flex-col items-center gap-2 py-1">
             <div
-              title={`${user?.name || 'ผู้ใช้'} (${ROLE_DISPLAY_NAMES[effectiveRole] ?? effectiveRole})`}
+              title={`${user?.name || 'ผู้ใช้'} (${getRoleDisplayName(effectiveRole, undefined, activeStore?.type)})`}
               className="w-9 h-9 rounded-full bg-stone-200 text-stone-700 flex items-center justify-center font-medium text-xs shrink-0 cursor-pointer overflow-hidden shadow-2xs"
             >
               {user?.avatar ? (
@@ -716,6 +709,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
                       <Link
                         key={item.href}
                         href={item.href}
+                        prefetch={true}
                         onClick={closeMobileSidebar}
                         className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                           isActive
@@ -757,7 +751,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
                   {user?.name || 'ผู้ใช้'}
                 </div>
                 <div className="text-xs text-stone-500 truncate font-normal">
-                  {ROLE_DISPLAY_NAMES[effectiveRole] ?? effectiveRole}
+                  {getRoleDisplayName(effectiveRole, undefined, activeStore?.type)}
                 </div>
               </div>
             </div>

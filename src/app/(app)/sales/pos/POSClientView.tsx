@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   Search,
   ShoppingCart,
@@ -332,14 +332,22 @@ export function POSClientView({
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMobileOptionOpen, setIsMobileOptionOpen] = useState(false);
 
-  const dynamicCategories = ['ทั้งหมด', ...Array.from(new Set(menuItems.map((m) => m.category)))];
-  const filteredMenu = menuItems.filter((item) => {
-    const matchCat = selectedCategory === 'ทั้งหมด' || item.category === selectedCategory;
-    const matchSearch =
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (item.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
-    return matchCat && matchSearch;
-  });
+  const dynamicCategories = useMemo(
+    () => ['ทั้งหมด', ...Array.from(new Set(menuItems.map((m) => m.category)))],
+    [menuItems]
+  );
+  const filteredMenu = useMemo(
+    () =>
+      menuItems.filter((item) => {
+        const matchCat = selectedCategory === 'ทั้งหมด' || item.category === selectedCategory;
+        const matchSearch =
+          !searchQuery.trim() ||
+          item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (item.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+        return matchCat && matchSearch;
+      }),
+    [menuItems, selectedCategory, searchQuery]
+  );
 
   /* ── Cart Operations ── */
   const addToCart = useCallback((menu: MenuItem, options?: CartItemOption) => {
@@ -417,99 +425,103 @@ export function POSClientView({
   const grandTotal = subtotal;
 
   /* ── Real-time BOM preview (for desktop panel) ── */
-  const cartBOMImpact: {
-    [ingId: number]: { name: string; unit: string; current: number; used: number; remaining: number };
-  } = {};
+  const cartBOMImpact = useMemo(() => {
+    const impact: {
+      [ingId: number]: { name: string; unit: string; current: number; used: number; remaining: number };
+    } = {};
 
-  cartItems.forEach(({ item, quantity, options }) => {
-    const shots = options.extraShots ?? (options.isSpecial ? 1 : 0);
-    const customNote = options.customNote || '';
-    const sweetness = options.sweetness || 'หวาน';
-    const sweetnessMultiplier = getSweetnessMultiplier(sweetness, customNote);
+    cartItems.forEach(({ item, quantity, options }) => {
+      const shots = options.extraShots ?? (options.isSpecial ? 1 : 0);
+      const customNote = options.customNote || '';
+      const sweetness = options.sweetness || 'หวาน';
+      const sweetnessMultiplier = getSweetnessMultiplier(sweetness, customNote);
 
-    // 1. Calculate sweetener volume reduction & identify primary milk in recipe
-    let totalSweetenerReduction = 0;
-    let primaryMilkIngId: number | null = null;
-    let maxMilkQty = 0;
+      // 1. Calculate sweetener volume reduction & identify primary milk in recipe
+      let totalSweetenerReduction = 0;
+      let primaryMilkIngId: number | null = null;
+      let maxMilkQty = 0;
 
-    item.recipes?.forEach((r) => {
-      const ing = ingredients.find((i) => String(i.id) === String(r.ingredient_id));
-      const ingName = ing?.name || (r as any).ingredient?.name || r.ingredient_name || '';
-      const ingCat = ing?.category || (r as any).ingredient?.category || '';
-      const baseQty = Number(r.quantity_used) || 0;
+      item.recipes?.forEach((r) => {
+        const ing = ingredients.find((i) => String(i.id) === String(r.ingredient_id));
+        const ingName = ing?.name || (r as any).ingredient?.name || r.ingredient_name || '';
+        const ingCat = ing?.category || (r as any).ingredient?.category || '';
+        const baseQty = Number(r.quantity_used) || 0;
 
-      if (checkIsSweetener(ingName, ingCat)) {
-        totalSweetenerReduction += baseQty * (1.0 - sweetnessMultiplier);
-      } else if (checkIsMilk(ingName, ingCat)) {
-        if (baseQty > maxMilkQty) {
-          maxMilkQty = baseQty;
-          primaryMilkIngId = ing ? ing.id : Number(r.ingredient_id);
+        if (checkIsSweetener(ingName, ingCat)) {
+          totalSweetenerReduction += baseQty * (1.0 - sweetnessMultiplier);
+        } else if (checkIsMilk(ingName, ingCat)) {
+          if (baseQty > maxMilkQty) {
+            maxMilkQty = baseQty;
+            primaryMilkIngId = ing ? ing.id : Number(r.ingredient_id);
+          }
+        }
+      });
+
+      // 2. Accumulate BOM usage with milk compensation
+      item.recipes?.forEach((r) => {
+        const ing = ingredients.find((i) => String(i.id) === String(r.ingredient_id));
+        const ingId = ing?.id ?? Number(r.ingredient_id);
+        const ingName = ing?.name || (r as any).ingredient?.name || r.ingredient_name || 'วัตถุดิบ';
+        const ingCat = ing?.category || (r as any).ingredient?.category || '';
+        const ingUnit = ing?.unit || (r as any).ingredient?.unit || r.ingredient_unit || 'หน่วย';
+        const ingQuantity = ing?.quantity ?? (r as any).ingredient?.quantity ?? 0;
+
+        const isCoffee = checkIsCoffee(ingName, ingCat);
+        const isSweetener = checkIsSweetener(ingName, ingCat);
+        const isPrimaryMilk = (Number(ingId) === Number(primaryMilkIngId));
+
+        let effectiveQty = Number(r.quantity_used) || 0;
+        if (isCoffee) {
+          effectiveQty = effectiveQty * (1.0 + shots);
+        } else if (isSweetener) {
+          effectiveQty = effectiveQty * sweetnessMultiplier;
+        } else if (isPrimaryMilk && Math.abs(totalSweetenerReduction) > 0.001) {
+          effectiveQty = Math.max(0, effectiveQty + totalSweetenerReduction);
+        }
+
+        const usedQty = effectiveQty * quantity;
+        if (usedQty > 0) {
+          if (!impact[ingId]) {
+            impact[ingId] = { name: ingName, unit: ingUnit, current: ingQuantity, used: 0, remaining: ingQuantity };
+          }
+          impact[ingId].used = Number((impact[ingId].used + usedQty).toFixed(3));
+          impact[ingId].remaining = Math.max(0, Number((impact[ingId].current - impact[ingId].used).toFixed(3)));
+        }
+      });
+
+      // Takeaway cup deduction
+      if (options.diningOption === 'กลับบ้าน' || customNote.includes('กลับบ้าน')) {
+        const cupIng = ingredients.find((i) =>
+          i.name.toLowerCase().includes('แก้ว') && (
+            i.name.toLowerCase().includes('takeaway') ||
+            i.name.toLowerCase().includes('กลับบ้าน') ||
+            i.category?.toLowerCase().includes('แก้ว') ||
+            i.category?.toLowerCase().includes('บรรจุภัณฑ์')
+          )
+        ) ?? ingredients.find((i) => i.name.toLowerCase().includes('แก้ว'));
+        if (cupIng) {
+          if (!impact[cupIng.id]) {
+            impact[cupIng.id] = { name: cupIng.name, unit: cupIng.unit, current: cupIng.quantity, used: 0, remaining: cupIng.quantity };
+          }
+          impact[cupIng.id].used += quantity;
+          impact[cupIng.id].remaining = Math.max(0, impact[cupIng.id].current - impact[cupIng.id].used);
         }
       }
+
+      options.selectedModifiers?.forEach((mod: any) => {
+        const ing = ingredients.find((i) => i.id === mod.ingredient_id);
+        if (ing) {
+          if (!impact[ing.id]) {
+            impact[ing.id] = { name: `${ing.name} (+${mod.name})`, unit: ing.unit, current: ing.quantity, used: 0, remaining: ing.quantity };
+          }
+          impact[ing.id].used += (Number(mod.quantity) || 1) * quantity;
+          impact[impact[ing.id] ? ing.id : ing.id].remaining = Math.max(0, impact[ing.id].current - impact[ing.id].used);
+        }
+      });
     });
 
-    // 2. Accumulate BOM usage with milk compensation
-    item.recipes?.forEach((r) => {
-      const ing = ingredients.find((i) => String(i.id) === String(r.ingredient_id));
-      const ingId = ing?.id ?? Number(r.ingredient_id);
-      const ingName = ing?.name || (r as any).ingredient?.name || r.ingredient_name || 'วัตถุดิบ';
-      const ingCat = ing?.category || (r as any).ingredient?.category || '';
-      const ingUnit = ing?.unit || (r as any).ingredient?.unit || r.ingredient_unit || 'หน่วย';
-      const ingQuantity = ing?.quantity ?? (r as any).ingredient?.quantity ?? 0;
-
-      const isCoffee = checkIsCoffee(ingName, ingCat);
-      const isSweetener = checkIsSweetener(ingName, ingCat);
-      const isPrimaryMilk = (Number(ingId) === Number(primaryMilkIngId));
-
-      let effectiveQty = Number(r.quantity_used) || 0;
-      if (isCoffee) {
-        effectiveQty = effectiveQty * (1.0 + shots);
-      } else if (isSweetener) {
-        effectiveQty = effectiveQty * sweetnessMultiplier;
-      } else if (isPrimaryMilk && Math.abs(totalSweetenerReduction) > 0.001) {
-        effectiveQty = Math.max(0, effectiveQty + totalSweetenerReduction);
-      }
-
-      const usedQty = effectiveQty * quantity;
-      if (usedQty > 0) {
-        if (!cartBOMImpact[ingId]) {
-          cartBOMImpact[ingId] = { name: ingName, unit: ingUnit, current: ingQuantity, used: 0, remaining: ingQuantity };
-        }
-        cartBOMImpact[ingId].used = Number((cartBOMImpact[ingId].used + usedQty).toFixed(3));
-        cartBOMImpact[ingId].remaining = Math.max(0, Number((cartBOMImpact[ingId].current - cartBOMImpact[ingId].used).toFixed(3)));
-      }
-    });
-
-    // Takeaway cup deduction
-    if (options.diningOption === 'กลับบ้าน' || customNote.includes('กลับบ้าน')) {
-      const cupIng = ingredients.find((i) =>
-        i.name.toLowerCase().includes('แก้ว') && (
-          i.name.toLowerCase().includes('takeaway') ||
-          i.name.toLowerCase().includes('กลับบ้าน') ||
-          i.category?.toLowerCase().includes('แก้ว') ||
-          i.category?.toLowerCase().includes('บรรจุภัณฑ์')
-        )
-      ) ?? ingredients.find((i) => i.name.toLowerCase().includes('แก้ว'));
-      if (cupIng) {
-        if (!cartBOMImpact[cupIng.id]) {
-          cartBOMImpact[cupIng.id] = { name: cupIng.name, unit: cupIng.unit, current: cupIng.quantity, used: 0, remaining: cupIng.quantity };
-        }
-        cartBOMImpact[cupIng.id].used += quantity;
-        cartBOMImpact[cupIng.id].remaining = Math.max(0, cartBOMImpact[cupIng.id].current - cartBOMImpact[cupIng.id].used);
-      }
-    }
-
-    options.selectedModifiers?.forEach((mod: any) => {
-      const ing = ingredients.find((i) => i.id === mod.ingredient_id);
-      if (ing) {
-        if (!cartBOMImpact[ing.id]) {
-          cartBOMImpact[ing.id] = { name: `${ing.name} (+${mod.name})`, unit: ing.unit, current: ing.quantity, used: 0, remaining: ing.quantity };
-        }
-        cartBOMImpact[ing.id].used += (Number(mod.quantity) || 1) * quantity;
-        cartBOMImpact[ing.id].remaining = Math.max(0, cartBOMImpact[ing.id].current - cartBOMImpact[ing.id].used);
-      }
-    });
-  });
+    return impact;
+  }, [cartItems, ingredients]);
 
   /* ── Checkout ── */
   const handleCheckout = async () => {

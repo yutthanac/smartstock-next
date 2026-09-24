@@ -1,11 +1,14 @@
 import React from 'react';
-import { Shield, Mail, Edit2, Trash2, Key, Store } from 'lucide-react';
+import { Shield, Mail, Edit2, Trash2, Key, Store, Eye } from 'lucide-react';
 import { StaffUser } from './types';
+import { getCleanRoleName } from './StaffModal';
 
 interface StaffTableViewProps {
   staffList: StaffUser[];
   currentUserId?: string;
   currentUserRole?: string;
+  activeStoreType?: string;
+  canManage?: boolean;
   onEdit: (staff: StaffUser) => void;
   onDelete: (id: string, name: string) => void;
 }
@@ -14,6 +17,8 @@ export const StaffTableView: React.FC<StaffTableViewProps> = ({
   staffList,
   currentUserId,
   currentUserRole,
+  activeStoreType,
+  canManage = true,
   onEdit,
   onDelete,
 }) => {
@@ -109,13 +114,13 @@ export const StaffTableView: React.FC<StaffTableViewProps> = ({
                           className={`text-xs font-normal px-2 py-0.5 rounded-lg flex items-center gap-1 ${
                             r.name === 'admin'
                               ? 'bg-stone-100 text-stone-800 border border-stone-200'
-                              : r.name === 'manager'
+                              : r.name === 'manager' || r.name === 'owner'
                               ? 'bg-[#f5efe6] text-[#78350f] border border-[#e8ded0]'
                               : 'bg-stone-50 text-stone-700 border border-stone-200/70'
                           }`}
                         >
                           <Shield className="w-3 h-3" />
-                          {r.display_name}
+                          {getCleanRoleName(r.name, r.display_name, activeStoreType || staff.stores?.[0]?.type)}
                         </span>
                       ))}
                     </div>
@@ -141,40 +146,48 @@ export const StaffTableView: React.FC<StaffTableViewProps> = ({
                   {/* Actions */}
                   <td className="py-4 px-6 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1 shrink-0">
-                      {canEdit ? (
-                        <button
-                          onClick={() => onEdit(staff)}
-                          title="แก้ไขสิทธิ์"
-                          className="p-2 rounded-xl text-stone-400 hover:text-stone-900 hover:bg-stone-100 transition-colors cursor-pointer"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
+                      {canManage ? (
+                        <>
+                          {canEdit ? (
+                            <button
+                              onClick={() => onEdit(staff)}
+                              title="แก้ไขสิทธิ์"
+                              className="p-2 rounded-xl text-stone-400 hover:text-stone-900 hover:bg-stone-100 transition-colors cursor-pointer"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                          ) : (
+                            <span
+                              title="บัญชี System Admin สงวนสิทธิ์ไม่ให้แก้ไข"
+                              className="p-2 text-stone-300 cursor-not-allowed"
+                            >
+                              <Shield className="w-4 h-4" />
+                            </span>
+                          )}
+                          <button
+                            onClick={() => onDelete(staff.id, staff.name)}
+                            disabled={isMe || isAdminTarget}
+                            title={
+                              isAdminTarget
+                                ? 'ไม่สามารถลบบัญชี System Admin ได้'
+                                : isMe
+                                ? 'ไม่สามารถลบตัวเองได้'
+                                : 'ลบพนักงาน'
+                            }
+                            className={`p-2 rounded-xl transition-colors ${
+                              isMe || isAdminTarget
+                                ? 'text-stone-200 cursor-not-allowed'
+                                : 'text-stone-400 hover:text-rose-600 hover:bg-stone-100 cursor-pointer'
+                            }`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
                       ) : (
-                        <span
-                          title="บัญชี System Admin สงวนสิทธิ์ไม่ให้แก้ไข"
-                          className="p-2 text-stone-300 cursor-not-allowed"
-                        >
-                          <Shield className="w-4 h-4" />
+                        <span className="text-xs text-stone-400 font-medium px-2 py-1">
+                          ดูข้อมูล
                         </span>
                       )}
-                      <button
-                        onClick={() => onDelete(staff.id, staff.name)}
-                        disabled={isMe || isAdminTarget}
-                        title={
-                          isAdminTarget
-                            ? 'ไม่สามารถลบบัญชี System Admin ได้'
-                            : isMe
-                            ? 'ไม่สามารถลบตัวเองได้'
-                            : 'ลบพนักงาน'
-                        }
-                        className={`p-2 rounded-xl transition-colors ${
-                          isMe || isAdminTarget
-                            ? 'text-stone-200 cursor-not-allowed'
-                            : 'text-stone-400 hover:text-rose-600 hover:bg-stone-100 cursor-pointer'
-                        }`}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
                     </div>
                   </td>
                 </tr>

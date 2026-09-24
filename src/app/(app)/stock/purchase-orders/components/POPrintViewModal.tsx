@@ -1,12 +1,14 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Printer,
   Download,
   X,
   CheckCircle2,
   ShoppingBag,
+  FileText,
 } from 'lucide-react';
 import { PurchaseOrder } from '../types';
 import { Button } from '@/components/Button';
@@ -26,10 +28,15 @@ export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
   onClose,
   onMarkCompleted,
 }) => {
+  const [mounted, setMounted] = useState(false);
   const { ingredients: ctxIngredients } = useStock();
   const ingredients = (propIngredients && propIngredients.length > 0) ? propIngredients : ctxIngredients;
 
-  if (!po) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!po || !mounted) return null;
 
   const isContinuousUnit = (unitStr?: string) => {
     if (!unitStr) return false;
@@ -113,7 +120,15 @@ export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
         }, 0);
 
   const handlePrint = () => {
+    const prevTitle = document.title;
+    const cleanStoreName = po.store_name ? po.store_name.replace(/[/\\?%*:|"<>]/g, '_') : 'SmartStock';
+    document.title = `ใบจ่ายตลาด_${cleanStoreName}_${po.date}_${po.id}`;
+
     window.print();
+
+    setTimeout(() => {
+      document.title = prevTitle;
+    }, 1500);
   };
 
   const handleExportCSV = () => {
@@ -158,13 +173,13 @@ export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  // Blank filler rows so small lists fill the A4 page naturally
-  const minRows = 19;
+  // Blank filler rows so small lists fill the A4 page naturally (16 rows fits single A4 page cleanly)
+  const minRows = 16;
   const blankRowsCount = Math.max(0, minRows - po.items.length);
   const blankRows = Array.from({ length: blankRowsCount }, (_, i) => po.items.length + i + 1);
 
-  return (
-    <div className="print-modal-backdrop fixed inset-0 z-50 overflow-y-auto bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 print:p-0 print:bg-white print:static print:overflow-visible">
+  return createPortal(
+    <div className="print-portal-root print-modal-backdrop fixed inset-0 z-50 overflow-y-auto bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 print:p-0 print:bg-white print:static print:overflow-visible">
       <div className="print-modal-card bg-white rounded-2xl max-w-4xl w-full shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[92vh] print:max-h-none print:shadow-none print:border-none print:rounded-none">
         
         {/* Top Control Bar (Screen only) */}
@@ -179,6 +194,7 @@ export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
               </h3>
               <p className="text-xs text-stone-500">
                 เลขที่: <span className="font-mono tabular-nums font-semibold">{po.id}</span> • วันที่: <span className="font-mono tabular-nums">{po.date}</span>
+                <span className="hidden sm:inline text-stone-400 ml-2">• เลือก "บันทึกเป็น PDF" ในหน้าต่างพิมพ์</span>
               </p>
             </div>
           </div>
@@ -212,8 +228,9 @@ export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
               onClick={handlePrint}
               icon={<Printer className="w-4 h-4" />}
               className="rounded-xl bg-stone-900 text-white hover:bg-stone-800"
+              title="พิมพ์เอกสาร หรือเลือก 'บันทึกเป็น PDF (Save as PDF)'"
             >
-              พิมพ์ใบจ่ายตลาด (Print)
+              พิมพ์ / บันทึก PDF (Print)
             </Button>
 
             <button
@@ -369,6 +386,7 @@ export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
 
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
