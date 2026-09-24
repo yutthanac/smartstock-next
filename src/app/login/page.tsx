@@ -7,11 +7,23 @@ export const metadata = {
   description: 'เข้าสู่ระบบจัดการสต็อกและขายหน้าร้าน SmartStock',
 };
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ redirect?: string }>;
+}) {
   const { token } = await getServerSession();
 
   if (token) {
-    redirect('/dashboard');
+    const params = await searchParams;
+    const dest =
+      params?.redirect &&
+      params.redirect.startsWith('/') &&
+      !params.redirect.startsWith('//') &&
+      params.redirect !== '/login'
+        ? params.redirect
+        : '/dashboard';
+    redirect(dest);
   }
 
   return <LoginClientView />;

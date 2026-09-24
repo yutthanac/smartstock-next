@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
-import { Lock, Mail, AlertCircle } from 'lucide-react';
+import { Lock, Mail, AlertCircle, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/Button';
 
 export function LoginClientView() {
@@ -11,6 +11,17 @@ export function LoginClientView() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [redirectNotice, setRedirectNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirectParam = searchParams.get('redirect');
+      if (redirectParam && redirectParam !== '/dashboard' && redirectParam !== '/login') {
+        setRedirectNotice('กรุณาเข้าสู่ระบบเพื่อเข้าถึงหน้าที่คุณต้องการ');
+      }
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +58,13 @@ export function LoginClientView() {
 
         {/* Card Container */}
         <div className="bg-white py-8 px-6 shadow-sm rounded-3xl sm:px-8 border border-stone-200/90">
+          {redirectNotice && !error && (
+            <div className="mb-5 p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200/80 flex items-center gap-2.5 text-amber-900 text-xs shadow-2xs">
+              <ShieldCheck className="w-4 h-4 shrink-0 text-amber-600" />
+              <p className="font-medium text-xs leading-relaxed">{redirectNotice}</p>
+            </div>
+          )}
+
           {error && (
             <div className="mb-5 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 flex items-start gap-3 text-rose-800 text-xs">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />

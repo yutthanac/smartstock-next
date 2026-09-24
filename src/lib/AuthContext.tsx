@@ -166,11 +166,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const isStorePickerRoute = pathname === '/store-picker';
 
     if (!user && !isAuthRoute) {
-      router.push('/login');
+      const redirectQuery = pathname && pathname !== '/'
+        ? `?redirect=${encodeURIComponent(pathname + (typeof window !== 'undefined' ? window.location.search : ''))}`
+        : '';
+      router.push(`/login${redirectQuery}`);
     } else if (user && isAuthRoute) {
-      // If already has an active store, skip picker
+      let targetUrl = '/dashboard';
+      if (typeof window !== 'undefined') {
+        const searchParams = new URLSearchParams(window.location.search);
+        const redirectParam = searchParams.get('redirect');
+        if (
+          redirectParam &&
+          redirectParam.startsWith('/') &&
+          !redirectParam.startsWith('//') &&
+          redirectParam !== '/login'
+        ) {
+          targetUrl = redirectParam;
+        }
+      }
+
+      // If already has an active store, navigate to targetUrl
       if (activeStore) {
-        router.push('/dashboard');
+        router.push(targetUrl);
       } else {
         router.push('/store-picker');
       }
@@ -216,6 +233,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(STORES_KEY, JSON.stringify(storeList));
       setClientCookie(AUTH_COOKIE_NAME, data.access_token);
 
+      // Read target redirect URL if user was accessing a specific page
+      let targetUrl = '/dashboard';
+      if (typeof window !== 'undefined') {
+        const searchParams = new URLSearchParams(window.location.search);
+        const redirectParam = searchParams.get('redirect');
+        if (
+          redirectParam &&
+          redirectParam.startsWith('/') &&
+          !redirectParam.startsWith('//') &&
+          redirectParam !== '/login'
+        ) {
+          targetUrl = redirectParam;
+        }
+      }
+
       // Prioritize Cafe store as default
       const cafeStore = storeList.find((s) => s.type === 'cafe' || s.name.includes('คาเฟ่') || s.name.toLowerCase().includes('cafe')) || storeList[0];
 
@@ -224,9 +256,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem(ACTIVE_STORE_KEY, JSON.stringify(cafeStore));
         localStorage.setItem('active_store_id', String(cafeStore.id));
         setClientCookie(ACTIVE_STORE_COOKIE_NAME, String(cafeStore.id));
-        router.push('/dashboard');
+        router.push(targetUrl);
       } else {
-        router.push('/store-picker');
+        router.push(targetUrl !== '/dashboard' ? targetUrl : '/store-picker');
       }
 
       return { success: true };
