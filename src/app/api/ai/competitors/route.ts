@@ -77,11 +77,42 @@ export interface MarketIntelligence {
   };
 }
 
+export interface StrategyDebate {
+  growth_opinion: {
+    advocate: string;
+    perspective: string;
+    key_points: string[];
+  };
+  risk_counter: {
+    critic: string;
+    perspective: string;
+    key_points: string[];
+  };
+  safe_verdict: {
+    verdict: string;
+    test_action: string;
+  };
+}
+
+export interface ConfidenceBreakdown {
+  real_data_percent: number;
+  ai_estimate_percent: number;
+  disclaimer: string;
+  items: {
+    label: string;
+    type: 'real' | 'estimated' | 'hybrid';
+    percent: number;
+    description: string;
+  }[];
+}
+
 export interface NeighborhoodAnalysis {
   location_name: string;
   lat: number;
   lng: number;
   data_sources?: DataSourcesStatus;
+  confidence_breakdown?: ConfidenceBreakdown;
+  strategy_debate?: StrategyDebate;
   market_intelligence?: MarketIntelligence;
   neighborhood_summary: {
     market_density: string;
@@ -432,6 +463,27 @@ ${realPlacesContext || 'ค้นหาร้านกาแฟ/คาเฟ่�
       "immediate_actions": ["สิ่งที่ร้านควรเตรียมพร้อมทันที 1", "สิ่งที่ควรทำ 2"]
     }
   },
+  "strategy_debate": {
+    "growth_opinion": {
+      "advocate": "ฝ่ายรุก: โอกาสทางธุรกิจ (Growth Strategist)",
+      "perspective": "มุมมองเชิงรุก โอกาสทำกำไรและเจาะตลาดในย่านนี้...",
+      "key_points": ["จุดเด่นและโอกาสสำคัญ 1", "จุดที่น่าลงทุน 2"]
+    },
+    "risk_counter": {
+      "critic": "ฝ่ายระวัง: ผู้ตรวจสอบความเสี่ยง (Devil's Advocate)",
+      "perspective": "มุมมองโต้แย้ง เตือนข้อควรระวังว่าข้อมูลเมนูและเสียงสะท้อนเป็นเพียงการคาดการณ์จำลองเชิงสถิติ...",
+      "key_points": ["ความเสี่ยงและจุดควรระวัง 1", "ความเสี่ยงข้อ 2"]
+    },
+    "safe_verdict": {
+      "verdict": "ข้อสรุปทางสายกลางเพื่อความปลอดภัยในการตัดสินใจ",
+      "test_action": "แนวทางการทดสอบตลาดแบบความเสี่ยงต่ำก่อนลงเงินจริง (เช่น ทดลองทำ Seasonal 15-20 แก้ว)"
+    }
+  },
+  "confidence_breakdown": {
+    "real_data_percent": 35,
+    "ai_estimate_percent": 65,
+    "disclaimer": "พิกัดและคะแนนดาวมาจากข้อมูลจริงบน Google Maps แต่รายการเมนูเฉพาะและเสียงสะท้อนลูกค้าเป็นการคาดการณ์จำลองเชิงสถิติโดย AI"
+  },
   "neighborhood_summary": {
     "market_density": "${placeCount >= 8 ? 'สูงมาก (การแข่งขันสูง)' : 'ปานกลาง'}",
     "target_audience": "กลุ่มลูกค้าหลักในย่านนี้",
@@ -555,9 +607,74 @@ ${realPlacesContext || 'ค้นหาร้านกาแฟ/คาเฟ่�
       finalCompetitors = matchedCompetitors;
     }
 
+    const defaultConfidenceBreakdown: ConfidenceBreakdown = {
+      real_data_percent: 35,
+      ai_estimate_percent: 65,
+      disclaimer: 'พิกัดและคะแนนดาวมาจากข้อมูลจริงบน Google Maps / OSM แต่รายการเมนูเฉพาะ เสียงสะท้อนรีวิว และการคำนวณราคาเป็นการคาดการณ์และจำลองเชิงสถิติโดย AI',
+      items: [
+        {
+          label: 'หมุดพิกัด & ร้านค้า',
+          type: 'real',
+          percent: 100,
+          description: 'ดึงข้อมูลสดจาก Google Places API / OpenStreetMap',
+        },
+        {
+          label: 'คะแนน Rating ดาว',
+          type: 'real',
+          percent: 100,
+          description: 'คะแนนเฉลี่ยจริงบน Google Maps',
+        },
+        {
+          label: 'ช่วงราคา & Foot Traffic',
+          type: 'hybrid',
+          percent: 65,
+          description: 'ประเมินจากระดับราคา Price Level จริง ร่วมกับโมเดล Foursquare',
+        },
+        {
+          label: 'เมนูยอดนิยม & สินค้าขายดี',
+          type: 'estimated',
+          percent: 70,
+          description: 'คาดการณ์จากประเภทคาเฟ่ ทำเล และเทรนด์ผู้บริโภคโดย AI',
+        },
+        {
+          label: 'เสียงสะท้อน คำชม & คำบ่น',
+          type: 'estimated',
+          percent: 85,
+          description: 'จำลองจากรูปแบบความพึงพอใจและ Pain Points ในอุตสาหกรรม (ไม่ใช่คอมเมนต์เดี่ยวรายบุคคล)',
+        },
+      ],
+    };
+
+    const defaultStrategyDebate: StrategyDebate = {
+      growth_opinion: {
+        advocate: 'ฝ่ายรุก: โอกาสทางธุรกิจ (Growth Strategist)',
+        perspective: parsed?.neighborhood_summary?.gap_in_market
+          ? `ย่านนี้ยังมีช่องว่างตลาด: "${parsed.neighborhood_summary.gap_in_market}" เหมาะแก่การชูเมนู Signature เพื่อดึงส่วนแบ่งตลาด`
+          : 'ย่านนี้มีความต้องการเครื่องดื่มที่มีเอกลักษณ์สูง การชูเมนูพรีเมียมและรสชาติเฉพาะตัวจะช่วยสร้างมาร์จิ้นสูงกว่าเมนูปกติ',
+        key_points: [
+          'วางราคาสินค้าหลักในจุด Sweet Spot เพื่อดึงดูดลูกค้าประจำ',
+          'สร้างความต่างด้วยการเสิร์ฟที่รวดเร็วและวัตถุดิบคุณภาพที่มีเรื่องราว (Storytelling)',
+        ],
+      },
+      risk_counter: {
+        critic: 'ฝ่ายระวัง: ผู้ตรวจสอบความเสี่ยง (Devil\'s Advocate)',
+        perspective: 'ระวัง! ข้อมูลเมนูคู่แข่งและเสียงสะท้อนเป็นการคาดการณ์จำลอง (Inference) ย่านนี้อาจมีคู่แข่งที่ลูกค้าผูกพันอยู่แล้ว',
+        key_points: [
+          'อย่าเพิ่งสต็อกวัตถุดิบพิเศษล่วงหน้าปริมาณมาก เพราะอาจเกิดต้นทุนจมหากกระแสตอบรับไม่เป็นไปตามคาด',
+          'ตรวจสอบเมนูหน้าร้านของคู่แข่งโดยรอบอีกครั้งก่อนตัดสินใจตั้งราคาหรือกำหนดสูตรเฉพาะ',
+        ],
+      },
+      safe_verdict: {
+        verdict: 'ข้อสรุปทางสายกลางเพื่อความปลอดภัยในการลงทุน',
+        test_action: 'ทดลองทำเป็นเมนูพิเศษจำนวนจำกัด (Special of the Day) 15-20 แก้ว/วัน ในช่วงสุดสัปดาห์ เพื่อประเมินยอดขายจริงก่อนบรรจุลงเมนูถาวร',
+      },
+    };
+
     return NextResponse.json({
       ...parsed,
       data_sources: dataSourcesStatus,
+      confidence_breakdown: parsed.confidence_breakdown || defaultConfidenceBreakdown,
+      strategy_debate: parsed.strategy_debate || defaultStrategyDebate,
       competitors: finalCompetitors,
       lat,
       lng,
@@ -657,6 +774,65 @@ function generateFallbackAnalysis(
       target_audience: 'ผู้บริโภค คนทำงาน และผู้พักอาศัยในบริเวณโดยรอบ',
       customer_demands: 'มองหากาแฟคุณภาพดี รสชาติคงที่ และการบริการที่รวดเร็ว',
       gap_in_market: 'ยังขาดร้านที่มีเอกลักษณ์เฉพาะตัวชัดเจนและเมนูทางเลือกพิเศษ',
+    },
+    confidence_breakdown: {
+      real_data_percent: 35,
+      ai_estimate_percent: 65,
+      disclaimer: 'พิกัดและคะแนนดาวมาจากข้อมูลจริงบน Google Maps / OSM แต่รายการเมนูเฉพาะ เสียงสะท้อนรีวิว และการคำนวณราคาเป็นการคาดการณ์และจำลองเชิงสถิติโดย AI',
+      items: [
+        {
+          label: 'หมุดพิกัด & ร้านค้า',
+          type: 'real',
+          percent: 100,
+          description: 'ดึงข้อมูลสดจาก Google Places API / OpenStreetMap',
+        },
+        {
+          label: 'คะแนน Rating ดาว',
+          type: 'real',
+          percent: 100,
+          description: 'คะแนนเฉลี่ยจริงบน Google Maps',
+        },
+        {
+          label: 'ช่วงราคา & Foot Traffic',
+          type: 'hybrid',
+          percent: 65,
+          description: 'ประเมินจากระดับราคา Price Level จริง ร่วมกับโมเดล Foursquare',
+        },
+        {
+          label: 'เมนูยอดนิยม & สินค้าขายดี',
+          type: 'estimated',
+          percent: 70,
+          description: 'คาดการณ์จากประเภทคาเฟ่ ทำเล และเทรนด์ผู้บริโภคโดย AI',
+        },
+        {
+          label: 'เสียงสะท้อน คำชม & คำบ่น',
+          type: 'estimated',
+          percent: 85,
+          description: 'จำลองจากรูปแบบความพึงพอใจและ Pain Points ในอุตสาหกรรม (ไม่ใช่คอมเมนต์เดี่ยวรายบุคคล)',
+        },
+      ],
+    },
+    strategy_debate: {
+      growth_opinion: {
+        advocate: 'ฝ่ายรุก: โอกาสทางธุรกิจ (Growth Strategist)',
+        perspective: 'ย่านนี้มีความต้องการเครื่องดื่มที่มีเอกลักษณ์สูง การเพิ่มเมนู Signature หรือเจาะกลุ่ม Specialty มีศักยภาพทำกำไรสูง',
+        key_points: [
+          'ควรดันเมนูไฮไลต์ราคา 85-95 บาท เพื่อสร้างอัตรากำไร (Margin) สูงกว่าเมนูปกติ',
+          'ดึงดูดลูกค้าด้วยความเร็วและการใช้วัตถุดิบคุณภาพที่มีเรื่องราว (Storytelling)',
+        ],
+      },
+      risk_counter: {
+        critic: 'ฝ่ายระวัง: ผู้ตรวจสอบความเสี่ยง (Devil\'s Advocate)',
+        perspective: 'ระวัง! ข้อมูลเมนูและรีวิวคู่แข่งเป็นเพียงการคาดการณ์เชิงสถิติ (Estimated Pattern) ไม่ใช่เมนูจริงทุกใบ',
+        key_points: [
+          'คู่แข่งในบริเวณมีจำนวนไม่น้อย หากสต็อกวัตถุดิบพิเศษล่วงหน้ามากเกินไป เสี่ยงเกิดต้นทุนจม',
+          'ไม่ควรตั้งราคาสูงเกินไปในทันที เพราะลูกค้าในพื้นที่อาจมี Brand Loyalty กับร้านเดิมอยู่แล้ว',
+        ],
+      },
+      safe_verdict: {
+        verdict: 'ข้อสรุปทางสายกลางเพื่อความปลอดภัยในการลงทุน',
+        test_action: 'ทดลองนำเสนอเป็นเมนู Seasonal พิเศษวันละ 15-20 แก้วในวันหยุดสุดสัปดาห์ก่อน เพื่อทดสอบความต้องการจริงโดยไม่เสี่ยงสต็อกค้าง',
+      },
     },
     competitors,
     suggested_positioning: [

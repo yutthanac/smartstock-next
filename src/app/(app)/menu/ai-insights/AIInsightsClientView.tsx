@@ -28,6 +28,9 @@ import {
   Lightbulb,
   ChevronDown,
   ChevronUp,
+  Scale,
+  Info,
+  AlertCircle,
 } from 'lucide-react';
 import { useStock } from '@/lib/StockContext';
 import { Topbar } from '@/components/Topbar';
@@ -161,11 +164,42 @@ export interface MarketIntelligence {
   };
 }
 
+export interface StrategyDebate {
+  growth_opinion: {
+    advocate: string;
+    perspective: string;
+    key_points: string[];
+  };
+  risk_counter: {
+    critic: string;
+    perspective: string;
+    key_points: string[];
+  };
+  safe_verdict: {
+    verdict: string;
+    test_action: string;
+  };
+}
+
+export interface ConfidenceBreakdown {
+  real_data_percent: number;
+  ai_estimate_percent: number;
+  disclaimer: string;
+  items: {
+    label: string;
+    type: 'real' | 'estimated' | 'hybrid';
+    percent: number;
+    description: string;
+  }[];
+}
+
 interface CompetitorAnalysisResult {
   location_name: string;
   lat: number;
   lng: number;
   data_sources?: DataSourcesStatus;
+  confidence_breakdown?: ConfidenceBreakdown;
+  strategy_debate?: StrategyDebate;
   market_intelligence?: MarketIntelligence;
   neighborhood_summary: {
     market_density: string;
@@ -236,6 +270,27 @@ export function AIInsightsClientView({
   const [isNearbyLoading, setIsNearbyLoading] = useState(false);
   const [placeFilter, setPlaceFilter] = useState<'coffee' | 'all'>('coffee');
   const [expandedDimensions, setExpandedDimensions] = useState<Record<number, boolean>>({});
+  const [showConfidenceDetails, setShowConfidenceDetails] = useState(false);
+  const [isMapCollapsed, setIsMapCollapsed] = useState(false);
+  const [expandedShopDetails, setExpandedShopDetails] = useState<Record<number, boolean>>({});
+
+  const toggleShopDetail = (index: number) => {
+    setExpandedShopDetails((prev) => ({ ...prev, [index]: !prev[index] }));
+  };
+
+  const isAllShopExpanded = competitorData?.competitors?.length
+    ? competitorData.competitors.every((_, i) => !!expandedShopDetails[i])
+    : false;
+
+  const toggleAllShopDetails = () => {
+    if (isAllShopExpanded) {
+      setExpandedShopDetails({});
+    } else {
+      const next: Record<number, boolean> = {};
+      competitorData?.competitors?.forEach((_, i) => { next[i] = true; });
+      setExpandedShopDetails(next);
+    }
+  };
 
   const toggleDimension = (id: number) => {
     setExpandedDimensions((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -571,119 +626,253 @@ export function AIInsightsClientView({
                   <span className="px-2.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-600">
                     รัศมี {searchRadius} กม.
                   </span>
+                  {competitorData && (
+                    <button
+                      type="button"
+                      onClick={() => setIsMapCollapsed(!isMapCollapsed)}
+                      className="px-2.5 py-1 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium cursor-pointer transition-all flex items-center gap-1"
+                    >
+                      {isMapCollapsed ? 'แสดงแผนที่' : 'ย่อแผนที่'}
+                      {isMapCollapsed ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
+                    </button>
+                  )}
                 </div>
               </div>
 
-              <InteractiveMapPicker
-                lat={mapLat}
-                lng={mapLng}
-                locationName={locationName}
-                radiusKm={searchRadius}
-                onRadiusChange={handleRadiusChange}
-                competitors={competitorData?.competitors || []}
-                nearbyPlaces={nearbyPlaces}
-                isNearbyLoading={isNearbyLoading}
-                placeFilter={placeFilter}
-                onPlaceFilterChange={handlePlaceFilterChange}
-                onLocationChange={handleLocationChange}
-                onNearbySearch={handleNearbySearch}
-                disabled={competitorLoading}
-              />
+              {!isMapCollapsed && (
+                <InteractiveMapPicker
+                  lat={mapLat}
+                  lng={mapLng}
+                  locationName={locationName}
+                  radiusKm={searchRadius}
+                  onRadiusChange={handleRadiusChange}
+                  competitors={competitorData?.competitors || []}
+                  nearbyPlaces={nearbyPlaces}
+                  isNearbyLoading={isNearbyLoading}
+                  placeFilter={placeFilter}
+                  onPlaceFilterChange={handlePlaceFilterChange}
+                  onLocationChange={handleLocationChange}
+                  onNearbySearch={handleNearbySearch}
+                  disabled={competitorLoading}
+                />
+              )}
             </div>
 
-            {/* Data Pipeline Ingestion Status Strip (5 Ingestion Sources) */}
-            {competitorData?.data_sources && (
-              <div className="p-4 rounded-2xl bg-white border border-stone-200/90 shadow-2xs space-y-2.5">
-                <div className="flex items-center justify-between text-xs flex-wrap gap-2">
-                  <div className="flex items-center gap-1.5 font-semibold text-stone-800">
-                    <Activity className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>แหล่งข้อมูล Market Intelligence (Data Pipeline Ingestion 5 ช่องทาง)</span>
+            {/* Data Grounding & Truth Meter (ความจริง vs การคาดเดา) */}
+            {competitorData && (
+              <div className="p-4 sm:p-5 rounded-2xl bg-white border border-stone-200/90 shadow-2xs space-y-3.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200/80 flex items-center justify-center text-emerald-700 shrink-0">
+                      <ShieldCheck className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-bold text-stone-900 flex items-center gap-1.5">
+                        <span>ความโปร่งใสของข้อมูล (Data Grounding & Truth Index)</span>
+                      </h4>
+                      <p className="text-[11px] text-stone-500">
+                        แยกแยะชัดเจนระหว่างข้อมูลจริงบนแผนที่ กับโมเดลการคาดการณ์จำลองโดย AI
+                      </p>
+                    </div>
                   </div>
-                  <span className="text-[11px] text-emerald-700 font-medium flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    ประมวลผลสดแบบ Real-time
+
+                  <div className="flex items-center gap-2 text-xs shrink-0">
+                    <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 font-semibold border border-emerald-200/80">
+                      🟢 ข้อมูลจริง {competitorData.confidence_breakdown?.real_data_percent ?? 35}%
+                    </span>
+                    <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 font-semibold border border-amber-200/80">
+                      🟡 แบบจำลอง AI {competitorData.confidence_breakdown?.ai_estimate_percent ?? 65}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* Progress bar visual split */}
+                <div className="space-y-1.5">
+                  <div className="w-full h-2.5 rounded-full bg-stone-100 overflow-hidden flex">
+                    <div
+                      style={{ width: `${competitorData.confidence_breakdown?.real_data_percent ?? 35}%` }}
+                      className="bg-emerald-500 transition-all duration-500"
+                      title="ข้อมูลจริงจาก Google Maps / OSM"
+                    />
+                    <div
+                      style={{ width: `${competitorData.confidence_breakdown?.ai_estimate_percent ?? 65}%` }}
+                      className="bg-amber-400 transition-all duration-500"
+                      title="แบบจำลองและการคาดการณ์โดย AI"
+                    />
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-stone-500 gap-1">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block shrink-0" />
+                      พิกัด, ชื่อร้าน, Rating ดาว, Google Reviews (จริง 100%)
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-400 inline-block shrink-0" />
+                      เมนูยอดนิยม, เสียงรีวิว, และ Sweet Spot (คาดการณ์โดย AI)
+                    </span>
+                  </div>
+                </div>
+
+                {/* Toggle Breakdown Details */}
+                <div className="pt-2 border-t border-stone-100 flex items-center justify-between flex-wrap gap-2 text-xs">
+                  <span className="text-stone-500 text-[11px]">
+                    {competitorData.confidence_breakdown?.disclaimer ||
+                      'หมุดพิกัดและคะแนนดาวมาจากข้อมูลจริงบนแผนที่ ส่วนเมนูและเสียงสะท้อนเป็นแบบจำลองเชิงสถิติ'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowConfidenceDetails(!showConfidenceDetails)}
+                    className="text-stone-700 hover:text-stone-900 font-semibold underline text-xs cursor-pointer flex items-center gap-1"
+                  >
+                    {showConfidenceDetails ? 'ซ่อนรายละเอียดที่มา' : 'ดูรายละเอียดการแยกแยะ'}
+                    {showConfidenceDetails ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                  </button>
+                </div>
+
+                {/* Expanded Detailed Breakdown */}
+                {showConfidenceDetails && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 pt-2 animate-in fade-in duration-200">
+                    {(competitorData.confidence_breakdown?.items || [
+                      {
+                        label: 'หมุดพิกัด & ร้านค้า',
+                        type: 'real' as const,
+                        percent: 100,
+                        description: 'ดึงข้อมูลสดจาก Google Places API / OpenStreetMap',
+                      },
+                      {
+                        label: 'คะแนน Rating ดาว',
+                        type: 'real' as const,
+                        percent: 100,
+                        description: 'คะแนนเฉลี่ยจริงบน Google Maps',
+                      },
+                      {
+                        label: 'ช่วงราคา & Foot Traffic',
+                        type: 'hybrid' as const,
+                        percent: 65,
+                        description: 'ประเมินจากระดับราคา Price Level จริง ร่วมกับโมเดล Foursquare',
+                      },
+                      {
+                        label: 'เมนูยอดนิยม & สินค้าขายดี',
+                        type: 'estimated' as const,
+                        percent: 70,
+                        description: 'คาดการณ์จากประเภทคาเฟ่ ทำเล และเทรนด์ผู้บริโภคโดย AI',
+                      },
+                      {
+                        label: 'เสียงสะท้อน คำชม & คำบ่น',
+                        type: 'estimated' as const,
+                        percent: 85,
+                        description: 'จำลองจากรูปแบบความพึงพอใจและ Pain Points ในอุตสาหกรรม (ไม่ใช่คอมเมนต์เดี่ยวรายบุคคล)',
+                      },
+                    ]).map((item, idx) => (
+                      <div
+                        key={idx}
+                        className={`p-2.5 rounded-xl border text-xs space-y-1 ${
+                          item.type === 'real'
+                            ? 'bg-emerald-50/50 border-emerald-200/80 text-emerald-950'
+                            : item.type === 'hybrid'
+                            ? 'bg-blue-50/50 border-blue-200/80 text-blue-950'
+                            : 'bg-amber-50/50 border-amber-200/80 text-amber-950'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between font-semibold">
+                          <span>{item.label}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-md font-bold bg-white/80">
+                            {item.type === 'real' ? 'จริง 100%' : item.type === 'hybrid' ? 'กึ่งจริง 65%' : 'AI คาดการณ์'}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-stone-600 font-normal leading-relaxed">
+                          {item.description}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* AI Strategy Debate (AI ถกเถียงกลยุทธ์: ฝ่ายรุก vs ฝ่ายระวัง + ข้อสรุปปลอดภัย) */}
+            {competitorData?.strategy_debate && (
+              <div className="p-4 sm:p-5 rounded-2xl bg-white border border-stone-200/90 shadow-2xs space-y-3.5">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200/80 flex items-center justify-center text-indigo-700 shrink-0">
+                      <Scale className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-bold text-stone-900 flex items-center gap-1.5">
+                        <span>AI ถกเถียงกลยุทธ์รอบด้าน (Strategy Debate: โอกาส vs ความเสี่ยง)</span>
+                      </h4>
+                      <p className="text-[11px] text-stone-500">
+                        จำลองมุมมอง 2 ด้าน (ฝ่ายรุก vs ฝ่ายระวัง) เพื่อให้คุณพิจารณารอบคอบก่อนลงทุน
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[11px] px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-800 font-semibold border border-indigo-200/80">
+                    Dual-AI Stress Test
                   </span>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-                  {/* Google Places */}
-                  <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/80 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-medium text-stone-500 flex items-center gap-1">
-                        <Store className="w-3 h-3 text-blue-600" /> Google Places
-                      </span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+
+                {/* 2 Columns: Growth vs Risk */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Column 1: Growth Strategist */}
+                  <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200/90 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
+                      <h5 className="text-xs sm:text-sm font-bold text-emerald-950">
+                        {competitorData.strategy_debate.growth_opinion.advocate}
+                      </h5>
                     </div>
-                    <p className="text-xs font-semibold text-stone-900 truncate">
-                      {competitorData.data_sources.google_places.count} ร้านค้า
+                    <p className="text-xs font-normal text-stone-800 leading-relaxed">
+                      {competitorData.strategy_debate.growth_opinion.perspective}
                     </p>
-                    <span className="text-[10px] text-stone-400 block truncate">
-                      {competitorData.data_sources.google_places.details}
-                    </span>
+                    <div className="pt-2 border-t border-emerald-200/60 space-y-1">
+                      <span className="text-[11px] font-semibold text-emerald-900 block">จุดเด่นที่ควรชู:</span>
+                      <ul className="space-y-1 text-xs text-stone-700">
+                        {competitorData.strategy_debate.growth_opinion.key_points.map((pt, idx) => (
+                          <li key={idx} className="flex items-start gap-1.5 leading-snug">
+                            <span className="text-emerald-600 font-bold">✓</span>
+                            <span>{pt}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
 
-                  {/* Foursquare */}
-                  <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/80 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-medium text-stone-500 flex items-center gap-1">
-                        <Compass className="w-3 h-3 text-fuchsia-600" /> Foursquare POI
-                      </span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  {/* Column 2: Devil's Advocate / Risk Caution */}
+                  <div className="p-4 rounded-xl bg-rose-50/60 border border-rose-200/90 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" />
+                      <h5 className="text-xs sm:text-sm font-bold text-rose-950">
+                        {competitorData.strategy_debate.risk_counter.critic}
+                      </h5>
                     </div>
-                    <p className="text-xs font-semibold text-stone-900 truncate">
-                      ทราฟฟิก {competitorData.data_sources.foursquare_poi.foot_traffic}
+                    <p className="text-xs font-normal text-stone-800 leading-relaxed">
+                      {competitorData.strategy_debate.risk_counter.perspective}
                     </p>
-                    <span className="text-[10px] text-stone-400 block truncate">
-                      Popularity {competitorData.data_sources.foursquare_poi.popularity_score}/100
-                    </span>
+                    <div className="pt-2 border-t border-rose-200/60 space-y-1">
+                      <span className="text-[11px] font-semibold text-rose-900 block">จุดควรระวัง & ความเสี่ยง:</span>
+                      <ul className="space-y-1 text-xs text-stone-700">
+                        {competitorData.strategy_debate.risk_counter.key_points.map((pt, idx) => (
+                          <li key={idx} className="flex items-start gap-1.5 leading-snug">
+                            <span className="text-rose-600 font-bold">⚠</span>
+                            <span>{pt}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
+                </div>
 
-                  {/* Yelp / Sentiment */}
-                  <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/80 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-medium text-stone-500 flex items-center gap-1">
-                        <MessageSquare className="w-3 h-3 text-amber-600" /> Yelp & Sentiment
-                      </span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    </div>
-                    <p className="text-xs font-semibold text-stone-900 truncate">
-                      {competitorData.data_sources.customer_sentiment.analyzed_reviews_count} รีวิว
-                    </p>
-                    <span className="text-[10px] text-stone-400 block truncate">
-                      Sentiment {competitorData.data_sources.customer_sentiment.sentiment_score}% บวก
+                {/* Safe Action Plan Banner */}
+                <div className="p-3.5 sm:p-4 rounded-xl bg-stone-900 text-white space-y-1.5 shadow-xs">
+                  <div className="flex items-center gap-2">
+                    <Scale className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span className="text-xs sm:text-sm font-bold text-amber-300">
+                      {competitorData.strategy_debate.safe_verdict.verdict}
                     </span>
                   </div>
-
-                  {/* POS Internal */}
-                  <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/80 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-medium text-stone-500 flex items-center gap-1">
-                        <DollarSign className="w-3 h-3 text-emerald-600" /> POS ยอดขายจริง
-                      </span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    </div>
-                    <p className="text-xs font-semibold text-stone-900 truncate">
-                      ฿{(competitorData.data_sources.pos_internal.net_sales || 0).toLocaleString()}
-                    </p>
-                    <span className="text-[10px] text-stone-400 block truncate">
-                      {competitorData.data_sources.pos_internal.top_sellers?.[0] ? `Top: ${competitorData.data_sources.pos_internal.top_sellers[0]}` : 'ข้อมูลร้านของเรา'}
-                    </span>
-                  </div>
-
-                  {/* Weather & External */}
-                  <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/80 space-y-1 col-span-2 sm:col-span-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-medium text-stone-500 flex items-center gap-1">
-                        <CloudSun className="w-3 h-3 text-sky-600" /> Open-Meteo & สภาพอากาศ
-                      </span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    </div>
-                    <p className="text-xs font-semibold text-stone-900 truncate">
-                      {competitorData.data_sources.external_context.weather.temp_c}°C {competitorData.data_sources.external_context.weather.condition}
-                    </p>
-                    <span className="text-[10px] text-stone-400 block truncate">
-                      {competitorData.data_sources.external_context.day_type} ({competitorData.data_sources.external_context.neighborhood_type})
-                    </span>
-                  </div>
+                  <p className="text-xs text-stone-200 font-normal leading-relaxed pl-6">
+                    👉 <strong>การลงมือทำที่ปลอดภัย:</strong> {competitorData.strategy_debate.safe_verdict.test_action}
+                  </p>
                 </div>
               </div>
             )}
@@ -692,15 +881,24 @@ export function AIInsightsClientView({
             {competitorData?.neighborhood_summary && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="p-4 rounded-2xl bg-white border border-stone-200/90 shadow-2xs space-y-1">
-                  <span className="text-xs text-stone-500 font-medium">ระดับการแข่งขันในย่าน</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-stone-500 font-medium">ระดับการแข่งขันในย่าน</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">🟢 หมุดจริงในรัศมี</span>
+                  </div>
                   <p className="text-sm font-semibold text-stone-900">{competitorData.neighborhood_summary.market_density}</p>
                 </div>
                 <div className="p-4 rounded-2xl bg-white border border-stone-200/90 shadow-2xs space-y-1">
-                  <span className="text-xs text-stone-500 font-medium">กลุ่มผู้บริโภคหลัก</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-stone-500 font-medium">กลุ่มผู้บริโภคหลัก</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">🟡 AI ประเมินย่าน</span>
+                  </div>
                   <p className="text-sm font-semibold text-stone-900">{competitorData.neighborhood_summary.target_audience}</p>
                 </div>
                 <div className="p-4 rounded-2xl bg-white border border-emerald-200 shadow-2xs space-y-1">
-                  <span className="text-xs text-emerald-700 font-medium">ช่องว่างตลาดที่น่าสนใจ</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-emerald-700 font-medium">ช่องว่างตลาดที่น่าสนใจ</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">✨ โอกาสเจาะตลาด</span>
+                  </div>
                   <p className="text-sm font-semibold text-emerald-950">{competitorData.neighborhood_summary.gap_in_market}</p>
                 </div>
               </div>
@@ -718,7 +916,7 @@ export function AIInsightsClientView({
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-stone-400 hidden sm:inline">
-                      หลอมรวม 5 แหล่งข้อมูลโดย Gemini AI
+                      วิเคราะห์เชิงลึกโดย AI ร่วมกับข้อมูลพื้นที่จริง
                     </span>
                     <button
                       type="button"
@@ -754,6 +952,9 @@ export function AIInsightsClientView({
                           <span className="text-sm sm:text-base font-semibold text-stone-900">
                             1. เมนูยอดนิยม & กำลังมาแรง
                           </span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200/80 font-medium">
+                            🟡 AI คาดการณ์ 70%
+                          </span>
                         </div>
                         <p className="text-xs text-stone-500 font-normal truncate">
                           {competitorData.market_intelligence.trending_menus.map((m) => m.name).join(', ')}
@@ -771,6 +972,10 @@ export function AIInsightsClientView({
 
                     {expandedDimensions[1] && (
                       <div className="p-4 pt-1 border-t border-stone-100 space-y-3 animate-in fade-in duration-200">
+                        <div className="p-2.5 rounded-xl bg-amber-50/60 border border-amber-200/80 text-[11px] text-amber-900 flex items-start gap-1.5">
+                          <Info className="w-3.5 h-3.5 text-amber-700 shrink-0 mt-0.5" />
+                          <span>* เมนูเหล่านี้ประเมินจากความต้องการของผู้บริโภคตามประเภทคาเฟ่ในพื้นที่โดย AI (ไม่ใช่ยอดขายจริงของคู่แข่ง)</span>
+                        </div>
                         <div className="space-y-2.5">
                           {competitorData.market_intelligence.trending_menus.map((tm, idx) => (
                             <div key={idx} className="p-3 rounded-xl bg-stone-50 border border-stone-200/80 space-y-1.5">
@@ -810,6 +1015,9 @@ export function AIInsightsClientView({
                           <span className="text-sm sm:text-base font-semibold text-stone-900">
                             2. กลยุทธ์ราคา & Sweet Spot
                           </span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-50 text-blue-800 border border-blue-200/80 font-medium">
+                            🟡 กึ่งจริง 65% (Google + AI)
+                          </span>
                         </div>
                         <p className="text-xs text-stone-500 font-normal truncate">
                           ราคาเฉลี่ย {competitorData.market_intelligence.pricing_strategy.area_average_price} • Sweet Spot {competitorData.market_intelligence.pricing_strategy.recommended_sweet_spot}
@@ -827,6 +1035,10 @@ export function AIInsightsClientView({
 
                     {expandedDimensions[2] && (
                       <div className="p-4 pt-1 border-t border-stone-100 space-y-3 animate-in fade-in duration-200">
+                        <div className="p-2.5 rounded-xl bg-blue-50/60 border border-blue-200/80 text-[11px] text-blue-900 flex items-start gap-1.5">
+                          <Info className="w-3.5 h-3.5 text-blue-700 shrink-0 mt-0.5" />
+                          <span>* วิเคราะห์จากระดับราคาจริงบน Google Maps ร่วมกับโมเดลการตั้งราคา Sweet Spot โดย AI</span>
+                        </div>
                         <div className="grid grid-cols-2 gap-2.5 text-center">
                           <div className="p-3 rounded-xl bg-stone-50 border border-stone-200/80">
                             <span className="text-xs text-stone-500 block font-normal">ราคาเฉลี่ยในย่าน</span>
@@ -868,6 +1080,9 @@ export function AIInsightsClientView({
                           <Compass className="w-4 h-4 text-blue-600 shrink-0" />
                           <span className="text-sm sm:text-base font-semibold text-stone-900">
                             3. ทำเล & Foot Traffic
+                          </span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-medium">
+                            🟢 พิกัดจริง & สถิติย่าน
                           </span>
                         </div>
                         <p className="text-xs text-stone-500 font-normal truncate">
@@ -914,6 +1129,9 @@ export function AIInsightsClientView({
                           <span className="text-sm sm:text-base font-semibold text-stone-900">
                             4. เสียงของลูกค้า (Sentiment)
                           </span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200/80 font-medium">
+                            🟡 แบบจำลอง AI 85%
+                          </span>
                         </div>
                         <p className="text-xs text-stone-500 font-normal truncate">
                           คำชม, ข้อติชม และ Unmet Needs ของลูกค้าในย่าน
@@ -931,9 +1149,14 @@ export function AIInsightsClientView({
 
                     {expandedDimensions[4] && (
                       <div className="p-4 pt-1 border-t border-stone-100 space-y-2.5 animate-in fade-in duration-200">
+                        <div className="p-2.5 rounded-xl bg-amber-50/70 border border-amber-200 text-[11px] text-amber-900 flex items-start gap-1.5">
+                          <AlertCircle className="w-3.5 h-3.5 text-amber-700 shrink-0 mt-0.5" />
+                          <span>* คำชมและข้อติชมจำลองจากพฤติกรรมผู้บริโภคในอุตสาหกรรมคาเฟ่โดย AI ไม่ใช่คอมเมนต์ส่วนบุคคลจริง</span>
+                        </div>
+
                         <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-100 text-sm space-y-1">
                           <span className="font-semibold text-emerald-900 flex items-center gap-1.5">
-                            <Smile className="w-4 h-4 text-emerald-600" /> สิ่งที่ลูกค้าชอบมากที่สุด:
+                            <Smile className="w-4 h-4 text-emerald-600" /> สิ่งที่ลูกค้าชอบมากที่สุด (แนวโน้มพฤติกรรม):
                           </span>
                           <p className="text-sm font-normal text-stone-800 leading-relaxed">
                             {competitorData.market_intelligence.customer_sentiment.top_compliments.join(' • ')}
@@ -942,7 +1165,7 @@ export function AIInsightsClientView({
 
                         <div className="p-3 rounded-xl bg-rose-50/70 border border-rose-100 text-sm space-y-1">
                           <span className="font-semibold text-rose-900 flex items-center gap-1.5">
-                            <Frown className="w-4 h-4 text-rose-600" /> จุดที่ลูกค้ามักติ/บ่นร้านแถวนี้:
+                            <Frown className="w-4 h-4 text-rose-600" /> จุดที่ลูกค้ามักติ/บ่นร้านแถวนี้ (Pain Points จำลอง):
                           </span>
                           <p className="text-sm font-normal text-stone-800 leading-relaxed">
                             {competitorData.market_intelligence.customer_sentiment.top_complaints.join(' • ')}
@@ -973,6 +1196,9 @@ export function AIInsightsClientView({
                           <Target className="w-4 h-4 text-rose-600 shrink-0" />
                           <span className="text-sm sm:text-base font-semibold text-stone-900">
                             5. การแข่งขัน & จุดเด่นของเรา
+                          </span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-medium">
+                            🟢 พิกัดคู่แข่งจริง
                           </span>
                         </div>
                         <p className="text-xs text-stone-500 font-normal truncate">
@@ -1026,6 +1252,9 @@ export function AIInsightsClientView({
                           <span className="text-sm sm:text-base font-semibold text-stone-900">
                             6. คาดการณ์ Demand & สภาพแวดล้อม
                           </span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-medium">
+                            🟢 สภาพอากาศสด
+                          </span>
                         </div>
                         <p className="text-xs text-stone-500 font-normal truncate">
                           ผลกระทบอากาศ & Action ด่วนวันนี้
@@ -1072,10 +1301,15 @@ export function AIInsightsClientView({
             {/* Recommended menus from gap analysis */}
             {competitorData?.recommended_menus && competitorData.recommended_menus.length > 0 && (
               <div className="p-5 rounded-2xl bg-white border border-amber-200/80 shadow-2xs space-y-3">
-                <h4 className="text-sm font-semibold text-stone-900 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-500" />
-                  เมนูแนะนำเจาะตลาดทำเลนี้
-                </h4>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <h4 className="text-sm font-semibold text-stone-900 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    เมนูแนะนำเจาะตลาดทำเลนี้
+                  </h4>
+                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 font-medium">
+                    🟡 AI แนะนำจากช่องว่างตลาด
+                  </span>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {competitorData.recommended_menus.map((recMenu, idx) => (
                     <div key={idx} className="bg-stone-50 p-4 rounded-xl border border-stone-200 space-y-2">
@@ -1213,33 +1447,51 @@ export function AIInsightsClientView({
             ) : (
               /* Analyzed Competitors Cards */
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-stone-900 flex items-center gap-2">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
                     <Store className="w-4 h-4 text-stone-500" />
-                    ร้านคู่แข่งสำคัญ ({competitorData.competitors.length} ร้าน)
-                  </h4>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedShopNames(competitorData.competitors.map((c) => c.name));
-                      setCompetitorData(null);
-                      if (nearbyPlaces.length === 0) fetchNearbyPlaces(mapLat, mapLng, searchRadius, locationName, placeFilter);
-                    }}
-                    className="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-medium transition-all cursor-pointer"
-                  >
-                    ← เลือกร้านใหม่
-                  </button>
+                    <h4 className="text-sm font-semibold text-stone-900">
+                      ร้านคู่แข่งสำคัญ ({competitorData.competitors.length} ร้าน)
+                    </h4>
+                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium">
+                      🟢 พิกัด & เรตติ้งจริง
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={toggleAllShopDetails}
+                      className="px-2.5 py-1 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-medium transition-all cursor-pointer flex items-center gap-1"
+                    >
+                      {isAllShopExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                      <span>{isAllShopExpanded ? 'ยุบวิเคราะห์ AI' : 'ขยายวิเคราะห์ AI'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedShopNames(competitorData.competitors.map((c) => c.name));
+                        setCompetitorData(null);
+                        if (nearbyPlaces.length === 0) fetchNearbyPlaces(mapLat, mapLng, searchRadius, locationName, placeFilter);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-medium transition-all cursor-pointer"
+                    >
+                      ← เลือกร้านใหม่
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {competitorData.competitors.map((shop, idx) => (
-                    <div key={idx} className="bg-white rounded-2xl border border-stone-200 shadow-2xs p-5 space-y-3 hover:border-stone-300 transition-all">
+                    <div key={idx} className="bg-white rounded-2xl border border-stone-200 shadow-2xs p-4 sm:p-5 space-y-3 hover:border-stone-300 transition-all">
                       <div className="flex items-start justify-between gap-3">
                         <div className="space-y-0.5">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs text-stone-400">#{idx + 1}</span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-xs text-stone-400 font-mono">#{idx + 1}</span>
                             <h5 className="font-semibold text-stone-900">{shop.name}</h5>
                             <span className="px-1.5 py-0.5 rounded bg-stone-100 text-stone-600 text-[10px] font-medium">{shop.price_level}</span>
+                            <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-medium flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" /> ข้อมูลจริง
+                            </span>
                           </div>
                           <p className="text-xs text-stone-500 flex items-center gap-1">
                             <MapPin className="w-3 h-3 text-stone-400 shrink-0" />
@@ -1256,43 +1508,76 @@ export function AIInsightsClientView({
                       </div>
 
                       {shop.signature_menus?.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {shop.signature_menus.map((m, mi) => (
-                            <span key={mi} className="px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 text-xs">{m}</span>
-                          ))}
+                        <div className="space-y-1">
+                          <span className="text-[11px] text-stone-400 font-medium">เมนูที่โดดเด่น (AI ประเมิน):</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {shop.signature_menus.map((m, mi) => (
+                              <span key={mi} className="px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 text-xs">{m}</span>
+                            ))}
+                          </div>
                         </div>
                       )}
 
-                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-stone-100 text-xs">
-                        <div className="p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-100 space-y-1">
-                          <span className="font-medium text-emerald-800 flex items-center gap-1">
-                            <ThumbsUp className="w-3 h-3" /> ลูกค้าชอบ
+                      {/* Collapsible AI Deep Analysis */}
+                      <div className="pt-2 border-t border-stone-100">
+                        <button
+                          type="button"
+                          onClick={() => toggleShopDetail(idx)}
+                          className="w-full flex items-center justify-between text-xs py-1 text-stone-600 hover:text-stone-900 font-medium cursor-pointer transition-colors"
+                        >
+                          <span className="flex items-center gap-1.5 flex-wrap">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                            <span>การวิเคราะห์ AI เชิงลึก (จุดแข็ง / ข้อติชม / โอกาส)</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                              🟡 AI จำลอง
+                            </span>
                           </span>
-                          <ul className="space-y-0.5 text-stone-700">
-                            {shop.strengths.slice(0, 2).map((s, si) => (
-                              <li key={si} className="flex items-start gap-1 leading-snug">
-                                <span className="text-emerald-500 font-bold">•</span> {s}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                        <div className="p-2.5 rounded-xl bg-rose-50/60 border border-rose-100 space-y-1">
-                          <span className="font-medium text-rose-800 flex items-center gap-1">
-                            <AlertTriangle className="w-3 h-3" /> ข้อติชม
-                          </span>
-                          <ul className="space-y-0.5 text-stone-700">
-                            {shop.weaknesses.slice(0, 2).map((w, wi) => (
-                              <li key={wi} className="flex items-start gap-1 leading-snug">
-                                <span className="text-rose-500 font-bold">•</span> {w}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
+                          <div className="flex items-center gap-1 text-[11px] text-stone-400">
+                            <span>{expandedShopDetails[idx] ? 'ซ่อน' : 'ดูบทวิเคราะห์'}</span>
+                            {expandedShopDetails[idx] ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                          </div>
+                        </button>
 
-                      <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200 text-xs">
-                        <strong className="text-stone-800 font-semibold">โอกาสของร้านเรา: </strong>
-                        <span className="text-stone-700">{shop.opportunity_for_us}</span>
+                        {expandedShopDetails[idx] && (
+                          <div className="space-y-2 pt-2 animate-in fade-in duration-200">
+                            <div className="p-2 rounded-lg bg-amber-50/60 border border-amber-100 text-[11px] text-amber-800 flex items-start gap-1">
+                              <Info className="w-3 h-3 text-amber-600 shrink-0 mt-0.5" />
+                              <span>* ข้อมูลจุดแข็ง/ข้อติชมในส่วนนี้จำลองจากแนวโน้มทั่วไปของร้าน ไม่ใช่คอมเมนต์เดี่ยวจริง</span>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <div className="p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-100 space-y-1">
+                                <span className="font-medium text-emerald-800 flex items-center gap-1">
+                                  <ThumbsUp className="w-3 h-3" /> ลูกค้าชอบ (แนวโน้ม)
+                                </span>
+                                <ul className="space-y-0.5 text-stone-700">
+                                  {shop.strengths.slice(0, 2).map((s, si) => (
+                                    <li key={si} className="flex items-start gap-1 leading-snug">
+                                      <span className="text-emerald-500 font-bold">•</span> {s}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                              <div className="p-2.5 rounded-xl bg-rose-50/60 border border-rose-100 space-y-1">
+                                <span className="font-medium text-rose-800 flex items-center gap-1">
+                                  <AlertTriangle className="w-3 h-3" /> ข้อติชม (แนวโน้ม)
+                                </span>
+                                <ul className="space-y-0.5 text-stone-700">
+                                  {shop.weaknesses.slice(0, 2).map((w, wi) => (
+                                    <li key={wi} className="flex items-start gap-1 leading-snug">
+                                      <span className="text-rose-500 font-bold">•</span> {w}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+
+                            <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200 text-xs">
+                              <strong className="text-stone-800 font-semibold">โอกาสของร้านเรา: </strong>
+                              <span className="text-stone-700">{shop.opportunity_for_us}</span>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}

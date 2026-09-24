@@ -795,32 +795,59 @@ export function InteractiveMapPicker({
                     </button>
                 </div>
 
-                {/* Category Filter Pills (Coffee shop vs All places) */}
-                <div className="flex items-center gap-1.5 self-start bg-white/95 dark:bg-stone-900/95 backdrop-blur-md p-1 rounded-xl shadow-md border border-stone-200/80 dark:border-stone-700/80 text-xs">
-                    <button
-                        type="button"
-                        onClick={() => setFilter('coffee')}
-                        className={`px-3 py-1 rounded-lg font-semibold transition-all flex items-center gap-1.5 ${
-                            activeFilter === 'coffee'
-                                ? 'bg-stone-900 text-white shadow-xs'
-                                : 'text-stone-600 dark:text-stone-300 hover:text-stone-900'
-                        }`}
-                    >
-                        <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                        <span>เฉพาะร้านกาแฟ/คาเฟ่</span>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setFilter('all')}
-                        className={`px-3 py-1 rounded-lg font-semibold transition-all flex items-center gap-1.5 ${
-                            activeFilter === 'all'
-                                ? 'bg-stone-900 text-white shadow-xs'
-                                : 'text-stone-600 dark:text-stone-300 hover:text-stone-900'
-                        }`}
-                    >
-                        <span className="w-2 h-2 rounded-full bg-stone-400"></span>
-                        <span>ร้านค้าทั้งหมดรอบข้าง</span>
-                    </button>
+                {/* Category Filter & Radius Pills */}
+                <div className="flex flex-wrap items-center gap-2 self-start">
+                    {/* Category Filter Pills (Coffee shop vs All places) */}
+                    <div className="flex items-center gap-1.5 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md p-1 rounded-xl shadow-md border border-stone-200/80 dark:border-stone-700/80 text-xs">
+                        <button
+                            type="button"
+                            onClick={() => setFilter('coffee')}
+                            className={`px-3 py-1 rounded-lg font-semibold transition-all flex items-center gap-1.5 ${
+                                activeFilter === 'coffee'
+                                    ? 'bg-stone-900 text-white shadow-xs'
+                                    : 'text-stone-600 dark:text-stone-300 hover:text-stone-900'
+                            }`}
+                        >
+                            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                            <span>ร้านกาแฟ/คาเฟ่</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setFilter('all')}
+                            className={`px-3 py-1 rounded-lg font-semibold transition-all flex items-center gap-1.5 ${
+                                activeFilter === 'all'
+                                    ? 'bg-stone-900 text-white shadow-xs'
+                                    : 'text-stone-600 dark:text-stone-300 hover:text-stone-900'
+                            }`}
+                        >
+                            <span className="w-2 h-2 rounded-full bg-stone-400"></span>
+                            <span>ร้านค้าทั้งหมด</span>
+                        </button>
+                    </div>
+
+                    {/* Radius Adjustment Pills */}
+                    {onRadiusChange && (
+                        <div className="flex items-center gap-1 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md p-1 rounded-xl shadow-md border border-stone-200/80 dark:border-stone-700/80 text-xs overflow-x-auto max-w-full">
+                            <span className="px-2 text-stone-500 dark:text-stone-400 font-medium flex items-center gap-1.5 shrink-0">
+                                <Sliders className="w-3.5 h-3.5 text-stone-400" />
+                                <span className="font-semibold text-stone-700 dark:text-stone-200">ปรับรัศมี:</span>
+                            </span>
+                            {radiusOptions.map((r) => (
+                                <button
+                                    key={r}
+                                    type="button"
+                                    onClick={() => onRadiusChange(r)}
+                                    className={`px-2.5 py-1 rounded-lg font-semibold text-xs transition-all shrink-0 ${
+                                        radiusKm === r
+                                            ? 'bg-blue-600 text-white shadow-xs'
+                                            : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 hover:bg-stone-100 dark:hover:bg-stone-800'
+                                    }`}
+                                >
+                                    {r} กม.
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Search Dropdown Results */}
@@ -958,133 +985,6 @@ export function InteractiveMapPicker({
                     </div>
                 </div>
             )}
-
-            {/* Sleek Floating Bottom Bar (Collapsible / Compact) */}
-            <div className="absolute bottom-3 left-4 right-4 z-[1000] bg-white/95 dark:bg-stone-900/95 backdrop-blur-md rounded-2xl border border-stone-200/90 dark:border-stone-800 shadow-2xl overflow-hidden transition-all duration-300 pointer-events-auto">
-                {/* Main Compact Bar (Always Visible) */}
-                <div className="flex items-center justify-between px-3.5 py-2.5 gap-2">
-                    {/* Left: Quick Location & Radius Badge */}
-                    <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0 border border-red-500/20">
-                            <MapPin className="w-4 h-4 text-red-600 dark:text-red-400" />
-                        </div>
-                        <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-xs font-bold text-stone-900 dark:text-white truncate max-w-[130px] sm:max-w-[220px]">
-                                    {displayLocationName || 'พิกัดที่เลือก'}
-                                </span>
-                                <span className="px-2 py-0.5 bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 text-[10px] font-bold rounded-full shrink-0 border border-red-200/60 dark:border-red-800/60">
-                                    รัศมี {radiusKm} กม.
-                                </span>
-                            </div>
-                            <div className="text-[10px] text-stone-400 font-mono flex items-center gap-2">
-                                <span>{pinnedLat.toFixed(4)}, {pinnedLng.toFixed(4)}</span>
-                                <span className="hidden sm:inline text-stone-500">
-                                    • {isNearbyLoading ? (
-                                        <span className="inline-flex items-center gap-1 text-orange-600 dark:text-orange-400 font-sans font-medium">
-                                            <span className="w-2 h-2 rounded-full bg-orange-500 animate-ping inline-block" />
-                                            กำลังค้นหาร้านรอบข้าง...
-                                        </span>
-                                    ) : (
-                                        `พบร้าน${activeFilter === 'coffee' ? 'กาแฟ/คาเฟ่' : 'รอบข้าง'} (${visibleNearby.length})`
-                                    )}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Right: Quick Radius Buttons + Expand Toggle */}
-                    <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                        {onRadiusChange && (
-                            <div className="hidden sm:flex items-center gap-1 bg-stone-100 dark:bg-stone-800/80 p-1 rounded-xl">
-                                {radiusOptions.slice(0, 4).map((r) => (
-                                    <button
-                                        key={r}
-                                        type="button"
-                                        onClick={() => onRadiusChange(r)}
-                                        className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold transition-all ${
-                                            radiusKm === r
-                                                ? 'bg-blue-600 text-white shadow-xs'
-                                                : 'text-stone-600 dark:text-stone-300 hover:text-stone-900'
-                                        }`}
-                                    >
-                                        {r}k
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Dropdown Toggle Button */}
-                        <button
-                            type="button"
-                            onClick={() => setIsBarExpanded(!isBarExpanded)}
-                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 text-xs font-medium transition-all active:scale-95"
-                            title={isBarExpanded ? 'ย่อแถบ' : 'ดูรายละเอียดและเลือกรัศมีเพิ่มเติม'}
-                        >
-                            <Sliders className="w-3.5 h-3.5 text-stone-500" />
-                            <span className="hidden sm:inline">{isBarExpanded ? 'ซ่อน' : 'ปรับรัศมี'}</span>
-                            {isBarExpanded ? (
-                                <ChevronDown className="w-3.5 h-3.5" />
-                            ) : (
-                                <ChevronUp className="w-3.5 h-3.5" />
-                            )}
-                        </button>
-                    </div>
-                </div>
-
-                {/* Collapsible Expanded Details Drawer */}
-                {isBarExpanded && (
-                    <div className="px-3.5 pb-3.5 pt-2 border-t border-stone-100 dark:border-stone-800 space-y-3 animate-in fade-in slide-in-from-top-1 duration-150">
-                        {/* Full Radius Picker */}
-                        {onRadiusChange && (
-                            <div className="flex flex-wrap items-center gap-1.5">
-                                <span className="text-[11px] font-semibold text-stone-500 dark:text-stone-400 shrink-0 mr-1 flex items-center gap-1">
-                                    <Sliders className="w-3 h-3 text-stone-400" /> รัศมีสำรวจ:
-                                </span>
-                                {radiusOptions.map((r) => (
-                                    <button
-                                        key={r}
-                                        type="button"
-                                        onClick={() => onRadiusChange(r)}
-                                        className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all ${
-                                            radiusKm === r
-                                                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 scale-105'
-                                                : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700'
-                                        }`}
-                                    >
-                                        {r} กิโลเมตร
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Legend Chips & Helper Info */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-stone-100 dark:border-stone-800/60 text-[11px]">
-                            <div className="flex items-center gap-2 overflow-x-auto">
-                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 font-medium">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-red-600" />
-                                    ตำแหน่งที่คุณปักหมุด
-                                </div>
-                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-stone-900 dark:text-stone-100 font-medium">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-zinc-900" />
-                                    ร้านคู่แข่งที่วิเคราะห์ ({competitors.length})
-                                </div>
-                                {visibleNearby.length > 0 && (
-                                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 font-medium">
-                                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                                        {activeFilter === 'coffee' ? 'ร้านกาแฟจริงรอบข้าง' : 'ร้านจริงรอบข้าง'} ({visibleNearby.length})
-                                    </div>
-                                )}
-                            </div>
-
-                            <span className="text-[10px] text-stone-400 flex items-center gap-1">
-                                <Hand className="w-3 h-3 text-amber-500" />
-                                ชี้เมาส์ (Hover) ที่หมุดเพื่อดูชื่อร้านได้ทันที
-                            </span>
-                        </div>
-                    </div>
-                )}
-            </div>
 
             {/* Custom Styles for Leaflet Markers and Radar Pulse */}
             <style jsx global>{`
