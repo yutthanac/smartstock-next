@@ -18,6 +18,10 @@ export interface StoreInfo {
   description?: string | null;
   logo_path?: string | null;
   logo_url?: string | null;
+  favicon_path?: string | null;
+  favicon_url?: string | null;
+  og_image_path?: string | null;
+  og_image_url?: string | null;
   theme_color?: string;
   menu_config?: Record<string, boolean>;
   phone?: string | null;
