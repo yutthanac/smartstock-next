@@ -4,6 +4,7 @@ import { Noto_Sans_Thai, Noto_Sans, Sarabun } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/lib/AuthContext';
 import { TopProgressBar } from '@/components/TopProgressBar';
+import { DynamicBranding } from '@/components/DynamicBranding';
 
 const notoSansThai = Noto_Sans_Thai({
   weight: ['300', '400', '500', '600', '700', '800'],
@@ -42,7 +43,10 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <TopProgressBar />
         </Suspense>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <DynamicBranding />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

@@ -6,7 +6,7 @@ import { Lock, Mail, AlertCircle, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/Button';
 
 export function LoginClientView() {
-  const { login } = useAuth();
+  const { login, activeStore } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -40,16 +40,16 @@ export function LoginClientView() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <div className="text-center mb-6">
           <div className="flex justify-center">
-            <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden">
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center overflow-hidden bg-white shadow-2xs border border-stone-200/80 p-2">
               <img
-                src="/images/logo_ss.png"
-                alt="SmartStock Logo"
+                src={activeStore?.logo_url || '/images/logo_ss.png'}
+                alt={activeStore?.name || 'SmartStock Logo'}
                 className="w-full h-full object-contain"
               />
             </div>
           </div>
           <h2 className="mt-4 text-2xl sm:text-3xl font-bold text-stone-900 tracking-tight flex items-center justify-center gap-2">
-            SmartStock
+            {activeStore?.name || 'SmartStock'}
           </h2>
         </div>
 
