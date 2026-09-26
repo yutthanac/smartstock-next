@@ -39,7 +39,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   let storeName = 'Welcome to Brrcafe';
   let faviconUrl = '/favicon.ico';
-  let ogImageUrl = '/images/logo_brrcafe.png';
+  let ogImageUrl = '/images/Brrlogo.png';
 
   if (activeStoreId) {
     try {
