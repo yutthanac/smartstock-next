@@ -22,7 +22,7 @@ interface BrandingImage {
 }
 
 export default function BrandingSettings() {
-  const { token, activeStore, stores, refreshStores } = useAuth();
+  const { token, activeStore, stores, refreshStores, setActiveStore } = useAuth();
   const [selectedStoreId, setSelectedStoreId] = useState<number | null>(null);
   const [pendingFiles, setPendingFiles] = useState<Record<string, { file: File; preview: string }>>({});
   const [saving, setSaving] = useState(false);
@@ -149,6 +149,29 @@ export default function BrandingSettings() {
 
     await refreshStores();
 
+    // If current store is the active store, also update activeStore directly so favicon and logos re-render immediately
+    if (activeStore && activeStore.id === currentStore.id) {
+      try {
+        const freshRes = await fetch(`${API_BASE_URL}/stores/${currentStore.id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+        });
+        if (freshRes.ok) {
+          const freshData = await freshRes.json();
+          setActiveStore({
+            ...activeStore,
+            logo_url: freshData.logo_url || activeStore.logo_url,
+            favicon_url: freshData.favicon_url || activeStore.favicon_url,
+            og_image_url: freshData.og_image_url || activeStore.og_image_url,
+          });
+        }
+      } catch (e) {
+        console.warn('Failed to fetch updated store branding:', e);
+      }
+    }
+
     if (errors.length === 0) {
       setPendingFiles({});
       showToast('บันทึกรูปภาพแบรนด์ดิ้งเรียบร้อยแล้ว', 'success');
@@ -165,9 +188,6 @@ export default function BrandingSettings() {
       <div className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-stone-100">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-stone-100 rounded-xl">
-              <Sparkles className="w-5 h-5 text-stone-700" />
-            </div>
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold text-stone-900 text-sm">
@@ -242,24 +262,6 @@ export default function BrandingSettings() {
                     </div>
                   )}
 
-                  {/* Pending Badge */}
-                  {pending && (
-                    <div className="absolute top-2 left-2 flex items-center gap-1 bg-amber-500 text-white text-[10px] font-medium px-2 py-0.5 rounded-full shadow-xs">
-                      <span>รอกดบันทึก</span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleCancelPending(img.key);
-                        }}
-                        className="hover:text-stone-200 ml-0.5"
-                        title="ยกเลิกรูปนี้"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  )}
-
                   {/* Upload overlay on hover */}
                   <button
                     type="button"
@@ -313,8 +315,6 @@ export default function BrandingSettings() {
         {hasPendingChanges && (
           <div className="mt-6 pt-4 border-t border-stone-100 flex items-center justify-between bg-stone-50 p-4 rounded-2xl border border-stone-200/80 animate-in fade-in duration-200">
             <div className="flex items-center gap-2 text-xs text-stone-600">
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-              <span>มีรูปที่เลือกใหม่ <strong>{Object.keys(pendingFiles).length}</strong> รายการ กรุณากดบันทึก</span>
             </div>
             <div className="flex items-center gap-2">
               <button

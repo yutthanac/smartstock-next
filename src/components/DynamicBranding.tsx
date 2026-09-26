@@ -17,21 +17,31 @@ export function DynamicBranding() {
 
     // 1. Update Favicon dynamically
     if (activeStore.favicon_url) {
-      let iconLink = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
-      if (!iconLink) {
-        iconLink = document.createElement('link');
-        iconLink.rel = 'icon';
-        document.head.appendChild(iconLink);
-      }
-      iconLink.href = activeStore.favicon_url;
+      // Browsers aggressively cache favicons; removing old elements and appending a fresh one with timestamp forces update
+      const existingIcons = document.querySelectorAll<HTMLLinkElement>(
+        "link[rel='icon'], link[rel='shortcut icon'], link[rel='alternate icon'], link[rel='apple-touch-icon']"
+      );
+      existingIcons.forEach((el) => el.remove());
 
-      let appleLink = document.querySelector<HTMLLinkElement>("link[rel='apple-touch-icon']");
-      if (!appleLink) {
-        appleLink = document.createElement('link');
-        appleLink.rel = 'apple-touch-icon';
-        document.head.appendChild(appleLink);
-      }
-      appleLink.href = activeStore.favicon_url;
+      const urlWithCacheBust = activeStore.favicon_url.includes('?')
+        ? `${activeStore.favicon_url}&v=${Date.now()}`
+        : `${activeStore.favicon_url}?v=${Date.now()}`;
+
+      const linkIcon = document.createElement('link');
+      linkIcon.rel = 'icon';
+      linkIcon.type = activeStore.favicon_url.endsWith('.ico') ? 'image/x-icon' : 'image/png';
+      linkIcon.href = urlWithCacheBust;
+      document.head.appendChild(linkIcon);
+
+      const linkShortcut = document.createElement('link');
+      linkShortcut.rel = 'shortcut icon';
+      linkShortcut.href = urlWithCacheBust;
+      document.head.appendChild(linkShortcut);
+
+      const linkApple = document.createElement('link');
+      linkApple.rel = 'apple-touch-icon';
+      linkApple.href = urlWithCacheBust;
+      document.head.appendChild(linkApple);
     }
 
     // 2. Update Open Graph Image
