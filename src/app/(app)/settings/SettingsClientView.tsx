@@ -16,6 +16,7 @@ import {
   Tag,
   Layers,
   Sliders,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { Topbar } from '@/components/Topbar';
 import { useStock } from '@/lib/StockContext';
@@ -23,6 +24,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { UnitSetting } from '@/types';
 import StoresSettingsClientView from './stores/StoresSettingsClientView';
 import SidebarCustomizer from './components/SidebarCustomizer';
+import BrandingSettings from './components/BrandingSettings';
 
 interface SettingsClientViewProps {
   initialUnits?: UnitSetting[];
@@ -45,7 +47,7 @@ export function SettingsClientView({ initialUnits, initialStores }: SettingsClie
     }
   }, [user]);
 
-  const [activeTab, setActiveTab] = useState<'sidebar' | 'stores' | 'units'>('sidebar');
+  const [activeTab, setActiveTab] = useState<'sidebar' | 'branding' | 'stores' | 'units'>('sidebar');
 
   // Form states for adding new unit
   const [newUnitName, setNewUnitName] = useState('');
@@ -122,6 +124,17 @@ export function SettingsClientView({ initialUnits, initialStores }: SettingsClie
             <span>เมนู Sidebar</span>
           </button>
           <button
+            onClick={() => setActiveTab('branding')}
+            className={`px-4 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === 'branding'
+                ? 'bg-stone-900 text-white shadow-xs'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
+            }`}
+          >
+            <ImageIcon className="w-4 h-4" />
+            <span>แบรนด์ดิ้ง</span>
+          </button>
+          <button
             onClick={() => setActiveTab('stores')}
             className={`px-4 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'stores'
@@ -145,9 +158,13 @@ export function SettingsClientView({ initialUnits, initialStores }: SettingsClie
           </button>
         </div>
 
-        {/* Tab: Sidebar Management */}
         {activeTab === 'sidebar' && (
           <SidebarCustomizer />
+        )}
+
+        {/* Tab: Branding */}
+        {activeTab === 'branding' && (
+          <BrandingSettings />
         )}
 
         {/* Tab: Stores Management */}
