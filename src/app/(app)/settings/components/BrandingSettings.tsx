@@ -25,6 +25,7 @@ export default function BrandingSettings() {
   const { token, activeStore, stores, refreshStores, setActiveStore } = useAuth();
   const [selectedStoreId, setSelectedStoreId] = useState<number | null>(null);
   const [pendingFiles, setPendingFiles] = useState<Record<string, { file: File; preview: string }>>({});
+  const [localStoreOverrides, setLocalStoreOverrides] = useState<Record<number, Partial<Record<'logo_url' | 'favicon_url' | 'og_image_url', string>>>>({});
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -40,7 +41,9 @@ export default function BrandingSettings() {
     setPendingFiles({});
   }, [selectedStoreId]);
 
-  const currentStore = stores.find((s) => s.id === selectedStoreId) || activeStore || stores[0];
+  const rawStore = stores.find((s) => s.id === selectedStoreId) || activeStore || stores[0];
+  const overrides = rawStore?.id ? localStoreOverrides[rawStore.id] : undefined;
+  const currentStore = rawStore ? { ...rawStore, ...overrides } : null;
 
   const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -141,6 +144,22 @@ export default function BrandingSettings() {
         if (!res.ok) {
           const err = await res.json().catch(() => null);
           errors.push(`${imgDef.label}: ${err?.message || 'ล้มเหลว'}`);
+        } else {
+          const resData = await res.json().catch(() => null);
+          const newUrl =
+            resData?.[`${imgDef.key}_url`] ||
+            resData?.[`${imgDef.key}_path`] ||
+            resData?.data?.[`${imgDef.key}_url`];
+
+          if (newUrl && currentStore?.id) {
+            setLocalStoreOverrides((prev) => ({
+              ...prev,
+              [currentStore.id]: {
+                ...prev[currentStore.id],
+                [`${imgDef.key}_url`]: newUrl,
+              },
+            }));
+          }
         }
       } catch (err: any) {
         errors.push(`${imgDef.label}: ${err?.message || 'ข้อผิดพลาดเครือข่าย'}`);
@@ -150,7 +169,7 @@ export default function BrandingSettings() {
     await refreshStores();
 
     // If current store is the active store, also update activeStore directly so favicon and logos re-render immediately
-    if (activeStore && activeStore.id === currentStore.id) {
+    if (activeStore && currentStore && activeStore.id === currentStore.id) {
       try {
         const freshRes = await fetch(`${API_BASE_URL}/stores/${currentStore.id}`, {
           headers: {

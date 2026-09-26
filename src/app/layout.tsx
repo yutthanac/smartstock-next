@@ -27,10 +27,70 @@ const sarabun = Sarabun({
   display: 'swap',
 });
 
-export const metadata: Metadata = {
-  title: 'SmartStock Pro - ระบบจัดการสต็อกและขายหน้าร้าน',
-  description: 'Smart POS & Inventory Recipe BOM Management System',
-};
+import { cookies } from 'next/headers';
+import { ACTIVE_STORE_COOKIE_NAME, AUTH_COOKIE_NAME } from '@/lib/cookies';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+
+export async function generateMetadata(): Promise<Metadata> {
+  const cookieStore = await cookies();
+  const activeStoreId = cookieStore.get(ACTIVE_STORE_COOKIE_NAME)?.value;
+  const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
+
+  let storeName = 'Welcome to Brrcafe';
+  let faviconUrl = '/favicon.ico';
+  let ogImageUrl = '/images/logo_brrcafe.png';
+
+  if (activeStoreId) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/stores/${activeStoreId}`, {
+        headers: {
+          Accept: 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        next: { revalidate: 60 },
+      });
+      if (res.ok) {
+        const store = await res.json();
+        if (store.name) storeName = store.name;
+        if (store.favicon_url) faviconUrl = store.favicon_url;
+        if (store.og_image_url) ogImageUrl = store.og_image_url;
+        else if (store.logo_url) ogImageUrl = store.logo_url;
+      }
+    } catch {
+      // Fallback to defaults
+    }
+  }
+
+  return {
+    title: `${storeName} - ระบบจัดการสต็อกและขายหน้าร้าน`,
+    description: 'Smart POS & Inventory Recipe BOM Management System',
+    icons: {
+      icon: [{ url: faviconUrl }],
+      shortcut: [{ url: faviconUrl }],
+      apple: [{ url: faviconUrl }],
+    },
+    openGraph: {
+      title: `${storeName} - SmartStock`,
+      description: 'ระบบจัดการสต็อกและขายหน้าร้าน Smart POS & Inventory Management System',
+      siteName: storeName,
+      images: [
+        {
+          url: ogImageUrl,
+          width: 1200,
+          height: 630,
+          alt: storeName,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${storeName} - SmartStock`,
+      description: 'ระบบจัดการสต็อกและขายหน้าร้าน Smart POS & Inventory Management System',
+      images: [ogImageUrl],
+    },
+  };
+}
 
 export default function RootLayout({
   children,
