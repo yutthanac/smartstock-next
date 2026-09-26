@@ -348,7 +348,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (effective === role) return true;
     return user.roles?.includes(role) || user.role === role || false;
   };
-  const hasPermission = (permission: string) => user?.permissions?.includes(permission) || false;
+  const hasPermission = (permission: string) => {
+    if (!user) return false;
+    if (user.role === 'admin' || user.roles?.includes('admin') || user.username === 'admin') return true;
+    if (activeStore?.my_role === 'owner' || user.role === 'owner' || user.roles?.includes('owner')) return true;
+    if (user.permissions?.includes('all')) return true;
+    return user.permissions?.includes(permission) || false;
+  };
 
   return (
     <AuthContext.Provider

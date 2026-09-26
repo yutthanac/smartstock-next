@@ -14,14 +14,15 @@ import {
   ShieldCheck,
   Filter,
   Store,
+  ArrowUpRight,
 } from 'lucide-react';
+import Link from 'next/link';
 import { Topbar } from '@/components/Topbar';
 import { useAuth } from '@/lib/AuthContext';
 import { RoleOption, PermissionOption, StaffUser, StaffStoreOption } from './components/types';
 import { StaffCardView } from './components/StaffCardView';
 import { StaffTableView } from './components/StaffTableView';
 import { StaffModal, getCleanRoleName } from './components/StaffModal';
-import { StaffRolesTab } from './components/StaffRolesTab';
 import { Dropdown } from '@/components/Dropdown';
 import { Button } from '@/components/Button';
 
@@ -43,8 +44,7 @@ export function StaffClientView({ initialUsers, initialRoles }: StaffClientViewP
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Active Tab: 'staff' (รายชื่อพนักงาน) or 'roles' (จัดการตำแหน่ง & สิทธิ์)
-  const [activeTab, setActiveTab] = useState<'staff' | 'roles'>('staff');
+
 
   // View Mode: 'card' or 'table'
   const [viewMode, setViewMode] = useState<'card' | 'table'>('table');
@@ -314,47 +314,24 @@ export function StaffClientView({ initialUsers, initialRoles }: StaffClientViewP
       <Topbar title="จัดการพนักงาน & ตำแหน่ง" />
 
       <main className="flex-1 p-6 space-y-6 max-w-7xl mx-auto w-full">
-        {/* Navigation Tabs (รายชื่อพนักงาน vs จัดการตำแหน่ง & สิทธิ์) */}
-        <div className="flex items-center gap-2 border-b border-stone-200/80 pb-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab('staff')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-medium transition-all cursor-pointer ${
-              activeTab === 'staff'
-                ? 'bg-stone-900 text-white shadow-xs'
-                : 'bg-white text-stone-600 hover:text-stone-900 hover:bg-stone-100/80 border border-stone-200/80'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span>รายชื่อพนักงาน</span>
-            <span
-              className={`px-1.5 py-0.5 rounded-full text-[11px] font-mono tabular-nums ${
-                activeTab === 'staff' ? 'bg-white/20 text-white' : 'bg-stone-100 text-stone-600'
-              }`}
-            >
-              {filteredStaff.length}
+        {/* Header Bar: Staff Count and Quick Link to Roles & Permissions */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200/80 pb-3">
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-stone-700" />
+            <span className="text-sm font-semibold text-stone-900">รายชื่อพนักงานในระบบ</span>
+            <span className="px-2 py-0.5 rounded-full text-xs font-mono font-semibold bg-stone-100 text-stone-700 border border-stone-200">
+              {filteredStaff.length} คน
             </span>
-          </button>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('roles')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-medium transition-all cursor-pointer ${
-              activeTab === 'roles'
-                ? 'bg-stone-900 text-white shadow-xs'
-                : 'bg-white text-stone-600 hover:text-stone-900 hover:bg-stone-100/80 border border-stone-200/80'
-            }`}
+          <Link
+            href="/roles"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-stone-700 bg-white border border-stone-200 hover:text-stone-900 hover:border-stone-400 hover:bg-stone-50 transition-all shadow-2xs group self-start sm:self-auto"
           >
-            <ShieldCheck className="w-4 h-4" />
-            <span>จัดการตำแหน่ง & สิทธิ์</span>
-            <span
-              className={`px-1.5 py-0.5 rounded-full text-[11px] font-mono tabular-nums ${
-                activeTab === 'roles' ? 'bg-white/20 text-white' : 'bg-stone-100 text-stone-600'
-              }`}
-            >
-              {roles.filter((r) => r.name !== 'manager').length}
-            </span>
-          </button>
+            <ShieldCheck className="w-4 h-4 text-stone-500 group-hover:text-stone-800 transition-colors" />
+            <span>ไปจัดการสิทธิ์</span>
+            <ArrowUpRight className="w-3.5 h-3.5 text-stone-400 group-hover:text-stone-700 transition-colors" />
+          </Link>
         </div>
 
         {/* Alerts */}
@@ -382,22 +359,13 @@ export function StaffClientView({ initialUsers, initialRoles }: StaffClientViewP
           </div>
         )}
 
-        {activeTab === 'roles' ? (
-          <StaffRolesTab
-            roles={roles}
-            activeStore={activeStore}
-            canManage={canManageStaff}
-            onRoleUpdated={fetchUsers}
-          />
-        ) : (
-          <>
-            {/* Toolbar Section */}
-            <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-4 bg-white p-4 rounded-3xl border border-stone-200/90 shadow-xs">
-              {/* Search Input */}
-              <div className="relative flex-1 min-w-[200px]">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
-                <input
-                  type="text"
+        {/* Toolbar Section */}
+        <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-4 bg-white p-4 rounded-3xl border border-stone-200/90 shadow-xs">
+          {/* Search Input */}
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+            <input
+              type="text"
                   placeholder="ค้นหาชื่อ, อีเมล หรือ ID พนักงาน..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -496,8 +464,6 @@ export function StaffClientView({ initialUsers, initialRoles }: StaffClientViewP
                 onDelete={handleDeleteUser}
               />
             )}
-          </>
-        )}
 
         {/* Reusable Modal Component */}
         <StaffModal

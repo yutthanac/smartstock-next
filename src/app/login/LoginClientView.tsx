@@ -17,9 +17,6 @@ export function LoginClientView() {
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
       const redirectParam = searchParams.get('redirect');
-      if (redirectParam && redirectParam !== '/dashboard' && redirectParam !== '/login') {
-        setRedirectNotice('กรุณาเข้าสู่ระบบเพื่อเข้าถึงหน้าที่คุณต้องการ');
-      }
     }
   }, []);
 

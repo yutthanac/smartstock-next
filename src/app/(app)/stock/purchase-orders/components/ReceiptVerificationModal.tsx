@@ -33,10 +33,8 @@ interface ReceiptVerificationModalProps {
     totalReceiptAmount?: number,
     receiptImages?: string[]
   ) => Promise<void>;
-  isManagerOrAdmin: boolean;
+  isOwnerOrAdmin?: boolean;
 }
-
-
 
 export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> = ({
   isOpen,
@@ -44,7 +42,7 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
   po,
   ingredients,
   onApproveAndStockIn,
-  isManagerOrAdmin,
+  isOwnerOrAdmin = false,
 }) => {
   // Multiple images state
   const [images, setImages] = useState<string[]>([]);
@@ -856,17 +854,24 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
                   </Button>
 
                   {po.status !== 'completed' ? (
-                    <button
-                      type="button"
-                      onClick={handleConfirmStockIn}
-                      disabled={isSubmitting || verifiedItems.length === 0}
-                      className="px-5 py-2.5 bg-stone-900 hover:bg-stone-800 active:scale-95 text-white font-semibold rounded-xl text-xs transition-all shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      <Check className="w-4 h-4" />
-                      <span>
-                        {isSubmitting ? 'กำลังนำเข้าสต็อก...' : 'ยืนยันและนำเข้าสต็อกจริง'}
-                      </span>
-                    </button>
+                    isOwnerOrAdmin ? (
+                      <button
+                        type="button"
+                        onClick={handleConfirmStockIn}
+                        disabled={isSubmitting || verifiedItems.length === 0}
+                        className="px-5 py-2.5 bg-stone-900 hover:bg-stone-800 active:scale-95 text-white font-semibold rounded-xl text-xs transition-all shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <Check className="w-4 h-4" />
+                        <span>
+                          {isSubmitting ? 'กำลังนำเข้าสต็อก...' : 'ยืนยันและนำเข้าสต็อกจริง'}
+                        </span>
+                      </button>
+                    ) : (
+                      <div className="px-3.5 py-2 bg-amber-50 text-amber-900 rounded-xl text-xs font-semibold flex items-center gap-1.5 border border-amber-200">
+                        <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>เฉพาะเจ้าของร้านหรือแอดมินที่อนุมัตินำเข้าสต็อกได้</span>
+                      </div>
+                    )
                   ) : (
                     <div className="px-4 py-2 bg-stone-100 text-stone-600 rounded-xl text-xs font-semibold flex items-center gap-1.5 border border-stone-200">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600" />

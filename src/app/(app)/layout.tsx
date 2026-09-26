@@ -6,6 +6,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { StockProvider } from '@/lib/StockContext';
 import { SidebarProvider } from '@/lib/SidebarContext';
 import { useAuth } from '@/lib/AuthContext';
+import { WanderingEyes } from '@/components/ui/wandering-eyes';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, token, isLoading } = useAuth();
@@ -25,10 +26,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (isLoading) {
     return (
       <div className="flex min-h-screen bg-[#faf9f5] items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center p-2.5 shadow-sm bg-white border border-stone-200/80 animate-pulse">
-            <img src="/images/logo_ss.png" alt="SmartStock" className="w-full h-full object-contain" />
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-white">
+            <img src="/images/Brr/Brrlogo.png" alt="SmartStock" className="w-full h-full object-contain" />
           </div>
+          <WanderingEyes className="h-14 w-32 text-stone-800" />
           <div className="flex items-center gap-2 text-stone-500 text-xs font-medium">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
             <span>กำลังตรวจสอบสิทธิ์การเข้าใช้งาน...</span>

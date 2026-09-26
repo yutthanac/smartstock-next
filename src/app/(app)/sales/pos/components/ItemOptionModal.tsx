@@ -32,7 +32,7 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
 
   const [temperature, setTemperature] = useState<string>(initialOptions?.temperature || 'เย็น');
   const [sweetness, setSweetness] = useState<string>(initialOptions?.sweetness || 'หวาน 100%');
-  const [diningOption, setDiningOption] = useState<string>(initialOptions?.diningOption || 'ทานที่ร้าน');
+  const [diningOption, setDiningOption] = useState<string>(initialOptions?.diningOption || 'ตัดแก้วพลาสติก');
   const [extraShots, setExtraShots] = useState<number>(initShots);
   const [customNote, setCustomNote] = useState<string>(initialOptions?.customNote || '');
   const [availableOptions, setAvailableOptions] = useState<MenuOptionIngredient[]>([]);
@@ -51,18 +51,121 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
     }
   }, [isOpen, item]);
 
-  const quickTags = ['แยกน้ำแข็ง', 'วิปครีม'];
+  // Quick options dynamically matched against store inventory
+  const quickOptionList: {
+    name: string;
+    price: number;
+    isService?: boolean;
+    ingredientId?: number;
+    inStock: boolean;
+    stockQty?: number;
+    unit?: string;
+  }[] = React.useMemo(() => {
+    const list: {
+      name: string;
+      price: number;
+      isService?: boolean;
+      ingredientId?: number;
+      inStock: boolean;
+      stockQty?: number;
+      unit?: string;
+    }[] = [
+      { name: 'แยกน้ำแข็ง', price: 0, isService: true, inStock: true },
+    ];
+
+    const ADDON_CANDIDATES = [
+      { name: 'วิปครีม', price: 15, keywords: ['วิปครีม', 'whipping', 'วิปปิ้งครีม', 'whip'] },
+      { name: 'ซอสคาราเมล', price: 10, keywords: ['คาราเมล', 'caramel'] },
+      { name: 'บุกคริสตัล', price: 10, keywords: ['บุก', 'คริสตัล', 'crystal'] },
+      { name: 'ไข่มุก', price: 10, keywords: ['ไข่มุก', 'boba', 'pearl'] },
+      { name: 'ผงโกโก้', price: 10, keywords: ['โกโก้', 'cocoa'] },
+      { name: 'ซอสช็อกโกแลต', price: 10, keywords: ['ช็อกโกแลต', 'chocolate'] },
+    ];
+
+    ADDON_CANDIDATES.forEach((cand) => {
+      const matched = ingredients.find((ing) => {
+        const lower = (ing.name || '').toLowerCase();
+        return cand.keywords.some((kw) => lower.includes(kw.toLowerCase()));
+      });
+
+      if (matched) {
+        const stockQty = Number(matched.quantity) || 0;
+        const inStock = stockQty > 0 && matched.status !== 'out';
+        list.push({
+          name: cand.name,
+          price: cand.price,
+          isService: false,
+          ingredientId: matched.id,
+          inStock,
+          stockQty,
+          unit: matched.unit,
+        });
+      }
+    });
+
+    ingredients.forEach((ing) => {
+      const cat = (ing.category || '').toLowerCase();
+      if (['topping', 'ท็อปปิ้ง', 'modifier', 'ส่วนผสมเสริม'].includes(cat)) {
+        if (!list.some((q) => q.ingredientId === ing.id || q.name === ing.name)) {
+          const stockQty = Number(ing.quantity) || 0;
+          const inStock = stockQty > 0 && ing.status !== 'out';
+          list.push({
+            name: ing.name,
+            price: ing.cost_per_unit > 0 ? Math.ceil(Number(ing.cost_per_unit) * 1.5 / 5) * 5 || 10 : 10,
+            isService: false,
+            ingredientId: ing.id,
+            inStock,
+            stockQty,
+            unit: ing.unit,
+          });
+        }
+      }
+    });
+
+    return list;
+  }, [ingredients]);
+
+  const quickTags = quickOptionList.map((q) => q.name);
 
   const handleToggleTag = (tag: string) => {
-    const currentTags = customNote
-      .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean);
+    const opt = quickOptionList.find((q) => q.name === tag);
+    if (!opt) return;
 
-    if (currentTags.includes(tag)) {
-      setCustomNote(currentTags.filter((t) => t !== tag).join(', '));
+    if (!opt.isService && !opt.inStock) {
+      return; // Cannot toggle out-of-stock items
+    }
+
+    if (opt.price > 0) {
+      setSelectedModifiers((prev) => {
+        const exists = prev.some((m) => m.name === opt.name);
+        if (exists) {
+          return prev.filter((m) => m.name !== opt.name);
+        } else {
+          return [
+            ...prev,
+            {
+              id: opt.ingredientId ?? (99000 + Math.abs(opt.name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0))),
+              ingredient_id: opt.ingredientId,
+              name: opt.name,
+              price: opt.price,
+              quantity: 1,
+              ingredient_name: opt.name,
+              ingredient_unit: opt.unit || 'ที่',
+            } as MenuOptionIngredient,
+          ];
+        }
+      });
     } else {
-      setCustomNote([...currentTags, tag].join(', '));
+      const currentTags = customNote
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean);
+
+      if (currentTags.includes(tag)) {
+        setCustomNote(currentTags.filter((t) => t !== tag).join(', '));
+      } else {
+        setCustomNote([...currentTags, tag].join(', '));
+      }
     }
   };
 
@@ -191,7 +294,13 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
 
   const allPreviewDeductions = [...previewDeductions, ...modifierDeductions];
 
-  const isTakeaway = diningOption === 'กลับบ้าน' || customNote.includes('กลับบ้าน');
+  const isTakeaway =
+    diningOption === 'ตัดแก้วพลาสติก' ||
+    diningOption === 'ตัดแก้ว' ||
+    diningOption === 'กลับบ้าน' ||
+    diningOption.includes('ตัดแก้ว') ||
+    customNote.includes('กลับบ้าน') ||
+    customNote.includes('ตัดแก้ว');
   const takeawayCup = isTakeaway
     ? ingredients.find(
         (i) =>
@@ -247,9 +356,9 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
             <label className="font-semibold text-stone-700 block mb-1">อุณหภูมิ</label>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { label: '🧊 เย็น', value: 'เย็น' },
-                { label: '☕ ร้อน', value: 'ร้อน' },
-                { label: '🥤 ปั่น (+10฿)', value: 'ปั่น (+10฿)' },
+                { label: 'เย็น', value: 'เย็น' },
+                { label: 'ร้อน', value: 'ร้อน' },
+                { label: 'ปั่น (+10฿)', value: 'ปั่น (+10฿)' },
               ].map(({ label, value }) => (
                 <button
                   key={value}
@@ -328,41 +437,35 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
             </div>
           </div>
 
-          {/* Option: Dine-in vs Takeaway */}
+          {/* Option: Cup / Plastic cup deduction */}
           <div>
-            <label className="font-semibold text-stone-700 block mb-1">รูปแบบการเสิร์ฟ</label>
+            <label className="font-semibold text-stone-700 block mb-1">การใช้แก้ว / รูปแบบการเสิร์ฟ</label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => setDiningOption('ทานที่ร้าน')}
+                onClick={() => setDiningOption('ตัดแก้วพลาสติก')}
                 className={`py-2.5 px-3 rounded-xl font-medium transition-all border cursor-pointer ${
-                  diningOption === 'ทานที่ร้าน'
-                    ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
-                    : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
-                }`}
-              >
-                ☕ ทานที่ร้าน
-              </button>
-              <button
-                type="button"
-                onClick={() => setDiningOption('กลับบ้าน')}
-                className={`py-2.5 px-3 rounded-xl font-medium transition-all border cursor-pointer ${
-                  diningOption === 'กลับบ้าน'
+                  diningOption === 'ตัดแก้วพลาสติก' || diningOption === 'กลับบ้าน'
                     ? 'bg-[#f5efe6] text-[#78350f] border border-[#e8ded0] shadow-xs font-semibold'
                     : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
                 }`}
               >
-                🥤 กลับบ้าน (Takeaway)
+                ตัดแก้วพลาสติก
+              </button>
+              <button
+                type="button"
+                onClick={() => setDiningOption('ไม่ตัดแก้ว')}
+                className={`py-2.5 px-3 rounded-xl font-medium transition-all border cursor-pointer ${
+                  diningOption === 'ไม่ตัดแก้ว' || diningOption === 'ทานที่ร้าน'
+                    ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
+                    : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
+                }`}
+              >
+                ไม่ตัดแก้ว (แก้วร้าน)
               </button>
             </div>
-            {diningOption === 'กลับบ้าน' && (
-              <p className="text-xs text-[#78350f] mt-1.5 font-medium">
-                ✓ ระบบจะตัดสต็อกแก้ว Takeaway อัตโนมัติ
-              </p>
-            )}
           </div>
-
-          {/* Dynamic Option Modifiers Chips */}
+          {/* Dynamic Option Modifiers Chips with Stock Check */}
           {availableOptions.length > 0 && (
             <div>
               <label className="font-semibold text-stone-700 block mb-1.5 text-xs">
@@ -370,7 +473,26 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
               </label>
               <div className="flex flex-wrap gap-1.5">
                 {availableOptions.map((opt) => {
+                  const linkedIng = ingredients.find((i) => i.id === opt.ingredient_id);
+                  const stockQty = Number(linkedIng?.quantity) || 0;
+                  const inStock = linkedIng ? (stockQty >= (opt.quantity || 1) && linkedIng.status !== 'out') : true;
                   const isSelected = selectedModifiers.some((m) => m.id === opt.id || m.name === opt.name);
+
+                  if (!inStock) {
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        disabled={true}
+                        title={`วัตถุดิบหมด (คงเหลือ: ${stockQty} ${linkedIng?.unit || ''})`}
+                        className="px-2.5 py-1.5 rounded-xl text-xs font-medium border bg-stone-100/70 text-stone-400 border-stone-200 cursor-not-allowed opacity-50 flex items-center gap-1.5"
+                      >
+                        <span className="line-through">{opt.name}</span>
+                        <span className="text-[10px] text-rose-500 font-semibold">(หมด)</span>
+                      </button>
+                    );
+                  }
+
                   return (
                     <button
                       key={opt.id}
@@ -401,26 +523,52 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
             </div>
           )}
 
-          {/* Quick Tags */}
-          <div>
-            <label className="font-semibold text-stone-700 block mb-1.5">ตัวเลือกเพิ่มเติม</label>
-            <div className="flex flex-wrap gap-1.5">
-              {quickTags.map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => handleToggleTag(tag)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
-                    customNote.split(',').map((t) => t.trim()).includes(tag)
-                      ? 'bg-stone-900 text-white border-stone-900'
-                      : 'bg-stone-50 text-stone-600 border border-stone-200 hover:bg-stone-100'
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
+          {/* Quick Tags / Options with Stock Check */}
+          {quickOptionList.length > 0 && (
+            <div>
+              <label className="font-semibold text-stone-700 block mb-1.5">ตัวเลือกด่วน</label>
+              <div className="flex flex-wrap gap-1.5">
+                {quickOptionList.map((q) => {
+                  const isSelected = selectedModifiers.some((m) => m.name === q.name) || customNote.split(',').map((t) => t.trim()).includes(q.name);
+
+                  if (!q.isService && !q.inStock) {
+                    return (
+                      <button
+                        key={q.name}
+                        type="button"
+                        disabled={true}
+                        title={`วัตถุดิบหมด (คงเหลือ: ${q.stockQty || 0} ${q.unit || ''})`}
+                        className="px-2.5 py-1.5 rounded-lg text-xs font-medium border bg-stone-100/70 text-stone-400 border-stone-200 cursor-not-allowed opacity-50 flex items-center gap-1.5"
+                      >
+                        <span className="line-through">{q.name}</span>
+                        <span className="text-[10px] text-rose-500 font-semibold">(หมด)</span>
+                      </button>
+                    );
+                  }
+
+                  return (
+                    <button
+                      key={q.name}
+                      type="button"
+                      onClick={() => handleToggleTag(q.name)}
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer flex items-center gap-1.5 ${
+                        isSelected
+                          ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
+                          : 'bg-stone-50 text-stone-700 border border-stone-200 hover:bg-stone-100'
+                      }`}
+                    >
+                      <span>{q.name}</span>
+                      {q.price > 0 && (
+                        <span className={`text-[10px] font-mono font-semibold ${isSelected ? 'text-amber-200' : 'text-amber-700'}`}>
+                          (+฿{q.price})
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Custom Note */}
           <div>
@@ -494,7 +642,7 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
                     <div className="font-medium text-stone-900 truncate flex items-center gap-1">
                       <span>{takeawayCup.name}</span>
                       <span className="text-xs bg-stone-100 text-stone-700 px-1.5 py-0.2 rounded font-semibold border border-stone-200">
-                        🥤 บรรจุภัณฑ์กลับบ้าน
+                        บรรจุภัณฑ์ / แก้วพลาสติก
                       </span>
                     </div>
                     <div className="text-xs text-stone-400 font-mono tabular-nums">

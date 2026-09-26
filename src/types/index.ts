@@ -134,6 +134,10 @@ export interface DashboardKPI {
   today_cost: number;
   today_profit: number;
   profit_margin: number;
+  total_sales?: number;
+  total_cost?: number;
+  total_profit?: number;
+  total_profit_margin?: number;
   today_refund?: number;
   today_cancelled_count?: number;
   today_waste_value?: number;

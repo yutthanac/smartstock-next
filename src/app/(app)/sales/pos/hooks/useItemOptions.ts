@@ -115,7 +115,7 @@ export function useItemOptions({
 
   const [temperature, setTemperature] = useState(initialOptions?.temperature || 'เย็น');
   const [sweetness, setSweetness] = useState(initialOptions?.sweetness || 'หวาน 100%');
-  const [diningOption, setDiningOption] = useState(initialOptions?.diningOption || 'ทานที่ร้าน');
+  const [diningOption, setDiningOption] = useState(initialOptions?.diningOption || 'ตัดแก้วพลาสติก');
   const [extraShots, setExtraShots] = useState(initShots);
   const [customNote, setCustomNote] = useState(initialOptions?.customNote || '');
   const [availableOptions, setAvailableOptions] = useState<MenuOptionIngredient[]>([]);
@@ -129,7 +129,7 @@ export function useItemOptions({
     const shots = initialOptions?.extraShots ?? (initialOptions?.isSpecial ? 1 : 0);
     setTemperature(initialOptions?.temperature || 'เย็น');
     setSweetness(initialOptions?.sweetness || 'หวาน 100%');
-    setDiningOption(initialOptions?.diningOption || 'ทานที่ร้าน');
+    setDiningOption(initialOptions?.diningOption || 'ตัดแก้วพลาสติก');
     setExtraShots(shots);
     setCustomNote(initialOptions?.customNote || '');
     setSelectedModifiers(initialOptions?.selectedModifiers || []);
@@ -148,19 +148,130 @@ export function useItemOptions({
     }
   }, [item, isActive]);
 
-  // Quick tags
-  const quickTags = ['แยกน้ำแข็ง', 'วิปครีม'];
+  // Quick options dynamically matched against store inventory
+  const quickOptionList: {
+    name: string;
+    price: number;
+    isService?: boolean;
+    ingredientId?: number;
+    inStock: boolean;
+    stockQty?: number;
+    unit?: string;
+  }[] = [
+    { name: 'แยกน้ำแข็ง', price: 0, isService: true, inStock: true },
+  ];
+
+  // Candidates for beverage toppings / add-ons (ONLY added if the store actually has this ingredient in inventory)
+  const TOPPING_CANDIDATES = [
+    { name: 'วิปครีม', price: 15, keywords: ['วิปครีม', 'วิปปิ้งครีม', 'whipping', 'whip'] },
+    { name: 'ซอสคาราเมล', price: 10, keywords: ['ซอสคาราเมล', 'ไซรัปคาราเมล', 'คาราเมล', 'caramel'] },
+    { name: 'บุกคริสตัล', price: 10, keywords: ['บุกคริสตัล', 'บุก', 'crystal'] },
+    { name: 'ไข่มุก', price: 10, keywords: ['ไข่มุก', 'boba', 'pearl'] },
+    { name: 'ซอสช็อกโกแลต', price: 10, keywords: ['ซอสช็อกโกแลต', 'ซอสช็อค', 'chocolate sauce'] },
+    { name: 'น้ำผึ้งแท้', price: 10, keywords: ['น้ำผึ้ง', 'honey'] },
+    { name: 'นมโอ๊ต', price: 15, keywords: ['นมโอ๊ต', 'oatly', 'oat milk'] },
+    { name: 'น้ำเชื่อมวานิลลา', price: 10, keywords: ['น้ำเชื่อมวานิลลา', 'ไซรัปวานิลลา', 'vanilla syrup'] },
+  ];
+
+  TOPPING_CANDIDATES.forEach((cand) => {
+    // Check if ingredient exists in store inventory
+    const matched = ingredients.find((ing) => {
+      const lower = (ing.name || '').toLowerCase();
+      return cand.keywords.some((kw) => lower.includes(kw.toLowerCase()));
+    });
+
+    if (matched) {
+      // Check stock sufficiency
+      const stockQty = Number(matched.quantity) || 0;
+      const inStock = stockQty > 0 && matched.status !== 'out';
+      quickOptionList.push({
+        name: cand.name,
+        price: cand.price,
+        isService: false,
+        ingredientId: matched.id,
+        inStock,
+        stockQty,
+        unit: matched.unit,
+      });
+    }
+  });
+
+  // Also include any ingredient classified as topping/modifier in store's stock
+  ingredients.forEach((ing) => {
+    const cat = (ing.category || '').toLowerCase();
+    if (['topping', 'ท็อปปิ้ง', 'modifier', 'ส่วนผสมเสริม', 'ท็อปปิ้งเครื่องดื่ม'].includes(cat)) {
+      if (!quickOptionList.some((q) => q.ingredientId === ing.id || q.name === ing.name)) {
+        const stockQty = Number(ing.quantity) || 0;
+        const inStock = stockQty > 0 && ing.status !== 'out';
+        quickOptionList.push({
+          name: ing.name,
+          price: ing.cost_per_unit > 0 ? Math.ceil(Number(ing.cost_per_unit) * 1.5 / 5) * 5 || 10 : 10,
+          isService: false,
+          ingredientId: ing.id,
+          inStock,
+          stockQty,
+          unit: ing.unit,
+        });
+      }
+    }
+  });
+
+  const quickTags = quickOptionList.map((q) => q.name);
+
   const handleToggleTag = (tag: string) => {
-    const current = customNote.split(',').map((t) => t.trim()).filter(Boolean);
-    if (current.includes(tag)) {
-      setCustomNote(current.filter((t) => t !== tag).join(', '));
+    const opt = quickOptionList.find((q) => q.name === tag);
+    if (!opt) return;
+
+    // Check if ingredient has enough stock
+    if (!opt.isService && !opt.inStock) {
+      return; // Cannot toggle out-of-stock items
+    }
+
+    if (opt.price > 0) {
+      // Toggle modifier to add price and BOM deduction
+      setSelectedModifiers((prev) => {
+        const exists = prev.some((m) => m.name === opt.name);
+        if (exists) {
+          return prev.filter((m) => m.name !== opt.name);
+        } else {
+          return [
+            ...prev,
+            {
+              id: opt.ingredientId ?? (99000 + Math.abs(opt.name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0))),
+              ingredient_id: opt.ingredientId,
+              name: opt.name,
+              price: opt.price,
+              quantity: 1,
+              ingredient_name: opt.name,
+              ingredient_unit: opt.unit || 'ที่',
+            } as MenuOptionIngredient,
+          ];
+        }
+      });
     } else {
-      setCustomNote([...current, tag].join(', '));
+      // Zero price: toggle in customNote
+      const current = customNote.split(',').map((t) => t.trim()).filter(Boolean);
+      if (current.includes(tag)) {
+        setCustomNote(current.filter((t) => t !== tag).join(', '));
+      } else {
+        setCustomNote([...current, tag].join(', '));
+      }
     }
   };
 
-  // Modifier toggle
+  const isTagSelected = (tag: string): boolean => {
+    const inModifiers = selectedModifiers.some((m) => m.name === tag);
+    const inNote = customNote.split(',').map((t) => t.trim()).includes(tag);
+    return inModifiers || inNote;
+  };
+
+  // Modifier toggle with stock sufficiency check
   const handleToggleModifier = (opt: MenuOptionIngredient) => {
+    const linkedIng = ingredients.find((i) => i.id === opt.ingredient_id);
+    const stockQty = Number(linkedIng?.quantity) || 0;
+    const inStock = linkedIng ? (stockQty >= (opt.quantity || 1) && linkedIng.status !== 'out') : true;
+    if (!inStock) return; // Prevent selecting out of stock modifier
+
     setSelectedModifiers((prev) => {
       const exists = prev.some((m) => m.id === opt.id || m.name === opt.name);
       return exists
@@ -314,7 +425,14 @@ export function useItemOptions({
 
   const allPreviewDeductions = [...previewDeductions, ...modifierDeductions];
 
-  const isTakeaway = diningOption === 'กลับบ้าน' || customNote.includes('กลับบ้าน');
+  const isTakeaway =
+    diningOption === 'ตัดแก้วพลาสติก' ||
+    diningOption === 'ตัดแก้ว' ||
+    diningOption === 'กลับบ้าน' ||
+    diningOption.includes('ตัดแก้ว') ||
+    customNote.includes('กลับบ้าน') ||
+    customNote.includes('ตัดแก้ว');
+
   const takeawayCup = isTakeaway
     ? ingredients.find(
         (i) =>
@@ -345,6 +463,8 @@ export function useItemOptions({
     handleToggleTag,
     handleToggleModifier,
     quickTags,
+    quickOptionList,
+    isTagSelected,
     // Computed
     currentPrice,
     sweetnessMultiplier,

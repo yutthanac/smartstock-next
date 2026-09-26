@@ -35,7 +35,7 @@ interface StockContextType {
   reorderIngredients: (orderedIds: number[]) => Promise<boolean>;
   reorderMenuItems: (orderedIds: number[]) => Promise<boolean>;
   createOrder: (tableNo: string, items: { menu_item_id: number; quantity: number; note?: string; options?: any }[], paymentMethod: 'cash' | 'qr_promptpay' | 'credit_card') => Promise<Order | null>;
-  cancelOrder: (orderId: number, refundReason?: string) => Promise<boolean>;
+  cancelOrder: (orderId: number, refundReason?: string, restoreStock?: boolean) => Promise<boolean>;
   updateOrder: (orderId: number, data: { table_no?: string; payment_method?: 'cash' | 'qr_promptpay' | 'credit_card'; status?: 'completed' | 'cancelled' | 'pending'; items?: { id: number; note?: string }[] }) => Promise<boolean>;
   hydrateData: (data: Partial<{ ingredients: Ingredient[]; menuItems: MenuItem[]; orders: Order[]; movements: StockMovement[]; dashboard: DashboardKPI; units: UnitSetting[] }>) => void;
 }
@@ -701,12 +701,15 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const cancelOrder = async (orderId: number, refundReason?: string): Promise<boolean> => {
+  const cancelOrder = async (orderId: number, refundReason?: string, restoreStock: boolean = true): Promise<boolean> => {
     try {
       const res = await fetch(`${API_BASE_URL}/pos/orders/${orderId}/cancel`, {
         method: 'POST',
         headers: apiHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ refund_reason: refundReason ?? '' }),
+        body: JSON.stringify({
+          refund_reason: refundReason ?? '',
+          restore_stock: restoreStock,
+        }),
       });
       if (res.ok) {
         await fetchData();

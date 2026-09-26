@@ -190,7 +190,7 @@ export function PurchaseOrdersClientView({
     addIngredient,
     hydrateData,
   } = useStock();
-  const { user } = useAuth();
+  const { user, activeStore } = useAuth();
 
   useEffect(() => {
     if (initialIngredients || initialUnits) {
@@ -202,9 +202,11 @@ export function PurchaseOrdersClientView({
   }, [initialIngredients, initialUnits, hydrateData]);
 
   const ingredients = ctxIngredients && ctxIngredients.length > 0 ? ctxIngredients : initialIngredients || [];
-  const isManagerOrAdmin = Boolean(
-    user?.roles?.some((r: string) => r === 'admin' || r === 'manager')
-  );
+  const isSystemAdmin = user?.role === 'admin' || user?.roles?.includes('admin') || user?.username === 'admin';
+  const effectiveRole = isSystemAdmin
+    ? 'admin'
+    : (activeStore?.my_role || (user?.roles?.[0] as string) || user?.role || 'staff');
+  const isOwnerOrAdmin = isSystemAdmin || effectiveRole === 'owner' || effectiveRole === 'admin' || user?.role === 'owner' || user?.roles?.includes('owner');
 
   const [poList, setPoList] = useState<PurchaseOrder[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -615,7 +617,11 @@ export function PurchaseOrdersClientView({
                         key={po.id}
                         onClick={() => {
                           if (isReceiptUploaded) {
-                            setVerifyingReceiptPO(po);
+                            if (isOwnerOrAdmin) {
+                              setVerifyingReceiptPO(po);
+                            } else {
+                              setViewingPO(po);
+                            }
                           } else {
                             setViewingPO(po);
                           }
@@ -705,16 +711,22 @@ export function PurchaseOrdersClientView({
                               </button>
                             )}
 
-                            {/* Manager: Verify AI Receipt */}
+                            {/* Owner / Admin: Verify AI Receipt */}
                             {isReceiptUploaded && (
-                              <button
-                                type="button"
-                                onClick={() => setVerifyingReceiptPO(po)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg bg-stone-900 hover:bg-stone-800 text-white shadow-xs transition-all cursor-pointer active:scale-95 whitespace-nowrap"
-                                title="ตรวจใบเสร็จด้วย AI และกดยืนยันรับเข้าสต็อกจริง"
-                              >
-                                <span>ตรวจบิล</span>
-                              </button>
+                              isOwnerOrAdmin ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setVerifyingReceiptPO(po)}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg bg-stone-900 hover:bg-stone-800 text-white shadow-xs transition-all cursor-pointer active:scale-95 whitespace-nowrap"
+                                  title="ตรวจใบเสร็จด้วย AI และกดยืนยันรับเข้าสต็อกจริง"
+                                >
+                                  <span>ตรวจบิล</span>
+                                </button>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-0.5 text-xs text-amber-700 bg-amber-50 rounded-md border border-amber-200">
+                                  รอเจ้าของ/แอดมินตรวจบิล
+                                </span>
+                              )
                             )}
 
                             {/* View & Print Button */}
@@ -767,14 +779,14 @@ export function PurchaseOrdersClientView({
         onUploadSuccess={handleUploadSuccess}
       />
 
-      {/* Modal: AI Receipt Verification & Stock In (Manager / Admin) */}
+      {/* Modal: AI Receipt Verification & Stock In (Owner / Admin) */}
       <ReceiptVerificationModal
         isOpen={Boolean(verifyingReceiptPO)}
         onClose={() => setVerifyingReceiptPO(null)}
         po={verifyingReceiptPO}
         ingredients={ingredients}
         onApproveAndStockIn={handleApproveAndStockIn}
-        isManagerOrAdmin={isManagerOrAdmin}
+        isOwnerOrAdmin={isOwnerOrAdmin}
       />
 
       {/* Modal: Print & Checklist View */}

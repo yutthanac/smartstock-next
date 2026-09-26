@@ -96,10 +96,13 @@ export function StoresSettingsClientView({ initialStores }: StoresSettingsClient
   const [editingMenuConfig, setEditingMenuConfig] = useState<Record<string, boolean>>({});
   const [savingConfig, setSavingConfig] = useState(false);
 
-  const authHeader = () => ({
-    Accept: 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  });
+  const authHeader = () => {
+    const activeToken = token || (typeof window !== 'undefined' ? localStorage.getItem('smartstock_auth_token') : null);
+    return {
+      Accept: 'application/json',
+      ...(activeToken ? { Authorization: `Bearer ${activeToken}` } : {}),
+    };
+  };
 
   const fetchStores = async () => {
     setLoading(true);
@@ -131,7 +134,7 @@ export function StoresSettingsClientView({ initialStores }: StoresSettingsClient
 
   useEffect(() => {
     fetchStores();
-  }, []);
+  }, [token]);
 
   const handleToggleExpand = (store: StoreDetail) => {
     if (expandedStore === store.id) {
@@ -146,12 +149,12 @@ export function StoresSettingsClientView({ initialStores }: StoresSettingsClient
   const handleSaveStore = async (formData: FormData, storeId?: number) => {
     try {
       const url = storeId ? `${API_BASE_URL}/stores/${storeId}` : `${API_BASE_URL}/stores`;
-      // For Laravel multipart update, can send via POST or PUT
+      const activeToken = token || (typeof window !== 'undefined' ? localStorage.getItem('smartstock_auth_token') : null);
       const res = await fetch(url, {
         method: 'POST',
         headers: {
           Accept: 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(activeToken ? { Authorization: `Bearer ${activeToken}` } : {}),
         },
         body: formData,
       });
@@ -163,11 +166,16 @@ export function StoresSettingsClientView({ initialStores }: StoresSettingsClient
         setEditStore(null);
       } else {
         const err = await res.json().catch(() => ({}));
-        alert(err.message || 'บันทึกข้อมูลไม่สำเร็จ');
+        let errorMsg = err.message || 'บันทึกข้อมูลไม่สำเร็จ';
+        if (err.errors && typeof err.errors === 'object') {
+          const detail = Object.values(err.errors).flat().join('\n');
+          if (detail) errorMsg = `${errorMsg}:\n${detail}`;
+        }
+        alert(errorMsg);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      alert(e.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อ');
     }
   };
 

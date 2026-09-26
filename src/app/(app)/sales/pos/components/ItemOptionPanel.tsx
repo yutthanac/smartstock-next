@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowLeft, Plus, Minus, PlusCircle, Check, Layers, ChevronDown, Thermometer, Droplets, Zap, Coffee, Home, StickyNote } from 'lucide-react';
+import { ArrowLeft, Plus, Minus, PlusCircle, Check, ChevronDown, Thermometer, Droplets, Zap } from 'lucide-react';
 import { MenuItem } from '@/types';
 import { Button } from '@/components/Button';
 import { useStock } from '@/lib/StockContext';
@@ -46,9 +46,12 @@ export const ItemOptionPanel: React.FC<ItemOptionPanelProps> = ({
     handleToggleTag,
     handleToggleModifier,
     quickTags,
+    quickOptionList,
+    isTagSelected,
     currentPrice,
     recipeSweeteners,
     allPreviewDeductions,
+    isTakeaway,
     takeawayCup,
     buildResult,
   } = opts;
@@ -194,7 +197,7 @@ export const ItemOptionPanel: React.FC<ItemOptionPanelProps> = ({
           </div>
         </section>
 
-        {/* Add-on Modifiers */}
+        {/* Add-on Modifiers with Stock Check */}
         {availableOptions.length > 0 && (
           <section className="p-3 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-2.5">
             <div className="flex items-center justify-between">
@@ -206,9 +209,31 @@ export const ItemOptionPanel: React.FC<ItemOptionPanelProps> = ({
             </div>
             <div className="grid grid-cols-2 gap-1.5">
               {availableOptions.map((opt) => {
+                const linkedIng = ingredients.find((i) => i.id === opt.ingredient_id);
+                const stockQty = Number(linkedIng?.quantity) || 0;
+                const inStock = linkedIng ? (stockQty >= (opt.quantity || 1) && linkedIng.status !== 'out') : true;
                 const isSelected = selectedModifiers.some(
                   (m) => m.id === opt.id || m.name === opt.name
                 );
+
+                if (!inStock) {
+                  return (
+                    <div
+                      key={opt.id ?? opt.name}
+                      title={`วัตถุดิบหมด (คงเหลือ: ${stockQty} ${linkedIng?.unit || ''})`}
+                      className="p-2.5 rounded-xl text-left border border-stone-200 bg-stone-100/70 text-stone-400 opacity-60 flex items-center justify-between cursor-not-allowed"
+                    >
+                      <div className="min-w-0 pr-1">
+                        <div className="font-semibold text-xs truncate line-through">{opt.name}</div>
+                        <div className="text-[10px] text-rose-500 font-semibold">(หมด)</div>
+                      </div>
+                      <span className="text-xs font-mono text-stone-400 shrink-0">
+                        {opt.price > 0 ? `+฿${opt.price}` : 'ฟรี'}
+                      </span>
+                    </div>
+                  );
+                }
+
                 return (
                   <button
                     key={opt.id ?? opt.name}
@@ -239,53 +264,77 @@ export const ItemOptionPanel: React.FC<ItemOptionPanelProps> = ({
           </section>
         )}
 
-        {/* Dine-in / Takeaway */}
+        {/* Cup Selection: Plastic Cup vs Dine-in */}
         <section>
-          {sectionLabel('รูปแบบการเสิร์ฟ')}
+          <span className={`font-semibold text-stone-800 flex items-center gap-1.5 mb-2 ${compact ? 'text-sm' : 'text-xs'}`}>
+            การใช้แก้ว / รูปแบบการเสิร์ฟ
+          </span>
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
-              onClick={() => setDiningOption('ทานที่ร้าน')}
-              className={`px-3 ${chip(diningOption === 'ทานที่ร้าน')}`}
+              onClick={() => setDiningOption('ตัดแก้วพลาสติก')}
+              className={`px-3 flex items-center justify-center gap-1.5 ${chip(diningOption === 'ตัดแก้วพลาสติก' || diningOption === 'กลับบ้าน', 'warm')}`}
             >
-              ทานที่ร้าน
+              <img src="/images/icons/coffee-cup.png" alt="" className={`w-4 h-4 object-contain ${(diningOption === 'ตัดแก้วพลาสติก' || diningOption === 'กลับบ้าน') ? 'brightness-0 invert' : 'opacity-70'}`} />
+              ตัดแก้วพลาสติก
             </button>
             <button
               type="button"
-              onClick={() => setDiningOption('กลับบ้าน')}
-              className={`px-3 ${chip(diningOption === 'กลับบ้าน', 'warm')}`}
+              onClick={() => setDiningOption('ไม่ตัดแก้ว')}
+              className={`px-3 flex items-center justify-center gap-1.5 ${chip(diningOption === 'ไม่ตัดแก้ว' || diningOption === 'ทานที่ร้าน')}`}
             >
-              กลับบ้าน
+              <img src="/images/icons/coffee-cup%20(1).png" alt="" className={`w-4 h-4 object-contain ${(diningOption === 'ไม่ตัดแก้ว' || diningOption === 'ทานที่ร้าน') ? 'brightness-0 invert' : 'opacity-70'}`} />
+              แก้วร้าน
             </button>
           </div>
-          {diningOption === 'กลับบ้าน' && (
-            <p className="text-[11px] text-stone-500 mt-1.5">ตัดสต็อกแก้ว Takeaway อัตโนมัติ</p>
-          )}
         </section>
 
-        {/* Quick Tags */}
-        <section>
-          {sectionLabel('ตัวเลือกด่วน')}
-          <div className="flex flex-wrap gap-1.5">
-            {quickTags.map((tag) => {
-              const active = customNote.split(',').map((t) => t.trim()).includes(tag);
-              return (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => handleToggleTag(tag)}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer active:scale-[0.97] ${
-                    active
-                      ? 'bg-stone-900 text-white border-stone-900'
-                      : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-50'
-                  }`}
-                >
-                  {tag}
-                </button>
-              );
-            })}
-          </div>
-        </section>
+        {/* Quick Tags / Options with Stock Check */}
+        {quickOptionList && quickOptionList.length > 0 && (
+          <section>
+            {sectionLabel('ตัวเลือกด่วน')}
+            <div className="flex flex-wrap gap-1.5">
+              {quickOptionList.map((q) => {
+                const active = isTagSelected(q.name);
+
+                if (!q.isService && !q.inStock) {
+                  return (
+                    <button
+                      key={q.name}
+                      type="button"
+                      disabled={true}
+                      title={`วัตถุดิบหมด (คงเหลือ: ${q.stockQty || 0} ${q.unit || ''})`}
+                      className="px-2.5 py-1.5 rounded-lg text-xs font-medium border bg-stone-100/70 text-stone-400 border-stone-200 cursor-not-allowed opacity-50 flex items-center gap-1.5"
+                    >
+                      <span className="line-through">{q.name}</span>
+                      <span className="text-[10px] text-rose-500 font-semibold">(หมด)</span>
+                    </button>
+                  );
+                }
+
+                return (
+                  <button
+                    key={q.name}
+                    type="button"
+                    onClick={() => handleToggleTag(q.name)}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer active:scale-[0.97] flex items-center gap-1.5 ${
+                      active
+                        ? 'bg-stone-900 text-white border-stone-900 shadow-2xs'
+                        : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-50'
+                    }`}
+                  >
+                    <span>{q.name}</span>
+                    {q.price > 0 && (
+                      <span className={`text-[10px] font-mono font-semibold ${active ? 'text-amber-200' : 'text-amber-700'}`}>
+                        (+฿{q.price})
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Custom Note */}
         <section>
@@ -306,8 +355,8 @@ export const ItemOptionPanel: React.FC<ItemOptionPanelProps> = ({
             className="w-full flex items-center justify-between px-3 py-2.5 bg-stone-50 hover:bg-stone-100 transition-colors cursor-pointer"
           >
             <span className="flex items-center gap-1.5 text-xs font-semibold text-stone-600">
-              <Layers className="w-3.5 h-3.5" />
-              ตัดสต็อกจากสูตร ({allPreviewDeductions.length + (takeawayCup ? 1 : 0)} รายการ)
+              <img src="/images/icons/eye.png" alt="" className="w-3.5 h-3.5 object-contain" />
+              Preview ({allPreviewDeductions.length + (takeawayCup ? 1 : 0)} รายการ)
             </span>
             <ChevronDown className={`w-3.5 h-3.5 text-stone-400 transition-transform duration-150 ${showBOM ? 'rotate-180' : ''}`} />
           </button>

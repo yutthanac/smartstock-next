@@ -31,6 +31,8 @@ import {
   Scale,
   Info,
   AlertCircle,
+  CheckCircle2,
+  X,
 } from 'lucide-react';
 import { useStock } from '@/lib/StockContext';
 import { Topbar } from '@/components/Topbar';
@@ -38,6 +40,7 @@ import { Button } from '@/components/Button';
 import { Badge } from '@/components/Badge';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { ExecutiveActionCards } from './components/ExecutiveActionCards';
 
 const InteractiveMapPicker = dynamic(
   () => import('@/components/InteractiveMapPicker').then((mod) => mod.InteractiveMapPicker),
@@ -235,6 +238,8 @@ export function AIInsightsClientView({
     dashboard: ctxDashboard,
     menuItems: ctxMenuItems,
     ingredients: ctxIngredients,
+    updateMenuItem,
+    addMenuItem,
     hydrateData,
   } = useStock();
 
@@ -254,6 +259,116 @@ export function AIInsightsClientView({
   const [loading, setLoading] = useState(false);
   const [competitorLoading, setCompetitorLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('market');
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => {
+      setToastMsg((prev) => (prev === msg ? null : prev));
+    }, 4500);
+  };
+
+  const handleUpdatePrice = async (menuId: number, newPrice: number): Promise<boolean> => {
+    try {
+      const ok = await updateMenuItem(menuId, { price: newPrice });
+      return ok;
+    } catch (err) {
+      console.error('Error updating menu price:', err);
+      return false;
+    }
+  };
+
+  const handleDeployPromotion = async (promo: {
+    name: string;
+    category: string;
+    price: number;
+    description: string;
+    recipes: { ingredient_id: number; quantity_used: number }[];
+  }): Promise<boolean> => {
+    try {
+      const ok = await addMenuItem({
+        name: promo.name,
+        category: promo.category || 'โปรโมชั่นพิเศษ',
+        price: promo.price,
+        description: promo.description,
+        recipes: promo.recipes || [],
+      });
+      return ok;
+    } catch (err) {
+      console.error('Error deploying promo:', err);
+      return false;
+    }
+  };
+
+  const handleAddToPO = (item: {
+    ingredient_id?: number;
+    name: string;
+    quantity: number;
+    unit: string;
+    cost_per_unit?: number;
+    total_price?: number;
+  }) => {
+    try {
+      const saved = localStorage.getItem('smartstock_shopping_orders');
+      let orders: any[] = [];
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) orders = parsed;
+        } catch {
+          orders = [];
+        }
+      }
+
+      const todayStr = new Date().toISOString().split('T')[0];
+      let targetOrder = orders.find((o) => o.status === 'pending' || o.status === 'draft');
+
+      if (!targetOrder) {
+        const newId = `PO-${todayStr.replace(/-/g, '')}-${Math.floor(1000 + Math.random() * 9000)}`;
+        targetOrder = {
+          id: newId,
+          title: 'รายการจ่ายตลาด (แนะนำจาก AI)',
+          date: todayStr,
+          status: 'pending',
+          items: [],
+          totalAmount: 0,
+        };
+        orders.unshift(targetOrder);
+      }
+
+      const existingItem = targetOrder.items.find(
+        (i: any) => (item.ingredient_id && i.ingredient_id === item.ingredient_id) || i.name === item.name
+      );
+
+      if (existingItem) {
+        existingItem.quantity += item.quantity;
+        if (item.cost_per_unit) {
+          existingItem.cost_per_unit = item.cost_per_unit;
+          existingItem.total_price = existingItem.quantity * item.cost_per_unit;
+        }
+      } else {
+        targetOrder.items.push({
+          ingredient_id: item.ingredient_id,
+          name: item.name,
+          quantity: item.quantity,
+          unit: item.unit,
+          cost_per_unit: item.cost_per_unit,
+          total_price: item.total_price || item.quantity * (item.cost_per_unit || 0),
+          checked: false,
+        });
+      }
+
+      targetOrder.totalAmount = targetOrder.items.reduce(
+        (sum: number, it: any) =>
+          sum + (Number(it.total_price) || Number(it.quantity) * Number(it.cost_per_unit || 0)),
+        0
+      );
+
+      localStorage.setItem('smartstock_shopping_orders', JSON.stringify(orders));
+    } catch (err) {
+      console.error('Error adding to shopping orders:', err);
+    }
+  };
   const [menuSubTab, setMenuSubTab] = useState<'existing' | 'new_ideas'>('existing');
 
   const [analysis, setAnalysis] = useState<AIAnalysisResult | null>(null);
@@ -537,7 +652,18 @@ export function AIInsightsClientView({
     <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
       <Topbar title="AI วิเคราะห์ตลาด" />
 
-      <main className="p-4 sm:p-6 lg:p-8 space-y-5 max-w-7xl mx-auto w-full">
+      <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
+        {/* Executive Action Cards (Top High-Impact Action Items) */}
+        <ExecutiveActionCards
+          menuItems={menuItems}
+          ingredients={ingredients}
+          dashboard={dashboard}
+          onUpdatePrice={handleUpdatePrice}
+          onDeployPromotion={handleDeployPromotion}
+          onAddToPO={handleAddToPO}
+          onShowToast={showToast}
+        />
+
         {/* Main Toolbar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 sm:p-4 rounded-2xl border border-stone-200/90 shadow-2xs">
           {/* Tabs */}
@@ -658,7 +784,7 @@ export function AIInsightsClientView({
               )}
             </div>
 
-            {/* Data Grounding & Truth Meter (ความจริง vs การคาดเดา) */}
+            {/* Data Grounding & Truth Meter */}
             {competitorData && (
               <div className="p-4 sm:p-5 rounded-2xl bg-white border border-stone-200/90 shadow-2xs space-y-3.5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
@@ -668,20 +794,20 @@ export function AIInsightsClientView({
                     </div>
                     <div>
                       <h4 className="text-xs sm:text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                        <span>ความโปร่งใสของข้อมูล (Data Grounding & Truth Index)</span>
+                        <span>ที่มาของข้อมูล</span>
                       </h4>
                       <p className="text-[11px] text-stone-500">
-                        แยกแยะชัดเจนระหว่างข้อมูลจริงบนแผนที่ กับโมเดลการคาดการณ์จำลองโดย AI
+                        พิกัดและคะแนนดาวมาจากแผนที่จริง ส่วนเมนูและคำแนะนำประเมินโดย AI
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 text-xs shrink-0">
-                    <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 font-semibold border border-emerald-200/80">
-                      🟢 ข้อมูลจริง {competitorData.confidence_breakdown?.real_data_percent ?? 35}%
+                    <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 font-semibold border border-emerald-200/80 inline-flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> ข้อมูลจริง {competitorData.confidence_breakdown?.real_data_percent ?? 35}%
                     </span>
-                    <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 font-semibold border border-amber-200/80">
-                      🟡 แบบจำลอง AI {competitorData.confidence_breakdown?.ai_estimate_percent ?? 65}%
+                    <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 font-semibold border border-amber-200/80 inline-flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /> ประเมินโดย AI {competitorData.confidence_breakdown?.ai_estimate_percent ?? 65}%
                     </span>
                   </div>
                 </div>
@@ -789,7 +915,7 @@ export function AIInsightsClientView({
               </div>
             )}
 
-            {/* AI Strategy Debate (AI ถกเถียงกลยุทธ์: ฝ่ายรุก vs ฝ่ายระวัง + ข้อสรุปปลอดภัย) */}
+            {/* AI Strategy Debate (โอกาส vs ความเสี่ยง + ข้อสรุปปลอดภัย) */}
             {competitorData?.strategy_debate && (
               <div className="p-4 sm:p-5 rounded-2xl bg-white border border-stone-200/90 shadow-2xs space-y-3.5">
                 <div className="flex items-center justify-between flex-wrap gap-2">
@@ -799,15 +925,15 @@ export function AIInsightsClientView({
                     </div>
                     <div>
                       <h4 className="text-xs sm:text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                        <span>AI ถกเถียงกลยุทธ์รอบด้าน (Strategy Debate: โอกาส vs ความเสี่ยง)</span>
+                        <span>วิเคราะห์รอบด้าน (โอกาส & ความเสี่ยง)</span>
                       </h4>
                       <p className="text-[11px] text-stone-500">
-                        จำลองมุมมอง 2 ด้าน (ฝ่ายรุก vs ฝ่ายระวัง) เพื่อให้คุณพิจารณารอบคอบก่อนลงทุน
+                        เปรียบเทียบจุดเด่นและข้อควรระวัง เพื่อความมั่นใจก่อนเริ่มทำเมนูใหม่
                       </p>
                     </div>
                   </div>
                   <span className="text-[11px] px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-800 font-semibold border border-indigo-200/80">
-                    Dual-AI Stress Test
+                    วิเคราะห์ 2 มุมมอง
                   </span>
                 </div>
 
@@ -829,7 +955,7 @@ export function AIInsightsClientView({
                       <ul className="space-y-1 text-xs text-stone-700">
                         {competitorData.strategy_debate.growth_opinion.key_points.map((pt, idx) => (
                           <li key={idx} className="flex items-start gap-1.5 leading-snug">
-                            <span className="text-emerald-600 font-bold">✓</span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0 mt-1.5 inline-block" />
                             <span>{pt}</span>
                           </li>
                         ))}
@@ -853,7 +979,7 @@ export function AIInsightsClientView({
                       <ul className="space-y-1 text-xs text-stone-700">
                         {competitorData.strategy_debate.risk_counter.key_points.map((pt, idx) => (
                           <li key={idx} className="flex items-start gap-1.5 leading-snug">
-                            <span className="text-rose-600 font-bold">⚠</span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0 mt-1.5 inline-block" />
                             <span>{pt}</span>
                           </li>
                         ))}
@@ -871,7 +997,7 @@ export function AIInsightsClientView({
                     </span>
                   </div>
                   <p className="text-xs text-stone-200 font-normal leading-relaxed pl-6">
-                    👉 <strong>การลงมือทำที่ปลอดภัย:</strong> {competitorData.strategy_debate.safe_verdict.test_action}
+                    <strong>คำแนะนำเบื้องต้น:</strong> {competitorData.strategy_debate.safe_verdict.test_action}
                   </p>
                 </div>
               </div>
@@ -883,21 +1009,21 @@ export function AIInsightsClientView({
                 <div className="p-4 rounded-2xl bg-white border border-stone-200/90 shadow-2xs space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-stone-500 font-medium">ระดับการแข่งขันในย่าน</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">🟢 หมุดจริงในรัศมี</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 border border-stone-200 font-medium">ข้อมูลแผนที่</span>
                   </div>
                   <p className="text-sm font-semibold text-stone-900">{competitorData.neighborhood_summary.market_density}</p>
                 </div>
                 <div className="p-4 rounded-2xl bg-white border border-stone-200/90 shadow-2xs space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-stone-500 font-medium">กลุ่มผู้บริโภคหลัก</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">🟡 AI ประเมินย่าน</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 font-medium">AI ประเมิน</span>
                   </div>
                   <p className="text-sm font-semibold text-stone-900">{competitorData.neighborhood_summary.target_audience}</p>
                 </div>
                 <div className="p-4 rounded-2xl bg-white border border-emerald-200 shadow-2xs space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-emerald-700 font-medium">ช่องว่างตลาดที่น่าสนใจ</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">✨ โอกาสเจาะตลาด</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-medium">โอกาสใหม่</span>
                   </div>
                   <p className="text-sm font-semibold text-emerald-950">{competitorData.neighborhood_summary.gap_in_market}</p>
                 </div>
@@ -953,7 +1079,7 @@ export function AIInsightsClientView({
                             1. เมนูยอดนิยม & กำลังมาแรง
                           </span>
                           <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200/80 font-medium">
-                            🟡 AI คาดการณ์ 70%
+                            AI คาดการณ์ 70%
                           </span>
                         </div>
                         <p className="text-xs text-stone-500 font-normal truncate">
@@ -1016,7 +1142,7 @@ export function AIInsightsClientView({
                             2. กลยุทธ์ราคา & Sweet Spot
                           </span>
                           <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-50 text-blue-800 border border-blue-200/80 font-medium">
-                            🟡 กึ่งจริง 65% (Google + AI)
+                            กึ่งจริง 65% (Google + AI)
                           </span>
                         </div>
                         <p className="text-xs text-stone-500 font-normal truncate">
@@ -1082,7 +1208,7 @@ export function AIInsightsClientView({
                             3. ทำเล & Foot Traffic
                           </span>
                           <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-medium">
-                            🟢 พิกัดจริง & สถิติย่าน
+                            พิกัดจริง & สถิติย่าน
                           </span>
                         </div>
                         <p className="text-xs text-stone-500 font-normal truncate">
@@ -1130,7 +1256,7 @@ export function AIInsightsClientView({
                             4. เสียงของลูกค้า (Sentiment)
                           </span>
                           <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200/80 font-medium">
-                            🟡 แบบจำลอง AI 85%
+                            แบบจำลอง AI 85%
                           </span>
                         </div>
                         <p className="text-xs text-stone-500 font-normal truncate">
@@ -1198,7 +1324,7 @@ export function AIInsightsClientView({
                             5. การแข่งขัน & จุดเด่นของเรา
                           </span>
                           <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-medium">
-                            🟢 พิกัดคู่แข่งจริง
+                            พิกัดคู่แข่งจริง
                           </span>
                         </div>
                         <p className="text-xs text-stone-500 font-normal truncate">
@@ -1253,7 +1379,7 @@ export function AIInsightsClientView({
                             6. คาดการณ์ Demand & สภาพแวดล้อม
                           </span>
                           <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-medium">
-                            🟢 สภาพอากาศสด
+                            สภาพอากาศสด
                           </span>
                         </div>
                         <p className="text-xs text-stone-500 font-normal truncate">
@@ -1285,7 +1411,7 @@ export function AIInsightsClientView({
                           <ul className="space-y-1 text-sm font-normal text-emerald-900 leading-relaxed">
                             {competitorData.market_intelligence.demand_forecast.immediate_actions.map((act, idx) => (
                               <li key={idx} className="flex items-start gap-1.5">
-                                <span className="font-bold">✓</span>
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0 mt-1.5 inline-block" />
                                 <span>{act}</span>
                               </li>
                             ))}
@@ -1307,7 +1433,7 @@ export function AIInsightsClientView({
                     เมนูแนะนำเจาะตลาดทำเลนี้
                   </h4>
                   <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 font-medium">
-                    🟡 AI แนะนำจากช่องว่างตลาด
+                    AI แนะนำจากช่องว่างตลาด
                   </span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -1454,7 +1580,7 @@ export function AIInsightsClientView({
                       ร้านคู่แข่งสำคัญ ({competitorData.competitors.length} ร้าน)
                     </h4>
                     <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium">
-                      🟢 พิกัด & เรตติ้งจริง
+                      พิกัด & เรตติ้งจริง
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1529,7 +1655,7 @@ export function AIInsightsClientView({
                             <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                             <span>การวิเคราะห์ AI เชิงลึก (จุดแข็ง / ข้อติชม / โอกาส)</span>
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
-                              🟡 AI จำลอง
+                              AI จำลอง
                             </span>
                           </span>
                           <div className="flex items-center gap-1 text-[11px] text-stone-400">
@@ -1750,6 +1876,20 @@ export function AIInsightsClientView({
           </div>
         )}
       </main>
+
+      {/* Floating Toast Notification */}
+      {toastMsg && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-stone-900 text-white px-4 py-3 rounded-2xl shadow-xl border border-stone-700 animate-in slide-in-from-bottom-2 duration-200 max-w-md">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span className="text-sm font-medium leading-relaxed">{toastMsg}</span>
+          <button
+            onClick={() => setToastMsg(null)}
+            className="text-stone-400 hover:text-white ml-auto shrink-0 p-1 cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

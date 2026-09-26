@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, XCircle } from 'lucide-react';
+import { AlertTriangle, XCircle, RotateCcw, Trash2 } from 'lucide-react';
 import { Order } from '@/types';
 
 interface CancelOrderModalProps {
@@ -9,7 +9,7 @@ interface CancelOrderModalProps {
   isOpen: boolean;
   isSubmitting: boolean;
   onClose: () => void;
-  onConfirm: (reason: string) => Promise<void>;
+  onConfirm: (reason: string, restoreStock: boolean) => Promise<void>;
 }
 
 const QUICK_REASONS = [
@@ -27,17 +27,19 @@ export function CancelOrderModal({
   onConfirm,
 }: CancelOrderModalProps) {
   const [refundReason, setRefundReason] = useState('');
+  const [restoreStock, setRestoreStock] = useState<boolean>(true);
 
   useEffect(() => {
     if (isOpen) {
       setRefundReason('');
+      setRestoreStock(true);
     }
   }, [isOpen]);
 
   if (!isOpen || !order) return null;
 
   const handleSubmit = async () => {
-    await onConfirm(refundReason.trim());
+    await onConfirm(refundReason.trim(), restoreStock);
   };
 
   return (
@@ -77,10 +79,61 @@ export function CancelOrderModal({
           </p>
         </div>
 
-        {/* Stock Return Box */}
-        <div className="p-3 bg-stone-50 border border-stone-200/80 rounded-xl text-xs text-stone-700 leading-relaxed">
-          <span className="font-semibold text-stone-900">ระบบจะคืนสต็อกวัตถุดิบตามสูตรให้อัตโนมัติ:</span>
-          <ul className="list-disc pl-4 mt-1 space-y-0.5 text-[11px] text-stone-600">
+        {/* Stock Handling Option: Restore vs Cut as Waste */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-stone-700 block">
+            การจัดการสต็อกวัตถุดิบ
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setRestoreStock(true)}
+              className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
+                restoreStock
+                  ? 'border-emerald-600 bg-emerald-50/70 text-emerald-900 shadow-2xs font-semibold'
+                  : 'border-stone-200 bg-stone-50 text-stone-600 hover:bg-stone-100'
+              }`}
+            >
+              <div className="text-xs font-bold flex items-center gap-1.5">
+                <RotateCcw className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>คืนสต็อก</span>
+              </div>
+              <p className="text-[10px] text-stone-500 font-normal mt-0.5">
+                ยังไม่ได้ชง / คืนของกลับเข้าคลัง
+              </p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setRestoreStock(false)}
+              className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
+                !restoreStock
+                  ? 'border-rose-600 bg-rose-50/70 text-rose-900 shadow-2xs font-semibold'
+                  : 'border-stone-200 bg-stone-50 text-stone-600 hover:bg-stone-100'
+              }`}
+            >
+              <div className="text-xs font-bold flex items-center gap-1.5">
+                <Trash2 className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                <span>ตัดทิ้งเป็นของเสีย</span>
+              </div>
+              <p className="text-[10px] text-stone-500 font-normal mt-0.5">
+                ชงไปแล้ว เสียของ ไม่คืนสต็อก
+              </p>
+            </button>
+          </div>
+        </div>
+
+        {/* Stock Summary Box */}
+        <div className={`p-3 rounded-xl text-xs leading-relaxed border ${
+          restoreStock
+            ? 'bg-emerald-50/40 border-emerald-200/80 text-emerald-900'
+            : 'bg-amber-50/40 border-amber-200/80 text-amber-900'
+        }`}>
+          <span className="font-semibold block">
+            {restoreStock
+              ? '✓ ระบบจะคืนสต็อกวัตถุดิบตามสูตรให้อัตโนมัติ:'
+              : '⚠️ ระบบจะไม่คืนสต็อก และจะบันทึกเป็นของเสีย (Waste) เนื่องจากทำเครื่องดื่มไปแล้ว:'}
+          </span>
+          <ul className="list-disc pl-4 mt-1 space-y-0.5 text-[11px] opacity-80">
             {order.items?.map((it, idx) => (
               <li key={idx}>
                 {it.name} <span className="font-mono">x{it.quantity}</span>

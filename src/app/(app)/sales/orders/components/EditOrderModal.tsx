@@ -31,9 +31,9 @@ export const parseOptionNote = (rawNote: string = ''): ParsedItemOption => {
   else if (note.includes('หวานน้อย') || note.includes('50%')) sweetness = 'หวานน้อย';
   else if (note.includes('หวานมาก') || note.includes('125%')) sweetness = 'หวานมาก';
 
-  let diningOption = 'ทานที่ร้าน';
-  if (note.includes('กลับบ้าน') || note.includes('Takeaway') || note.includes('Take away')) {
-    diningOption = 'กลับบ้าน';
+  let diningOption = 'ไม่ตัดแก้ว';
+  if (note.includes('ตัดแก้วพลาสติก') || note.includes('ตัดแก้ว') || note.includes('กลับบ้าน') || note.includes('Takeaway') || note.includes('Take away')) {
+    diningOption = 'ตัดแก้วพลาสติก';
   }
 
   let extraShots = 0;
@@ -49,7 +49,7 @@ export const parseOptionNote = (rawNote: string = ''): ParsedItemOption => {
       if (!t) return false;
       if (['เย็น', 'ร้อน', 'ปั่น (+10฿)', 'ปั่น'].includes(t)) return false;
       if (['ไม่หวาน', 'หวานน้อย', 'หวาน', 'หวานมาก', 'หวาน (100%)', 'หวาน 100%'].includes(t)) return false;
-      if (['ทานที่ร้าน', 'กลับบ้าน', '🥤 กลับบ้าน'].includes(t)) return false;
+      if (['ทานที่ร้าน', 'กลับบ้าน', '🥤 กลับบ้าน', 'ตัดแก้วพลาสติก', 'ไม่ตัดแก้ว', 'ไม่ตัดแก้ว (แก้วร้าน)'].includes(t)) return false;
       if (t.includes('ช็อต')) return false;
       return true;
     });
@@ -68,7 +68,7 @@ export const serializeOptionNote = (opts: ParsedItemOption): string => {
   if (opts.temperature) parts.push(opts.temperature);
   if (opts.sweetness && opts.sweetness !== 'หวาน (100%)') parts.push(opts.sweetness);
   if (opts.extraShots > 0) parts.push(`เพิ่ม ${opts.extraShots} ช็อต`);
-  if (opts.diningOption === 'กลับบ้าน') parts.push('🥤 กลับบ้าน');
+  if (opts.diningOption === 'ตัดแก้วพลาสติก' || opts.diningOption === 'กลับบ้าน') parts.push('ตัดแก้วพลาสติก');
   if (opts.customNote.trim()) parts.push(opts.customNote.trim());
   return parts.join(', ');
 };
@@ -377,28 +377,31 @@ export function EditOrderModal({
 
                   <div>
                     <label className="font-semibold text-stone-700 text-xs block mb-1">
-                      รูปแบบการเสิร์ฟ
+                      การใช้แก้ว / รูปแบบการเสิร์ฟ
                     </label>
                     <div className="grid grid-cols-2 gap-1.5">
-                      {['ทานที่ร้าน', 'กลับบ้าน'].map((mode) => (
+                      {[
+                        { label: 'ตัดแก้วพลาสติก', value: 'ตัดแก้วพลาสติก' },
+                        { label: 'ไม่ตัดแก้ว (แก้วร้าน)', value: 'ไม่ตัดแก้ว' },
+                      ].map(({ label, value }) => (
                         <button
-                          key={mode}
+                          key={value}
                           type="button"
                           onClick={() =>
                             handleUpdateItemOption(currentKey, (prev) => ({
                               ...prev,
-                              diningOption: mode,
+                              diningOption: value,
                             }))
                           }
                           className={`py-2 px-2 rounded-xl text-xs font-semibold transition-all border text-center cursor-pointer ${
-                            currentOpts.diningOption === mode
-                              ? mode === 'กลับบ้าน'
+                            (currentOpts.diningOption === value || (value === 'ตัดแก้วพลาสติก' && currentOpts.diningOption === 'กลับบ้าน') || (value === 'ไม่ตัดแก้ว' && currentOpts.diningOption === 'ทานที่ร้าน'))
+                              ? value === 'ตัดแก้วพลาสติก'
                                 ? 'bg-[#f5efe6] text-[#78350f] border-[#e8ded0] shadow-2xs font-bold'
                                 : 'bg-stone-900 text-white border-stone-900 shadow-xs'
                               : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'
                           }`}
                         >
-                          {mode}
+                          {label}
                         </button>
                       ))}
                     </div>
@@ -411,7 +414,7 @@ export function EditOrderModal({
                     ตัวเลือกเพิ่มเติม
                   </label>
                   <div className="flex flex-wrap gap-1.5">
-                    {['แยกน้ำแข็ง', 'วิปครีม'].map((tag) => {
+                    {['แยกน้ำแข็ง'].map((tag) => {
                       const isSelected = currentOpts.customNote.includes(tag);
                       return (
                         <button

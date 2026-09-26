@@ -616,7 +616,7 @@ export function StockClientView({
               }`}
             >
               <Boxes className="w-3.5 h-3.5 text-stone-700" />
-              <span>สต็อกวัตถุดิบทั้งหมด</span>
+              <span>สต็อกทั้งหมด</span>
               <span className="px-1.5 py-0.2 rounded-full text-xs bg-stone-200 text-stone-800 font-mono tabular-nums font-semibold">
                 {ingredients.length}
               </span>

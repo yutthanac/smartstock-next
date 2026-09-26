@@ -150,10 +150,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
     ? 'admin'
     : (activeStore?.my_role || (user?.roles?.[0] as string) || user?.role || 'owner');
 
-  const isRoleAllowed = (allowedRoles: string[]): boolean => {
-    // Admin (system administrator) has master access to everything
-    if (effectiveRole === 'admin') return true;
-    return allowedRoles.includes(effectiveRole);
+  const isItemPermitted = (item: NavItem): boolean => {
+    // System admin or owner has master access to everything
+    if (effectiveRole === 'admin' || effectiveRole === 'owner') return true;
+    if (user?.permissions?.includes('all')) return true;
+
+    // Check specific requiredPermission
+    if (item.requiredPermission) {
+      if (user?.permissions && user.permissions.length > 0) {
+        return user.permissions.includes(item.requiredPermission);
+      }
+    }
+
+    return item.allowedRoles.includes(effectiveRole);
   };
 
   const themeColor = activeStore?.theme_color || '#059669';
@@ -168,6 +177,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
           href: '/dashboard',
           icon: LayoutDashboard,
           moduleKey: 'dashboard',
+          requiredPermission: 'dashboard.view',
           allowedRoles: ['admin', 'owner', 'manager'],
         },
       ],
@@ -181,6 +191,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
           icon: Store,
           badge: 'Active',
           moduleKey: 'pos',
+          requiredPermission: 'pos.order',
           allowedRoles: ['admin', 'owner', 'manager', 'cashier', 'staff'],
         },
         {
@@ -188,6 +199,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
           href: '/sales/orders',
           icon: Receipt,
           moduleKey: 'orders',
+          requiredPermission: 'pos.order',
           allowedRoles: ['admin', 'owner', 'manager', 'cashier', 'staff'],
         },
       ],
@@ -201,6 +213,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
           icon: Boxes,
           alertCount: dashboard.low_stock_count > 0 ? dashboard.low_stock_count : undefined,
           moduleKey: 'stock',
+          requiredPermission: 'inventory.view',
           allowedRoles: ['admin', 'owner', 'manager', 'chef'],
         },
         {
@@ -208,7 +221,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
           href: '/stock/purchase-orders',
           icon: ShoppingBag,
           moduleKey: 'purchase_orders',
-          allowedRoles: ['admin', 'owner', 'manager', 'chef'],
+          requiredPermission: 'inventory.view',
+          allowedRoles: ['admin', 'owner', 'manager', 'chef', 'cashier', 'staff'],
         },
       ],
     },
@@ -220,6 +234,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
           href: '/menu',
           icon: UtensilsCrossed,
           moduleKey: 'menu',
+          requiredPermission: 'menu.view',
           allowedRoles: ['admin', 'owner', 'manager', 'chef', 'cashier'],
         },
         {
@@ -228,6 +243,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
           icon: Sparkles,
           highlight: true,
           moduleKey: 'ai_insights',
+          requiredPermission: 'menu.view',
           allowedRoles: ['admin', 'owner', 'manager', 'chef'],
         },
       ],
@@ -240,6 +256,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
           href: '/reports/sales',
           icon: BarChart3,
           moduleKey: 'reports_sales',
+          requiredPermission: 'reports.view',
           allowedRoles: ['admin', 'owner', 'manager'],
         },
         {
@@ -247,6 +264,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
           href: '/reports/profit',
           icon: TrendingUp,
           moduleKey: 'reports_profit',
+          requiredPermission: 'reports.view',
           allowedRoles: ['admin', 'owner', 'manager'],
         },
       ],
@@ -259,6 +277,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
           href: '/staff',
           icon: Users,
           moduleKey: 'staff',
+          requiredPermission: 'system.users',
           allowedRoles: ['admin', 'owner', 'manager', 'chef', 'cashier', 'staff'],
         },
         {
@@ -266,13 +285,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
           href: '/roles',
           icon: ShieldCheck,
           moduleKey: 'roles',
-          allowedRoles: ['admin'],
+          requiredPermission: 'system.roles',
+          allowedRoles: ['admin', 'owner'],
         },
         {
           label: 'ตั้งค่าระบบ',
           href: '/settings',
           icon: Settings,
           moduleKey: 'settings',
+          requiredPermission: 'system.settings',
           allowedRoles: ['admin'],
         },
       ],
@@ -462,7 +483,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
         {menuSections.map((section, idx) => {
           const visibleItems = section.items.filter((item) => {
             if (!isModuleEnabled(item.moduleKey)) return false;
-            if (!isRoleAllowed(item.allowedRoles)) return false;
+            if (!isItemPermitted(item)) return false;
             return true;
           });
 
@@ -686,7 +707,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
           {menuSections.map((section, sIdx) => {
             const visibleItems = section.items.filter((item) => {
               if (!isModuleEnabled(item.moduleKey)) return false;
-              if (!isRoleAllowed(item.allowedRoles)) return false;
+              if (!isItemPermitted(item)) return false;
               return true;
             });
             if (visibleItems.length === 0) return null;

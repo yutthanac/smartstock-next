@@ -283,11 +283,11 @@ export function OrdersClientView({ initialOrders }: OrdersClientViewProps) {
     }
   };
 
-  const handleConfirmCancel = async (reason: string) => {
+  const handleConfirmCancel = async (reason: string, restoreStock: boolean = true) => {
     if (!cancellingOrder) return;
     setIsSubmitting(true);
     try {
-      const success = await cancelOrder(cancellingOrder.id, reason || undefined);
+      const success = await cancelOrder(cancellingOrder.id, reason || undefined, restoreStock);
       if (success) {
         await fetchOrdersByFilter();
         setCancellingOrder(null);

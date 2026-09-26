@@ -48,7 +48,13 @@ function formatOptionNote(options: CartItemOption): string {
   options.selectedModifiers?.forEach((m) => {
     parts.push(`+${m.name}${m.price > 0 ? ` (+฿${m.price})` : ''}`);
   });
-  if (options.diningOption && options.diningOption !== 'ทานที่ร้าน') parts.push('🥤 กลับบ้าน');
+  if (options.diningOption) {
+    if (options.diningOption === 'ตัดแก้วพลาสติก' || options.diningOption === 'กลับบ้าน' || options.diningOption.includes('ตัดแก้ว')) {
+      parts.push('ตัดแก้วพลาสติก');
+    } else if (options.diningOption === 'ไม่ตัดแก้ว' || options.diningOption === 'ทานที่ร้าน') {
+      parts.push('ไม่ตัดแก้ว');
+    }
+  }
   if (options.spiciness && options.spiciness !== 'ไม่เผ็ด') parts.push(options.spiciness);
   if (options.customNote) parts.push(options.customNote);
   return parts.join(' • ');
@@ -206,7 +212,7 @@ function CartItemRow({
       {/* Note & edit */}
       <div className="flex items-center justify-between pt-1 border-t border-stone-200/60 text-xs">
         <span className="text-stone-500 truncate max-w-[190px]">
-          {note || 'ทานที่ร้าน • หวาน 100%'}
+          {note || 'ตัดแก้วพลาสติก • หวาน 100%'}
         </span>
         <button
           onClick={() => onEdit(entry.item, entry.cartId)}
@@ -354,7 +360,7 @@ export function POSClientView({
     const defaultOptions: CartItemOption = options || {
       temperature: 'เย็น',
       sweetness: 'หวาน 100%',
-      diningOption: 'ทานที่ร้าน',
+      diningOption: 'ตัดแก้วพลาสติก',
       extraShots: 0,
       customNote: '',
     };
