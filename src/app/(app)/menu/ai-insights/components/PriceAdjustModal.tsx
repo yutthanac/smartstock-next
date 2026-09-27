@@ -76,28 +76,28 @@ export function PriceAdjustModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-stone-200 overflow-hidden">
+      <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-stone-200 overflow-hidden max-h-[96vh] flex flex-col">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-stone-100 flex items-center justify-between bg-stone-50/50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-800">
+        <div className="p-4 sm:px-6 sm:py-5 border-b border-stone-100 flex items-center justify-between bg-stone-50/50">
+          <div className="flex items-center gap-2.5 min-w-0 pr-2">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-800 shrink-0">
               <DollarSign className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="text-base font-bold text-stone-900">ปรับราคาเมนู (Price Optimization)</h3>
-              <p className="text-xs text-stone-500">{menuItem.name} • {menuItem.category}</p>
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-base font-bold text-stone-900 truncate">ปรับราคาเมนู</h3>
+              <p className="text-[11px] sm:text-xs text-stone-500 truncate">{menuItem.name} • {menuItem.category}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-stone-400 hover:text-stone-700 rounded-xl hover:bg-stone-100 transition-colors"
+            className="p-1.5 text-stone-400 hover:text-stone-700 rounded-xl hover:bg-stone-100 transition-colors cursor-pointer shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto">
           {reason && (
             <div className="p-3.5 bg-amber-50/80 border border-amber-200/70 rounded-2xl text-xs text-amber-900 leading-relaxed flex items-start gap-2.5">
               <TrendingUp className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
@@ -117,13 +117,13 @@ export function PriceAdjustModal({
 
           {/* Price Comparison Inputs */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-3.5 bg-stone-50 rounded-2xl border border-stone-200/80">
+            <div className="p-3 sm:p-3.5 bg-stone-50 rounded-2xl border border-stone-200/80">
               <span className="text-[11px] font-medium text-stone-500 block mb-1">ราคาปัจจุบัน</span>
-              <div className="text-lg font-bold text-stone-700 font-mono">฿{currentPrice.toFixed(0)}</div>
+              <div className="text-base sm:text-lg font-bold text-stone-700 font-mono">฿{currentPrice.toFixed(0)}</div>
               <span className="text-[10px] text-stone-400">มาร์จิ้น {currentMargin.toFixed(1)}%</span>
             </div>
 
-            <div className="p-3.5 bg-emerald-50/60 rounded-2xl border border-emerald-200">
+            <div className="p-3 sm:p-3.5 bg-emerald-50/60 rounded-2xl border border-emerald-200">
               <label htmlFor="target-price-input" className="text-[11px] font-semibold text-emerald-800 block mb-1">
                 ราคาใหม่ที่แนะนำ
               </label>
@@ -136,7 +136,7 @@ export function PriceAdjustModal({
                   min="1"
                   value={priceInput}
                   onChange={(e) => setPriceInput(e.target.value)}
-                  className="w-full pl-7 pr-3 py-1.5 text-lg font-bold text-emerald-950 font-mono bg-white rounded-xl border border-emerald-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20"
+                  className="w-full pl-7 pr-3 py-1.5 text-base sm:text-lg font-bold text-emerald-950 font-mono bg-white rounded-xl border border-emerald-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20"
                   autoFocus
                 />
               </div>
@@ -147,7 +147,7 @@ export function PriceAdjustModal({
           </div>
 
           {/* Impact Projection */}
-          <div className="p-4 bg-stone-900 text-white rounded-2xl space-y-2">
+          <div className="p-3.5 sm:p-4 bg-stone-900 text-white rounded-2xl space-y-2">
             <div className="flex items-center justify-between text-xs text-stone-300">
               <span>ส่วนต่างราคาต่อแก้ว:</span>
               <span className={`font-mono font-bold ${priceDiff >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
@@ -159,9 +159,9 @@ export function PriceAdjustModal({
               <span className="font-mono text-stone-200">฿{recipeCost.toFixed(2)} / แก้ว</span>
             </div>
             <div className="pt-2 border-t border-stone-800 flex items-center justify-between">
-              <span className="text-xs font-semibold text-stone-200">กำไรสุทธิคาดการณ์เพิ่มขึ้น:</span>
-              <span className="text-sm font-bold font-mono text-amber-400">
-                {estProfitGainMonthly >= 0 ? `+฿${Math.round(estProfitGainMonthly).toLocaleString()} / เดือน` : `-฿${Math.round(Math.abs(estProfitGainMonthly)).toLocaleString()} / เดือน`}
+              <span className="text-xs font-semibold text-stone-200">กำไรสุทธิคาดการณ์เพิ่ม:</span>
+              <span className="text-xs sm:text-sm font-bold font-mono text-amber-400">
+                {estProfitGainMonthly >= 0 ? `+฿${Math.round(estProfitGainMonthly).toLocaleString()} / ด.` : `-฿${Math.round(Math.abs(estProfitGainMonthly)).toLocaleString()} / ด.`}
               </span>
             </div>
           </div>
@@ -171,14 +171,14 @@ export function PriceAdjustModal({
           </p>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-2.5 pt-2">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center sm:justify-end gap-2 pt-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={onClose}
               disabled={isSubmitting}
-              className="rounded-xl text-xs"
+              className="w-full sm:w-auto rounded-xl text-xs justify-center min-h-[38px]"
             >
               ยกเลิก
             </Button>
@@ -188,7 +188,7 @@ export function PriceAdjustModal({
               size="sm"
               isLoading={isSubmitting}
               icon={<Check className="w-3.5 h-3.5" />}
-              className="bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs"
+              className="w-full sm:w-auto bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs justify-center min-h-[38px]"
             >
               ยืนยันและอัปเดตราคา
             </Button>

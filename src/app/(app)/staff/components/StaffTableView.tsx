@@ -25,16 +25,16 @@ export const StaffTableView: React.FC<StaffTableViewProps> = ({
   return (
     <div className="bg-white rounded-3xl border border-stone-200/90 shadow-xs overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full min-w-[760px] text-left border-collapse">
           <thead>
             <tr className="bg-stone-50/50 border-b border-stone-200 text-xs font-semibold text-stone-900">
-              <th className="py-4 px-6 font-semibold whitespace-nowrap">พนักงาน (Staff)</th>
-              <th className="py-4 px-6 font-semibold whitespace-nowrap">อีเมล (Email)</th>
-              <th className="py-4 px-6 font-semibold whitespace-nowrap">สังกัดร้านค้า (Store)</th>
-              <th className="py-4 px-6 font-semibold whitespace-nowrap">บทบาท & สิทธิ์ (Roles)</th>
-              <th className="py-4 px-6 font-semibold whitespace-nowrap">จำนวนสิทธิ์</th>
-              <th className="py-4 px-6 font-semibold whitespace-nowrap">วันที่สร้าง</th>
-              <th className="py-4 px-6 text-right font-semibold whitespace-nowrap w-24">จัดการ</th>
+              <th className="py-3 sm:py-4 px-3.5 sm:px-6 font-semibold whitespace-nowrap">พนักงาน (Staff)</th>
+              <th className="py-3 sm:py-4 px-3.5 sm:px-6 font-semibold whitespace-nowrap">อีเมล (Email)</th>
+              <th className="py-3 sm:py-4 px-3.5 sm:px-6 font-semibold whitespace-nowrap">สังกัดร้านค้า (Store)</th>
+              <th className="py-3 sm:py-4 px-3.5 sm:px-6 font-semibold whitespace-nowrap">บทบาท & สิทธิ์ (Roles)</th>
+              <th className="py-3 sm:py-4 px-3.5 sm:px-6 font-semibold whitespace-nowrap">จำนวนสิทธิ์</th>
+              <th className="py-3 sm:py-4 px-3.5 sm:px-6 font-semibold whitespace-nowrap">วันที่สร้าง</th>
+              <th className="py-3 sm:py-4 px-3.5 sm:px-6 text-right font-semibold whitespace-nowrap w-24">จัดการ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100 text-xs">

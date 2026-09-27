@@ -25,8 +25,8 @@ export const KpiCards: React.FC<KpiCardsProps> = ({ dashboard, view = 'hero-layo
       </div>
 
       {/* Center Hero Number - Crisp, High-Contrast Cafe Monochrome */}
-      <div className="my-auto py-8 sm:py-10 flex flex-col items-center justify-center text-center">
-        <div className="text-6xl sm:text-7xl lg:text-8xl font-black text-stone-900 tracking-tight leading-none tabular-nums">
+      <div className="my-auto py-5 sm:py-10 flex flex-col items-center justify-center text-center">
+        <div className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-stone-900 tracking-tight leading-none tabular-nums break-all">
           {dashboard.today_sales.toLocaleString()}
         </div>
       </div>

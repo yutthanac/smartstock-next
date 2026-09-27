@@ -233,9 +233,49 @@ export const StaffRolesTab: React.FC<StaffRolesTabProps> = ({
       )}
 
       {/* Main Grid: Left Roles Selector / Right Permissions Checklist */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Roles Selection Tabs */}
-        <div className="lg:col-span-4 space-y-3">
+      <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-12 lg:gap-6 items-start">
+        {/* Mobile Role Switcher (horizontal scroll) */}
+        <div className="lg:hidden space-y-1.5">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[11px] font-medium text-stone-500 uppercase tracking-wider">
+              เลือกตำแหน่ง ({displayRoles.length})
+            </span>
+            <span className="text-[10px] text-stone-400">เลื่อนซ้าย-ขวา</span>
+          </div>
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+            {displayRoles.map((role) => {
+              const isSelected = role.id === selectedRoleId;
+              const cleanName = getCleanRoleName(role.name, role.display_name, storeType);
+              const assignedCount = (rolePermissions[role.id] || []).length;
+              const isAdmin = role.name === 'admin';
+
+              return (
+                <button
+                  key={role.id}
+                  type="button"
+                  onClick={() => setSelectedRoleId(role.id)}
+                  className={`shrink-0 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center gap-2 min-h-[40px] cursor-pointer ${
+                    isSelected
+                      ? 'bg-stone-900 text-white border-stone-900 shadow-sm'
+                      : 'bg-white text-stone-700 border-stone-200 hover:border-stone-300'
+                  }`}
+                >
+                  <span className="whitespace-nowrap">{cleanName}</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${
+                      isSelected ? 'bg-stone-800 text-stone-200' : 'bg-stone-100 text-stone-600'
+                    }`}
+                  >
+                    {isAdmin ? 'เต็ม' : assignedCount}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Left Column: Desktop Roles Selection Tabs */}
+        <div className="hidden lg:block lg:col-span-4 space-y-3">
           <div className="bg-white p-3 rounded-3xl border border-stone-200/90 shadow-xs space-y-2">
             <div className="px-3 pt-2 pb-1 text-xs font-medium text-stone-500 uppercase tracking-wider">
               เลือกตำแหน่งเพื่อดูและจัดการสิทธิ์
@@ -291,17 +331,17 @@ export const StaffRolesTab: React.FC<StaffRolesTabProps> = ({
         </div>
 
         {/* Right Column: Permissions Checklist for Selected Role */}
-        <div className="lg:col-span-8 bg-white p-6 rounded-3xl border border-stone-200/90 shadow-xs space-y-6">
+        <div className="lg:col-span-8 bg-white p-4 sm:p-6 rounded-3xl border border-stone-200/90 shadow-xs space-y-6">
           {/* Header of selected role */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-stone-100 gap-3">
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Shield className="w-5 h-5 text-stone-900" />
-                <h4 className="font-semibold text-stone-900 text-base">
+                <h4 className="font-semibold text-stone-900 text-sm sm:text-base">
                   สิทธิ์การใช้งาน: {getCleanRoleName(currentRole?.name, currentRole?.display_name, storeType)}
                 </h4>
                 {selectedRoleId === 'admin' && (
-                  <Badge variant="neutral" size="sm" className="font-normal">
+                  <Badge variant="neutral" size="sm" className="font-normal text-[10px]">
                     สิทธิ์สูงสุดถาวร
                   </Badge>
                 )}
@@ -318,7 +358,7 @@ export const StaffRolesTab: React.FC<StaffRolesTabProps> = ({
                 isLoading={saving}
                 icon={<Save className="w-4 h-4" />}
                 size="md"
-                className="shrink-0"
+                className="w-full sm:w-auto shrink-0 justify-center min-h-[40px]"
               >
                 บันทึกการตั้งค่าสิทธิ์
               </Button>

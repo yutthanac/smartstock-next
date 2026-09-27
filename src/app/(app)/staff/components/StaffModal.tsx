@@ -75,8 +75,8 @@ export const StaffModal: React.FC<StaffModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-stone-200 animate-scale-in max-h-[90vh] overflow-y-auto no-scrollbar">
+    <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4">
+      <div className="bg-white rounded-3xl max-w-lg w-full p-4 sm:p-6 shadow-2xl border border-stone-200 animate-scale-in max-h-[96vh] sm:max-h-[90vh] overflow-y-auto no-scrollbar">
         <div className="flex items-center justify-between pb-4 border-b border-stone-100">
           <div className="flex items-center gap-2">
             {mode === 'create' ? (
@@ -249,17 +249,17 @@ export const StaffModal: React.FC<StaffModalProps> = ({
             />
           </div>
 
-          <div className="pt-4 border-t border-stone-100 flex items-center justify-end gap-2">
+          <div className="pt-4 border-t border-stone-100 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl text-stone-600 hover:bg-stone-100 text-xs font-medium cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-stone-600 hover:bg-stone-100 text-xs font-medium cursor-pointer"
             >
               ยกเลิก
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-medium shadow-xs cursor-pointer"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-medium shadow-xs cursor-pointer"
             >
               {mode === 'create' ? 'สร้างพนักงาน' : 'บันทึกการเปลี่ยนแปลง'}
             </button>

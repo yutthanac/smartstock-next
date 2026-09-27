@@ -136,13 +136,13 @@ export const SalesAnalyticsChart: React.FC<SalesAnalyticsChartProps> = ({
           </div>
 
           {/* Time Range Filter Buttons - Cafe Monochrome */}
-          <div className="inline-flex rounded-xl p-1 bg-stone-100 border border-stone-200/80 text-xs shrink-0 self-start sm:self-auto">
+          <div className="inline-flex rounded-xl p-1 bg-stone-100 border border-stone-200/80 text-xs shrink-0 self-start sm:self-auto max-w-full overflow-x-auto no-scrollbar">
             {(['7days', 'weekly', 'monthly', 'yearly'] as TimeRange[]).map((tr) => (
               <button
                 key={tr}
                 type="button"
                 onClick={() => setTimeRange(tr)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                   timeRange === tr
                     ? 'bg-stone-900 text-white shadow-xs'
                     : 'text-stone-600 hover:text-stone-900'

@@ -254,7 +254,7 @@ export default function SidebarCustomizer() {
   return (
     <div className="space-y-5">
       {/* 1. Header & Store Bar */}
-      <div className="bg-white rounded-3xl p-5 border border-stone-200/90 shadow-xs space-y-4">
+      <div className="bg-white rounded-3xl p-4 sm:p-5 border border-stone-200/90 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div
@@ -268,16 +268,16 @@ export default function SidebarCustomizer() {
               )}
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base font-semibold text-stone-900">{currentStore?.name || 'เลือกร้าน'}</h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-sm sm:text-base font-semibold text-stone-900">{currentStore?.name || 'เลือกร้าน'}</h2>
                 <span
-                  className="text-xs font-medium px-2 py-0.5 rounded-full text-white"
+                  className="text-[11px] font-medium px-2 py-0.5 rounded-full text-white"
                   style={{ backgroundColor: currentStore?.theme_color || '#78350f' }}
                 >
                   {currentStore?.type === 'cafe' ? 'คาเฟ่' : currentStore?.type === 'bakery' ? 'เบเกอรี่' : 'ร้านอาหาร'}
                 </span>
                 {activeStore?.id === currentStore?.id && (
-                  <span className="text-xs font-normal px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-700 border border-stone-200">
+                  <span className="text-[11px] font-normal px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-700 border border-stone-200">
                     กำลังใช้งาน
                   </span>
                 )}
@@ -287,7 +287,7 @@ export default function SidebarCustomizer() {
           </div>
 
           {/* Store Switcher */}
-          <div className="flex items-center gap-2 bg-stone-50 p-1.5 rounded-2xl border border-stone-200/80 shrink-0">
+          <div className="flex items-center justify-between sm:justify-start gap-2 bg-stone-50 p-1.5 rounded-2xl border border-stone-200/80 shrink-0">
             <span className="text-xs font-normal text-stone-600 pl-1">ร้าน:</span>
             <Dropdown
               value={selectedStoreId}
@@ -322,7 +322,7 @@ export default function SidebarCustomizer() {
         </div>
 
         {/* Action Shortcuts */}
-        <div className="pt-3 border-t border-stone-100 flex items-center gap-2 flex-wrap text-xs">
+        <div className="pt-3 border-t border-stone-100 flex items-center gap-1.5 sm:gap-2 flex-wrap text-xs">
           <span className="font-medium text-stone-500 flex items-center gap-1">
             แม่แบบ:
           </span>
@@ -383,7 +383,7 @@ export default function SidebarCustomizer() {
       )}
 
       {/* 2. Menu Table Card */}
-      <div className="bg-white rounded-3xl p-5 border border-stone-200/90 shadow-xs space-y-4">
+      <div className="bg-white rounded-3xl p-4 sm:p-5 border border-stone-200/90 shadow-xs space-y-4">
         {/* Filters & Save Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-100">
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -428,7 +428,7 @@ export default function SidebarCustomizer() {
             isLoading={saving}
             icon={<Save className="w-4 h-4" />}
             size="sm"
-            className="cursor-pointer"
+            className="w-full sm:w-auto cursor-pointer justify-center min-h-[38px]"
           >
             บันทึก
           </Button>
@@ -465,7 +465,7 @@ export default function SidebarCustomizer() {
 
         {/* Single Column Table with Status on the RIGHT */}
         <div className="overflow-x-auto rounded-2xl border border-stone-200/90 shadow-2xs">
-          <table className="w-full text-left border-collapse text-xs">
+          <table className="w-full min-w-[720px] text-left border-collapse text-xs">
             <thead>
               <tr className="bg-stone-50/50 border-b border-stone-200 text-xs font-medium text-stone-700">
                 <th className="py-3 px-3 w-10 text-center font-medium">#</th>

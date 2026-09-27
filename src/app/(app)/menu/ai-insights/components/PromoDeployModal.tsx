@@ -101,29 +101,29 @@ export function PromoDeployModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-stone-200 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-stone-200 overflow-hidden max-h-[96vh] flex flex-col">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-stone-100 flex items-center justify-between bg-stone-50/50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-800">
+        <div className="p-4 sm:px-6 sm:py-5 border-b border-stone-100 flex items-center justify-between bg-stone-50/50">
+          <div className="flex items-center gap-2.5 min-w-0 pr-2">
+            <div className="w-10 h-10 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-800 shrink-0">
               <Tag className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="text-base font-bold text-stone-900">สร้างเมนูโปรโมชั่นระบายสต็อกลง POS</h3>
-              <p className="text-xs text-stone-500">พร้อมจำหน่ายบนหน้าจอขายหน้าร้านทันที</p>
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-base font-bold text-stone-900 truncate">สร้างเมนูโปรโมชั่นระบายสต็อก</h3>
+              <p className="text-[11px] sm:text-xs text-stone-500 truncate">พร้อมจำหน่ายบน POS ทันที</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-stone-400 hover:text-stone-700 rounded-xl hover:bg-stone-100 transition-colors"
+            className="p-1.5 text-stone-400 hover:text-stone-700 rounded-xl hover:bg-stone-100 transition-colors cursor-pointer shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto">
           {error && (
             <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800">
               {error}
@@ -241,14 +241,14 @@ export function PromoDeployModal({
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-stone-100">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center sm:justify-end gap-2 pt-3 border-t border-stone-100">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={onClose}
               disabled={isSubmitting}
-              className="rounded-xl text-xs"
+              className="w-full sm:w-auto rounded-xl text-xs justify-center min-h-[38px]"
             >
               ยกเลิก
             </Button>
@@ -258,7 +258,7 @@ export function PromoDeployModal({
               size="sm"
               isLoading={isSubmitting}
               icon={<Check className="w-3.5 h-3.5" />}
-              className="bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs"
+              className="w-full sm:w-auto bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs justify-center min-h-[38px]"
             >
               เปิดขายบนหน้า POS ทันที
             </Button>

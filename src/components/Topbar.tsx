@@ -16,12 +16,20 @@ import {
   ChevronDown,
   Camera,
   Trash2,
+  AlertTriangle,
+  AlertCircle,
+  PackageX,
+  ExternalLink,
+  ArrowRight,
+  CheckCheck,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useStock } from '@/lib/StockContext';
 import { useAuth } from '@/lib/AuthContext';
 import { useSidebar } from '@/lib/SidebarContext';
 import { Button } from '@/components/Button';
 import { getUserRoleBadge } from '@/lib/role-utils';
+import { formatInteger } from '@/lib/cafePresets';
 
 interface TopbarProps {
   title: string;
@@ -29,13 +37,101 @@ interface TopbarProps {
 }
 
 export const Topbar: React.FC<TopbarProps> = ({ title }) => {
-  const { dashboard } = useStock();
+  const { dashboard, ingredients, orders } = useStock();
   const { user, logout, updateProfile, activeStore } = useAuth();
   const { toggleMobileSidebar } = useSidebar();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [dismissedNotificationIds, setDismissedNotificationIds] = useState<string[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  const storageKey = `smartstock_dismissed_notifs_${activeStore?.id ?? 'default'}`;
+
+  // Load dismissed notifications from localStorage on mount or store change
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        setDismissedNotificationIds(JSON.parse(saved));
+      } else {
+        setDismissedNotificationIds([]);
+      }
+    } catch {
+      // Ignore JSON parse errors
+    }
+  }, [storageKey]);
+
+  // Compute critical stock items (low or out of stock)
+  const criticalStockAlerts = React.useMemo(() => {
+    if (!ingredients || ingredients.length === 0) return [];
+    return ingredients
+      .filter((ing) => {
+        const notifId = `stock-${ing.id}`;
+        if (dismissedNotificationIds.includes(notifId)) return false;
+        const qty = Number(ing.quantity) || 0;
+        const reorderPt = Number(ing.reorder_point) || 0;
+        return qty <= reorderPt || ing.status === 'out' || ing.status === 'low';
+      })
+      .map((ing) => ({
+        ...ing,
+        isOut: (Number(ing.quantity) || 0) <= 0 || ing.status === 'out',
+      }))
+      .slice(0, 10);
+  }, [ingredients, dismissedNotificationIds]);
+
+  // Compute cancelled orders for today
+  const cancelledOrdersList = React.useMemo(() => {
+    if (!orders || orders.length === 0) return [];
+    // Get local date string YYYY-MM-DD
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const todayLocal = `${year}-${month}-${day}`;
+
+    return orders
+      .filter((ord) => {
+        if (ord.status !== 'cancelled') return false;
+        const notifId = `order-${ord.id}`;
+        if (dismissedNotificationIds.includes(notifId)) return false;
+        // Only include today's cancellations
+        if (!ord.created_at) return false;
+        return ord.created_at.startsWith(todayLocal);
+      })
+      .slice(0, 5);
+  }, [orders, dismissedNotificationIds]);
+
+  const totalNotificationsCount = criticalStockAlerts.length + cancelledOrdersList.length;
+
+  const handleMarkAllAsRead = () => {
+    const allIds: string[] = [];
+    if (ingredients) {
+      ingredients.forEach((ing) => {
+        const qty = Number(ing.quantity) || 0;
+        const reorderPt = Number(ing.reorder_point) || 0;
+        if (qty <= reorderPt || ing.status === 'out' || ing.status === 'low') {
+          allIds.push(`stock-${ing.id}`);
+        }
+      });
+    }
+    if (orders) {
+      orders.forEach((ord) => {
+        if (ord.status === 'cancelled') {
+          allIds.push(`order-${ord.id}`);
+        }
+      });
+    }
+    const updated = Array.from(new Set([...dismissedNotificationIds, ...allIds]));
+    setDismissedNotificationIds(updated);
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(updated));
+    } catch {
+      // Ignore storage errors
+    }
+  };
 
   // Profile Form state
   const [name, setName] = useState('');
@@ -55,18 +151,21 @@ export const Topbar: React.FC<TopbarProps> = ({ title }) => {
     }
   }, [user]);
 
-  // Click outside listener for user dropdown
+  // Click outside listener for user dropdown and notifications dropdown
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setIsDropdownOpen(false);
       }
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setIsNotificationOpen(false);
+      }
     };
-    if (isDropdownOpen) {
+    if (isDropdownOpen || isNotificationOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isDropdownOpen]);
+  }, [isDropdownOpen, isNotificationOpen]);
 
   const getRoleBadge = (roles?: string[], singleRole?: string) => {
     return getUserRoleBadge(roles, singleRole, activeStore?.type);
@@ -168,18 +267,163 @@ export const Topbar: React.FC<TopbarProps> = ({ title }) => {
 
         {/* Right: Notifications & User Avatar with Dropdown */}
         <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-          {/* Notification Bell with Badge Count */}
-          <button
-            aria-label="แจ้งเตือน"
-            className="relative p-2 text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-xl transition-colors cursor-pointer"
-          >
-            <Bell className="w-4 h-4" />
-            {dashboard.low_stock_count > 0 && (
-              <span className="absolute top-1 right-1 min-w-4 h-4 px-1 bg-stone-900 text-white rounded-full text-xs font-semibold flex items-center justify-center ring-2 ring-white">
-                {dashboard.low_stock_count > 9 ? '9+' : dashboard.low_stock_count}
-              </span>
+          {/* Notification Bell with Badge Count & Dropdown */}
+          <div ref={notifRef} className="relative">
+            <button
+              onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+              aria-label="แจ้งเตือน"
+              className={`relative p-2 rounded-xl transition-colors cursor-pointer ${
+                isNotificationOpen
+                  ? 'bg-stone-100 text-stone-900 ring-2 ring-stone-900/10'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+              }`}
+            >
+              <Bell className="w-4 h-4" />
+              {totalNotificationsCount > 0 && (
+                <span className="absolute top-1 right-1 min-w-4 h-4 px-1 bg-stone-900 text-white rounded-full text-[10px] font-bold flex items-center justify-center ring-2 ring-white">
+                  {totalNotificationsCount > 9 ? '9+' : totalNotificationsCount}
+                </span>
+              )}
+            </button>
+
+            {/* Notification Dropdown Menu */}
+            {isNotificationOpen && (
+              <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 max-w-[calc(100vw-1.5rem)] bg-white rounded-3xl shadow-2xl border border-stone-200/90 z-50 animate-scale-in overflow-hidden">
+                {/* Header */}
+                <div className="p-4 border-b border-stone-100 flex items-center justify-between bg-stone-50/50">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-xl bg-stone-900 text-white flex items-center justify-center">
+                      <Bell className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-stone-900 text-xs">การแจ้งเตือน</h4>
+                      <p className="text-[10px] text-stone-500">แจ้งเตือนสถานะสำคัญของร้าน</p>
+                    </div>
+                  </div>
+                  {totalNotificationsCount > 0 ? (
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-stone-900 text-white">
+                      {totalNotificationsCount} รายการ
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-medium text-stone-400">ปกติทั้งหมด</span>
+                  )}
+                </div>
+
+                {/* Notifications List */}
+                <div className="max-h-80 overflow-y-auto divide-y divide-stone-100">
+                  {/* Low / Out of stock items */}
+                  {criticalStockAlerts.length > 0 && (
+                    <div className="p-2 space-y-1">
+                      <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-stone-400 flex items-center gap-1.5">
+                        <AlertTriangle className="w-3 h-3 text-stone-600" />
+                        <span>สต็อกวิกฤต / ใกล้หมด</span>
+                      </div>
+                      {criticalStockAlerts.map((item) => (
+                        <Link
+                          key={item.id}
+                          href="/stock"
+                          onClick={() => setIsNotificationOpen(false)}
+                          className="flex items-start gap-2.5 p-2 rounded-2xl hover:bg-stone-50 transition-colors group"
+                        >
+                          <div
+                            className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 text-xs font-semibold ${
+                              item.isOut
+                                ? 'bg-rose-50 text-rose-600 border border-rose-200'
+                                : 'bg-amber-50 text-amber-700 border border-amber-200'
+                            }`}
+                          >
+                            {item.isOut ? <PackageX className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="text-xs font-semibold text-stone-900 truncate group-hover:text-stone-700">
+                                {item.name}
+                              </span>
+                              <span
+                                className={`text-[10px] font-semibold px-1.5 py-0.2 rounded-full shrink-0 ${
+                                  item.isOut
+                                    ? 'bg-rose-100 text-rose-700'
+                                    : 'bg-amber-100 text-amber-800'
+                                }`}
+                              >
+                                {item.isOut ? 'หมดสต็อก' : 'ใกล้หมด'}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-stone-500 mt-0.5">
+                              เหลือ {formatInteger(item.quantity)} {item.unit} (จุดสั่งซื้อ {formatInteger(item.reorder_point)} {item.unit})
+                            </p>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Cancelled Orders (if any today) */}
+                  {cancelledOrdersList.length > 0 && (
+                    <div className="p-2 space-y-1">
+                      <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-stone-400 flex items-center gap-1.5">
+                        <AlertCircle className="w-3 h-3 text-stone-600" />
+                        <span>ออเดอร์ยกเลิกวันนี้</span>
+                      </div>
+                      {cancelledOrdersList.map((ord) => (
+                        <Link
+                          key={ord.id}
+                          href="/sales/orders"
+                          onClick={() => setIsNotificationOpen(false)}
+                          className="flex items-start gap-2.5 p-2 rounded-2xl hover:bg-stone-50 transition-colors group"
+                        >
+                          <div className="w-7 h-7 rounded-xl bg-stone-100 text-stone-600 border border-stone-200 flex items-center justify-center shrink-0">
+                            <AlertCircle className="w-3.5 h-3.5" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="text-xs font-semibold text-stone-900 truncate">
+                                บิล #{ord.order_number}
+                              </span>
+                              <span className="text-[10px] font-semibold text-stone-600">
+                                ฿{ord.total.toLocaleString()}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-stone-500 mt-0.5 truncate">
+                              เหตุผล: {ord.refund_reason || 'ลูกค้ายกเลิก'}
+                            </p>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Empty state */}
+                  {totalNotificationsCount === 0 && (
+                    <div className="p-8 text-center space-y-2">
+                      <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-200/60">
+                        <CheckCircle2 className="w-5 h-5" />
+                      </div>
+                      <p className="text-xs font-semibold text-stone-800">ไม่มีการแจ้งเตือนค้าง</p>
+                      <p className="text-[11px] text-stone-400">สต็อกสินค้าและสถานะร้านค้าเป็นปกติเรียบร้อย</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer action: Mark all as read */}
+                <div className="p-2.5 bg-stone-50 border-t border-stone-100 text-center">
+                  <button
+                    type="button"
+                    disabled={totalNotificationsCount === 0}
+                    onClick={handleMarkAllAsRead}
+                    className={`inline-flex items-center justify-center gap-1.5 text-xs font-semibold py-1.5 px-3 rounded-xl w-full transition-colors ${
+                      totalNotificationsCount > 0
+                        ? 'text-stone-700 hover:text-stone-900 hover:bg-stone-200/60 cursor-pointer'
+                        : 'text-stone-400 cursor-not-allowed'
+                    }`}
+                  >
+                    <CheckCheck className="w-4 h-4 text-emerald-600" />
+                    <span>อ่านทั้งหมด</span>
+                  </button>
+                </div>
+              </div>
             )}
-          </button>
+          </div>
 
           {/* User Avatar with Dropdown Trigger */}
           <div ref={dropdownRef} className="relative flex items-center pl-2 border-l border-stone-200">

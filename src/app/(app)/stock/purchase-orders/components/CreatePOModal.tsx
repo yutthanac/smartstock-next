@@ -291,17 +291,17 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-3xl w-full shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[90vh] animate-scale-in">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4">
+      <div className="bg-white rounded-3xl max-w-3xl w-full shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[96vh] sm:max-h-[90vh] animate-scale-in">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-stone-50 border-b border-stone-200 gap-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:px-6 sm:py-4 bg-stone-50 border-b border-stone-200 gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-9 h-9 shrink-0 rounded-xl bg-stone-100 border border-stone-200/80 text-stone-700 flex items-center justify-center">
               <ShoppingBag className="w-5 h-5 text-stone-700" />
             </div>
             <div className="min-w-0">
-              <h3 className="font-semibold text-stone-900 text-base">สร้างลิสต์รายการไปซื้อของ (Checklist)</h3>
-              <p className="text-xs text-stone-500">จดรายการของที่ต้องไปซื้อให้พนักงานออกไปจ่ายตลาด</p>
+              <h3 className="font-semibold text-stone-900 text-sm sm:text-base">สร้างลิสต์รายการไปซื้อของ (Checklist)</h3>
+              <p className="text-[11px] sm:text-xs text-stone-500">จดรายการของที่ต้องไปซื้อให้พนักงานออกไปจ่ายตลาด</p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -329,7 +329,7 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 text-xs">
+        <form onSubmit={handleSubmit} className="p-3.5 sm:p-6 overflow-y-auto space-y-4 text-xs">
           {/* Top Quick Details */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-1 sm:col-span-1">
@@ -421,12 +421,15 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
 
           {/* Shopping Checklist Table */}
           <div className="space-y-2">
-            <h4 className="font-bold text-stone-900 text-sm">
-              รายการของที่ต้องไปซื้อ (<span className="font-mono tabular-nums font-bold">{items.length}</span> รายการ)
-            </h4>
+            <div className="flex items-center justify-between">
+              <h4 className="font-bold text-stone-900 text-sm">
+                รายการของที่ต้องไปซื้อ (<span className="font-mono tabular-nums font-bold">{items.length}</span> รายการ)
+              </h4>
+              <span className="text-[10px] text-stone-400 sm:hidden">เลื่อนซ้าย-ขวาได้</span>
+            </div>
 
             <div className="overflow-x-auto border border-stone-200 rounded-2xl">
-              <table className="w-full text-left text-xs">
+              <table className="w-full min-w-[560px] text-left text-xs">
                 <thead>
                   <tr className="bg-stone-100 text-stone-700 font-semibold border-b border-stone-200 uppercase text-xs">
                     <th className="py-2.5 px-4">รายการของที่ต้องซื้อ</th>
@@ -584,7 +587,7 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
               <button
                 type="button"
                 onClick={handleAddCustomItem}
-                className="px-3 py-1.5 rounded-xl bg-stone-900 text-white font-medium hover:bg-stone-800 transition-colors flex items-center justify-center gap-1 text-xs cursor-pointer active:scale-95"
+                className="px-3 py-2 rounded-xl bg-stone-900 text-white font-medium hover:bg-stone-800 transition-colors flex items-center justify-center gap-1 text-xs cursor-pointer active:scale-95 min-h-[38px]"
               >
                 <Plus className="w-3.5 h-3.5" /> เพิ่มลงลิสต์
               </button>
@@ -604,13 +607,13 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
           </div>
 
           {/* Modal Footer Actions */}
-          <div className="pt-3 border-t border-stone-200 flex items-center justify-between">
+          <div className="pt-3 border-t border-stone-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <div className="text-xs">
               <span className="text-stone-500 font-medium">รวมทั้งหมด </span>
               <span className="font-bold text-stone-900 font-mono tabular-nums">{items.length}</span>
               <span className="text-stone-500 font-medium"> รายการ</span>
               {estimatedTotal > 0 && (
-                <span className="ml-2 text-stone-600 font-medium">
+                <span className="ml-2 text-stone-600 font-medium block sm:inline mt-0.5 sm:mt-0">
                   • งบประมาณ:{' '}
                   <span className="font-bold text-stone-900 font-mono tabular-nums">
                     ฿{estimatedTotal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -618,19 +621,19 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
                 </span>
               )}
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={onClose}
-                className="cursor-pointer rounded-xl border-stone-300 text-stone-700 hover:bg-stone-100"
+                className="w-full sm:w-auto cursor-pointer rounded-xl border-stone-300 text-stone-700 hover:bg-stone-100 justify-center min-h-[40px]"
               >
                 ยกเลิก
               </Button>
               <Button
                 type="submit"
                 disabled={items.length === 0}
-                className="cursor-pointer rounded-xl bg-stone-900 text-white hover:bg-stone-800"
+                className="w-full sm:w-auto cursor-pointer rounded-xl bg-stone-900 text-white hover:bg-stone-800 justify-center min-h-[40px]"
               >
                 บันทึกลิสต์ไปซื้อของ
               </Button>

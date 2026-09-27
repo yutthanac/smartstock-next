@@ -134,7 +134,7 @@ export const DashboardCalendarDropdown: React.FC = () => {
 
       {/* Dropdown Floating Popover */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-[340px] sm:w-[370px] bg-white rounded-2xl border border-stone-200/90 shadow-xl p-4 z-50 animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] max-w-[370px] bg-white rounded-2xl border border-stone-200/90 shadow-xl p-3 sm:p-4 z-50 animate-in fade-in zoom-in-95 duration-150">
           {/* Header of Calendar Dropdown */}
           <div className="flex items-center justify-between pb-3 border-b border-stone-100">
             <div>

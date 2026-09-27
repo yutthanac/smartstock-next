@@ -77,7 +77,7 @@ export function ProfitReportClientView({
                     มาร์จิ้น {totalMargin}%
                   </span>
                 </div>
-                <div className="text-2xl font-black text-stone-900 mt-2 font-mono tabular-nums tracking-tight">
+                <div className="text-lg sm:text-2xl font-black text-stone-900 mt-2 font-mono tabular-nums tracking-tight break-all">
                   ฿{totalProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               </div>
@@ -88,7 +88,7 @@ export function ProfitReportClientView({
             </div>
 
             {/* 2. ต้นทุนทั้งหมด */}
-            <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-2xs relative overflow-hidden flex flex-col justify-between">
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200 shadow-2xs relative overflow-hidden flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-stone-500">ต้นทุนทั้งหมด (All-time)</span>
@@ -96,7 +96,7 @@ export function ProfitReportClientView({
                     {totalCostPercentage}% ของยอดขาย
                   </span>
                 </div>
-                <div className="text-2xl font-black text-stone-900 mt-2 font-mono tabular-nums tracking-tight">
+                <div className="text-lg sm:text-2xl font-black text-stone-900 mt-2 font-mono tabular-nums tracking-tight break-all">
                   ฿{totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               </div>
@@ -107,7 +107,7 @@ export function ProfitReportClientView({
             </div>
 
             {/* 3. กำไรวันนี้ */}
-            <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-2xs relative overflow-hidden flex flex-col justify-between">
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200 shadow-2xs relative overflow-hidden flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-stone-500">กำไรวันนี้ (Today)</span>
@@ -115,7 +115,7 @@ export function ProfitReportClientView({
                     มาร์จิ้น {todayMargin}%
                   </span>
                 </div>
-                <div className="text-2xl font-black text-emerald-700 mt-2 font-mono tabular-nums tracking-tight">
+                <div className="text-lg sm:text-2xl font-black text-emerald-700 mt-2 font-mono tabular-nums tracking-tight break-all">
                   ฿{todayProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               </div>
@@ -126,7 +126,7 @@ export function ProfitReportClientView({
             </div>
 
             {/* 4. ต้นทุนวันนี้ */}
-            <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-2xs relative overflow-hidden flex flex-col justify-between">
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200 shadow-2xs relative overflow-hidden flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-stone-500">ต้นทุนวันนี้ (Today)</span>
@@ -134,7 +134,7 @@ export function ProfitReportClientView({
                     {todayCostPercentage}% ของยอดขาย
                   </span>
                 </div>
-                <div className="text-2xl font-black text-stone-900 mt-2 font-mono tabular-nums tracking-tight">
+                <div className="text-lg sm:text-2xl font-black text-stone-900 mt-2 font-mono tabular-nums tracking-tight break-all">
                   ฿{todayCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               </div>

@@ -81,6 +81,29 @@
 
 ---
 
+### [2026-09-27] พัฒนาระบบศูนย์การแจ้งเตือน Dropdown บน Topbar (Notification Center Dropdown)
+- **ฟังก์ชันการทำงาน**:
+  - เชื่อมโยงปุ่มกระดิ่ง `Bell` มุมขวาบนของ [Topbar.tsx](file:///c:/meeting/smartStock/src/components/Topbar.tsx)
+  - แสดงตัวเลข Badge รายการแจ้งเตือนรวมแบบเรียลไทม์
+  - เมื่อคลิกกระดิ่งจะเปิด Dropdown แสดงรายการแจ้งเตือนสำคัญ:
+    - ⚠️ **สต็อกวิกฤต & ของหมด**: แจ้งเตือนวัตถุดิบที่คงเหลือต่ำกว่าเกณฑ์ `reorder_point` หรือสถานะ `out` พร้อมจำนวนคงเหลือและหน่วย สามารถคลิกไปยังหน้าจัดการสต็อกได้ทันที
+    - ❌ **ออเดอร์ยกเลิก**: แจ้งเตือนบิลที่ถูกยกเลิกประจำวัน พร้อมยอดเงินและเหตุผลการยกเลิก คลิกไปยังหน้าประวัติการขายได้ทันที
+    - ✅ **สถานะปกติ (Empty State)**: แสดงสถานะเรียบร้อยเมื่อไม่มีรายการค้าง
+  - รองรับการปิดเมื่อคลิกภายนอก (Click outside to close)
+
+### [2026-09-27] เพิ่มระบบล้างประวัติการปรับสต็อก (Stock Movement History Clear)
+- **Backend API**: เพิ่ม Endpoint `DELETE /api/stock-movements` ใน [IngredientController.php](file:///c:/meeting/smartsotck-backend/app/Http/Controllers/Api/IngredientController.php) และ [api.php](file:///c:/meeting/smartsotck-backend/routes/api.php) ลบเฉพาะประวัติของร้านปัจจุบันตาม `store_id` โดยไม่กระทบจำนวนสต็อกคงเหลือ
+- **Frontend UI**: เพิ่มฟังก์ชัน `clearMovements` ใน [StockContext.tsx](file:///c:/meeting/smartStock/src/lib/StockContext.tsx), ปุ่มล้างประวัติพร้อม Modal ยืนยัน และ Empty State ใน [StockClientView.tsx](file:///c:/meeting/smartStock/src/app/(app)/stock/StockClientView.tsx)
+
+### [2026-09-27] ปรับปรุงการดีไซน์การ์ดสัดส่วนรายได้ & ต้นทุน (Sales Donut Card Redesign)
+- **ปรับ UI ให้ตรงตามแบบอ้างอิงเป๊ะ 100%**:
+  - ปรับหัวการ์ด: ไอคอน `PieChart` ในกล่องมน `rounded-2xl` พร้อมป้าย `กำไร {margin}%` โทนสีครีม-น้ำตาลกาแฟสากล
+  - จัดการแสดงผลชาร์ต Donut: ลดขนาดลงมาที่ 190px พอดีกรอบ แสดงยอดขายรวมตรงกลางพร้อมตัวเลข `฿ยอดขาย` ขนาด 2xl ชัดเจน
+  - จัดวาง Legend รายการกำไรสุทธิและต้นทุนวัตถุดิบทางขวา:
+    - แยกแสดง `กำไร / สุทธิ` และ `ต้นทุน / วัตถุดิบ` สองบรรทัด พร้อมจุดสัญลักษณ์สีดำ Espresso (`#1c1917`) และสีเทาหินอุ่น (`#d6d3d1`)
+    - แสดงตัวเลขจำนวนเงิน `฿ยอด` เด่นชัดควบคู่กับสัดส่วนเปอร์เซ็นต์ `({pct}%)`
+  - คืนค่าการสอดประสานกับกราฟแท่ง Bar Chart ในสัดส่วน 8:4 สวยงามบนทุกขนาดหน้าจอ
+
 ### [2026-09-27] ปรับปรุงระบบแบรนด์ดิ้งร้านค้า (Store Branding: Logo, Favicon, OG Image)
 - **รองรับการเลือกและพรีวิวรูปก่อนบันทึกจริง**:
   - เพิ่มระบบ Stage Preview ให้เลือกไฟล์รูปแล้วแสดงตัวอย่างทันทีก่อนบันทึก

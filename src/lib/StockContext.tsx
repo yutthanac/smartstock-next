@@ -37,6 +37,7 @@ interface StockContextType {
   createOrder: (tableNo: string, items: { menu_item_id: number; quantity: number; note?: string; options?: any }[], paymentMethod: 'cash' | 'qr_promptpay' | 'credit_card') => Promise<Order | null>;
   cancelOrder: (orderId: number, refundReason?: string, restoreStock?: boolean) => Promise<boolean>;
   updateOrder: (orderId: number, data: { table_no?: string; payment_method?: 'cash' | 'qr_promptpay' | 'credit_card'; status?: 'completed' | 'cancelled' | 'pending'; items?: { id: number; note?: string }[] }) => Promise<boolean>;
+  clearMovements: () => Promise<boolean>;
   hydrateData: (data: Partial<{ ingredients: Ingredient[]; menuItems: MenuItem[]; orders: Order[]; movements: StockMovement[]; dashboard: DashboardKPI; units: UnitSetting[] }>) => void;
 }
 
@@ -741,6 +742,22 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
     return false;
   };
 
+  const clearMovements = async (): Promise<boolean> => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/stock-movements`, {
+        method: 'DELETE',
+        headers: apiHeaders(),
+      });
+      if (res.ok) {
+        setMovements([]);
+        return true;
+      }
+    } catch (e) {
+      console.error('Error clearing stock movements:', e);
+    }
+    return false;
+  };
+
   return (
     <StockContext.Provider
       value={{
@@ -776,6 +793,7 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
         createOrder,
         cancelOrder,
         updateOrder,
+        clearMovements,
         hydrateData,
       }}
     >

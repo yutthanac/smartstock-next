@@ -229,13 +229,13 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-6 overflow-y-auto">
       <form
         onSubmit={onSubmit}
-        className="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-stone-200 animate-scale-in overflow-hidden"
+        className="bg-white rounded-3xl max-w-4xl w-full max-h-[96vh] sm:max-h-[92vh] flex flex-col shadow-2xl border border-stone-200 animate-scale-in overflow-hidden"
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-5 sm:px-7 border-b border-stone-100 shrink-0">
+        <div className="flex items-center justify-between p-4 sm:p-5 sm:px-7 border-b border-stone-100 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-stone-100 border border-stone-200/80 text-stone-700 flex items-center justify-center font-normal shadow-2xs">
               {editingTarget ? <Edit2 className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
@@ -588,18 +588,18 @@ export const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 sm:px-7 border-t border-stone-100 bg-stone-50/50 flex items-center justify-end gap-2 text-xs shrink-0">
+        <div className="p-4 sm:px-7 border-t border-stone-100 bg-stone-50/50 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 text-xs shrink-0">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
-            className="rounded-xl border-stone-300 text-stone-700 hover:bg-stone-100"
+            className="w-full sm:w-auto rounded-xl border-stone-300 text-stone-700 hover:bg-stone-100"
           >
             ยกเลิก
           </Button>
           <Button
             type="submit"
-            className="rounded-xl bg-stone-900 text-white hover:bg-stone-800"
+            className="w-full sm:w-auto rounded-xl bg-stone-900 text-white hover:bg-stone-800"
           >
             {editingTarget ? 'บันทึกการแก้ไข' : 'บันทึกวัตถุดิบเข้าสต็อก'}
           </Button>

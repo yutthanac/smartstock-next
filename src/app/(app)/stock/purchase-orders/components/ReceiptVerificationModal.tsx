@@ -587,36 +587,36 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
 
       <div className="bg-white rounded-2xl w-full shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[95vh] animate-scale-in">
         {/* Header Bar */}
-        <div className="px-6 py-3.5 bg-stone-50 border-b border-stone-200 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-stone-100 border border-stone-200 text-stone-700 flex items-center justify-center">
+        <div className="p-3.5 sm:px-6 sm:py-3.5 bg-stone-50 border-b border-stone-200 flex items-center justify-between">
+          <div className="flex items-center gap-2.5 min-w-0 pr-2">
+            <div className="w-9 h-9 rounded-xl bg-stone-100 border border-stone-200 text-stone-700 flex items-center justify-center shrink-0">
               <FileText className="w-4 h-4 text-stone-700" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-stone-900 text-base">
-                  ตรวจสอบใบเสร็จ &amp; ปรับหน่วยรับเข้าสต็อก
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h3 className="font-bold text-stone-900 text-sm sm:text-base truncate">
+                  ตรวจใบเสร็จ &amp; ปรับหน่วยรับสต็อก
                 </h3>
                 <Badge
                   variant={po.status === 'completed' ? 'success' : 'warning'}
                   size="sm"
                   className={
                     po.status === 'completed'
-                      ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                      : 'border-[#e8ded0] bg-[#f5efe6] text-[#78350f]'
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-800 text-[10px]'
+                      : 'border-[#e8ded0] bg-[#f5efe6] text-[#78350f] text-[10px]'
                   }
                 >
-                  {po.status === 'completed' ? 'รับเข้าสต็อกแล้ว' : 'รอผู้จัดการอนุมัติ'}
+                  {po.status === 'completed' ? 'รับเข้าแล้ว' : 'รออนุมัติ'}
                 </Badge>
               </div>
-              <p className="text-xs text-stone-500">
+              <p className="text-[11px] sm:text-xs text-stone-500 truncate">
                 รหัสลิสต์: <span className="font-mono tabular-nums font-semibold">{po.id}</span> • ผู้ไปซื้อ:{' '}
                 <span className="font-medium text-stone-800">{po.buyer_name || 'พนักงาน'}</span>
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             {/* Multi-Receipt Progress Pill */}
             {images.length > 1 && (
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-stone-100 border border-stone-200 text-xs">
@@ -648,17 +648,17 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
         {/* Progress bar on mobile */}
         {images.length > 1 && (
           <div className="sm:hidden px-4 py-2 bg-stone-100 border-b border-stone-200 flex items-center justify-between text-xs">
-            <span className="text-stone-600 font-medium">
-              ตรวจใบเสร็จ {verifiedCount} จาก {totalImagesCount} ใบ ({verifiedPercentage}%)
+            <span className="text-stone-600 font-medium text-[11px]">
+              ตรวจ {verifiedCount}/{totalImagesCount} ใบ ({verifiedPercentage}%)
             </span>
-            <span className="font-mono font-bold text-stone-800">
+            <span className="font-mono font-bold text-stone-800 text-[11px]">
               เหลือ {totalImagesCount - verifiedCount} ใบ
             </span>
           </div>
         )}
 
         {/* Modal Body: Split Screen */}
-        <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-0 text-xs text-stone-700">
+        <div className="flex-1 overflow-y-auto lg:overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-0 text-xs text-stone-700">
           {/* Left Column: Image Viewer & Multi-image Stepper (5 cols) */}
           <ReceiptImageViewer
             currentImage={currentImage}
@@ -828,13 +828,13 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
                 <div>
                   {images.length > 1 && currentImageIndex + 1 < images.length && (
                     <button
                       type="button"
                       onClick={handleMarkCurrentAsChecked}
-                      className="px-3 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 font-semibold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                      className="w-full sm:w-auto px-3 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-colors min-h-[38px]"
                     >
                       <span>ตรวจใบนี้เสร็จแล้ว → ดูใบถัดไป</span>
                       <ChevronRight className="w-3.5 h-3.5" />
@@ -842,13 +842,13 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
                   )}
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={onClose}
                     disabled={isSubmitting}
-                    className="rounded-xl border-stone-300 text-stone-700 hover:bg-stone-100"
+                    className="w-full sm:w-auto rounded-xl border-stone-300 text-stone-700 hover:bg-stone-100 justify-center min-h-[40px]"
                   >
                     ปิดหน้าต่าง
                   </Button>
@@ -859,7 +859,7 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
                         type="button"
                         onClick={handleConfirmStockIn}
                         disabled={isSubmitting || verifiedItems.length === 0}
-                        className="px-5 py-2.5 bg-stone-900 hover:bg-stone-800 active:scale-95 text-white font-semibold rounded-xl text-xs transition-all shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="w-full sm:w-auto px-5 py-2.5 bg-stone-900 hover:bg-stone-800 active:scale-95 text-white font-semibold rounded-xl text-xs transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed min-h-[40px]"
                       >
                         <Check className="w-4 h-4" />
                         <span>
@@ -867,15 +867,15 @@ export const ReceiptVerificationModal: React.FC<ReceiptVerificationModalProps> =
                         </span>
                       </button>
                     ) : (
-                      <div className="px-3.5 py-2 bg-amber-50 text-amber-900 rounded-xl text-xs font-semibold flex items-center gap-1.5 border border-amber-200">
+                      <div className="w-full sm:w-auto px-3.5 py-2 bg-amber-50 text-amber-900 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-amber-200">
                         <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                        <span>เฉพาะเจ้าของร้านหรือแอดมินที่อนุมัตินำเข้าสต็อกได้</span>
+                        <span>เฉพาะเจ้าของร้านหรือแอดมินที่อนุมัติได้</span>
                       </div>
                     )
                   ) : (
-                    <div className="px-4 py-2 bg-stone-100 text-stone-600 rounded-xl text-xs font-semibold flex items-center gap-1.5 border border-stone-200">
+                    <div className="w-full sm:w-auto px-4 py-2 bg-stone-100 text-stone-600 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-stone-200">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      <span>รายการนี้รับเข้าสต็อกเรียบร้อยแล้ว</span>
+                      <span>รับเข้าสต็อกเรียบร้อยแล้ว</span>
                     </div>
                   )}
                 </div>

@@ -45,10 +45,10 @@ export const AdjustStockModal: React.FC<AdjustStockModalProps> = ({
   const equivRemainder = packSize > 0 ? numAmount % packSize : 0;
 
   return (
-    <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
       <form
         onSubmit={onSubmit}
-        className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs border border-stone-200 animate-scale-in"
+        className="bg-white rounded-3xl max-w-md w-full p-4 sm:p-6 shadow-2xl space-y-4 text-xs border border-stone-200 animate-scale-in"
       >
         <div className="flex items-center justify-between pb-3 border-b border-stone-100">
           <div>
@@ -191,18 +191,18 @@ export const AdjustStockModal: React.FC<AdjustStockModalProps> = ({
           </div>
         </div>
 
-        <div className="pt-3 border-t border-stone-100 flex justify-end gap-2">
+        <div className="pt-3 border-t border-stone-100 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
-            className="rounded-xl border-stone-300 text-stone-700 hover:bg-stone-100"
+            className="w-full sm:w-auto rounded-xl border-stone-300 text-stone-700 hover:bg-stone-100"
           >
             ยกเลิก
           </Button>
           <Button
             type="submit"
-            className="rounded-xl bg-stone-900 text-white hover:bg-stone-800"
+            className="w-full sm:w-auto rounded-xl bg-stone-900 text-white hover:bg-stone-800"
           >
             ยืนยันปรับสต็อก
           </Button>

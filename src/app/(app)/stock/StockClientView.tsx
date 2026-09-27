@@ -17,6 +17,8 @@ import {
   CheckCircle2,
   Check,
   X,
+  AlertTriangle,
+  RotateCcw,
 } from 'lucide-react';
 import {
   DndContext,
@@ -337,9 +339,13 @@ export function StockClientView({
     deleteIngredient,
     adjustStock,
     reorderIngredients,
+    clearMovements,
     isLoading,
     hydrateData,
   } = useStock();
+
+  const [isClearMovementsModalOpen, setIsClearMovementsModalOpen] = useState(false);
+  const [isClearingMovements, setIsClearingMovements] = useState(false);
 
   useEffect(() => {
     if (initialIngredients || initialUnits || initialMovements) {
@@ -606,7 +612,7 @@ export function StockClientView({
       <main className="p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-5">
         {/* Navigation Tabs Bar */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-stone-100 p-1.5 rounded-2xl border border-stone-200/80 shadow-2xs">
-          <div className="flex items-center gap-1 overflow-x-auto">
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar w-full sm:w-auto">
             <button
               onClick={() => setActiveTab('inventory')}
               className={`h-9 px-3.5 rounded-xl text-xs transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
@@ -787,12 +793,29 @@ export function StockClientView({
         {/* Tab 2: Movement History Log View */}
         {activeTab === 'movements' && (
           <div className="bg-white rounded-2xl border border-stone-200 shadow-2xs p-5 space-y-3">
-            <h3 className="font-semibold text-stone-900 text-sm flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-stone-100 border border-stone-200/80 flex items-center justify-center text-stone-700 shrink-0">
-                <History className="w-4 h-4" />
-              </div>
-              <span>บันทึกประวัติการปรับสต็อก</span>
-            </h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <h3 className="font-semibold text-stone-900 text-sm flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-stone-100 border border-stone-200/80 flex items-center justify-center text-stone-700 shrink-0">
+                  <History className="w-4 h-4" />
+                </div>
+                <span>บันทึกประวัติการปรับสต็อก</span>
+                <span className="text-xs font-mono text-stone-400 font-normal">
+                  ({movements.length} รายการ)
+                </span>
+              </h3>
+
+              {movements.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setIsClearMovementsModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-rose-600 bg-rose-50 hover:bg-rose-100/80 border border-rose-200 transition-colors cursor-pointer self-start sm:self-auto"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>ล้างประวัติการปรับสต็อก</span>
+                </button>
+              )}
+            </div>
+
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -807,66 +830,77 @@ export function StockClientView({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {movements.map((mov) => (
-                    <TableRow key={mov.id} className="hover:bg-stone-50/80 transition-colors">
-                      <TableCell className="text-stone-500 font-mono tabular-nums text-xs">{mov.created_at}</TableCell>
-                      <TableCell className="font-medium text-stone-900 text-xs">{mov.ingredient_name}</TableCell>
-                      <TableCell>
-                        {mov.type === 'in' && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
-                            <TrendingUp className="w-3 h-3 text-emerald-600" />
-                            รับเข้า
-                          </span>
-                        )}
-                        {mov.type === 'open' && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-900 border border-amber-200">
-                            เปิดใช้งาน
-                          </span>
-                        )}
-                        {mov.type === 'consume' && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-700 border border-stone-200">
-                            <Coffee className="w-3 h-3 text-stone-500" />
-                            ตัดขาย (POS)
-                          </span>
-                        )}
-                        {mov.type === 'out' && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-stone-50 text-stone-600 border border-stone-200">
-                            <TrendingDown className="w-3 h-3 text-stone-400" />
-                            ตัดออก
-                          </span>
-                        )}
-                        {mov.type === 'waste' && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200">
-                            <Trash2 className="w-3 h-3 text-rose-600" />
-                            ของเสีย/ทิ้ง
-                          </span>
-                        )}
-                        {mov.type === 'adjust' && (
-                          <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200">
-                            ปรับยอดนับสต็อก
-                          </span>
-                        )}
-                        {mov.type === 'audit_adjustment' && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-700 border border-stone-200">
-                            <ClipboardCheck className="w-3 h-3" />
-                            รีเช็คสต๊อก
-                          </span>
-                        )}
+                  {movements.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="h-36 text-center text-stone-400 text-xs">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <History className="w-8 h-8 text-stone-300 stroke-[1.5]" />
+                          <p>ยังไม่มีประวัติการปรับสต็อก</p>
+                        </div>
                       </TableCell>
-                      <TableCell
-                        className={`text-right font-mono tabular-nums text-xs font-medium ${
-                          mov.quantity > 0 ? 'text-stone-800' : 'text-stone-500'
-                        }`}
-                      >
-                        {mov.quantity > 0 ? `+${formatInteger(mov.quantity)}` : formatInteger(mov.quantity)} {mov.unit}
-                      </TableCell>
-                      <TableCell className="text-right font-mono tabular-nums text-xs text-stone-900 font-semibold">
-                        {formatInteger(mov.remaining_quantity)} {mov.unit}
-                      </TableCell>
-                      <TableCell className="text-stone-600 font-normal text-xs">{mov.note || '-'}</TableCell>
-                      <TableCell className="text-stone-500 font-normal text-xs">{mov.staff_name || '-'}</TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    movements.map((mov) => (
+                      <TableRow key={mov.id} className="hover:bg-stone-50/80 transition-colors">
+                        <TableCell className="text-stone-500 font-mono tabular-nums text-xs">{mov.created_at}</TableCell>
+                        <TableCell className="font-medium text-stone-900 text-xs">{mov.ingredient_name}</TableCell>
+                        <TableCell>
+                          {mov.type === 'in' && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
+                              <TrendingUp className="w-3 h-3 text-emerald-600" />
+                              รับเข้า
+                            </span>
+                          )}
+                          {mov.type === 'open' && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-900 border border-amber-200">
+                              เปิดใช้งาน
+                            </span>
+                          )}
+                          {mov.type === 'consume' && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-700 border border-stone-200">
+                              <Coffee className="w-3 h-3 text-stone-500" />
+                              ตัดขาย (POS)
+                            </span>
+                          )}
+                          {mov.type === 'out' && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-stone-50 text-stone-600 border border-stone-200">
+                              <TrendingDown className="w-3 h-3 text-stone-400" />
+                              ตัดออก
+                            </span>
+                          )}
+                          {mov.type === 'waste' && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200">
+                              <Trash2 className="w-3 h-3 text-rose-600" />
+                              ของเสีย/ทิ้ง
+                            </span>
+                          )}
+                          {mov.type === 'adjust' && (
+                            <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200">
+                              ปรับยอดนับสต็อก
+                            </span>
+                          )}
+                          {mov.type === 'audit_adjustment' && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-700 border border-stone-200">
+                              <ClipboardCheck className="w-3 h-3" />
+                              รีเช็คสต๊อก
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell
+                          className={`text-right font-mono tabular-nums text-xs font-medium ${
+                            mov.quantity > 0 ? 'text-stone-800' : 'text-stone-500'
+                          }`}
+                        >
+                          {mov.quantity > 0 ? `+${formatInteger(mov.quantity)}` : formatInteger(mov.quantity)} {mov.unit}
+                        </TableCell>
+                        <TableCell className="text-right font-mono tabular-nums text-xs text-stone-900 font-semibold">
+                          {formatInteger(mov.remaining_quantity)} {mov.unit}
+                        </TableCell>
+                        <TableCell className="text-stone-600 font-normal text-xs">{mov.note || '-'}</TableCell>
+                        <TableCell className="text-stone-500 font-normal text-xs">{mov.staff_name || '-'}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -906,6 +940,64 @@ export function StockClientView({
         setAdjustAmount={setAdjustAmount}
         setAdjustNote={setAdjustNote}
       />
+
+      {/* Clear Movements Confirmation Modal */}
+      {isClearMovementsModalOpen && (
+        <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 border border-stone-200 animate-scale-in text-center">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200/80 text-rose-600 flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+
+            <div className="space-y-1.5">
+              <h3 className="font-bold text-stone-900 text-base">ยืนยันล้างประวัติการปรับสต็อก?</h3>
+              <p className="text-xs text-stone-500 leading-relaxed">
+                การล้างประวัติจะลบรายการบันทึกการเคลื่อนไหวสต็อกทั้งหมด ({movements.length} รายการ) ของร้านค้านี้ โดยจะไม่ส่งผลกระทบต่อจำนวนสต็อกคงเหลือปัจจุบัน
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsClearMovementsModalOpen(false)}
+                disabled={isClearingMovements}
+                className="flex-1 py-2.5 px-4 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200/70 rounded-xl transition-colors cursor-pointer"
+              >
+                ยกเลิก
+              </button>
+              <Button
+                variant="danger"
+                size="md"
+                disabled={isClearingMovements}
+                onClick={async () => {
+                  setIsClearingMovements(true);
+                  const success = await clearMovements();
+                  setIsClearingMovements(false);
+                  if (success) {
+                    setIsClearMovementsModalOpen(false);
+                    showToast('ล้างประวัติการปรับสต็อกเรียบร้อยแล้ว');
+                  } else {
+                    showToast('ไม่สามารถล้างประวัติได้ กรุณาลองใหม่อีกครั้ง');
+                  }
+                }}
+                className="flex-1 justify-center gap-1.5"
+              >
+                {isClearingMovements ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    กำลังล้าง...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    ล้างประวัติ
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Floating Toast Notification */}
       {toastMsg && (

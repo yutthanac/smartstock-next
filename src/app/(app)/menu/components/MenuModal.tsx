@@ -80,10 +80,10 @@ export const MenuModal: React.FC<MenuModalProps> = ({
   const calculatedMargin = numPrice > 0 ? ((calculatedProfit / numPrice) * 100).toFixed(1) : '0';
 
   return (
-    <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4">
       <form
         onSubmit={onSubmit}
-        className="bg-white rounded-2xl max-w-5xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col border border-stone-200 animate-scale-in"
+        className="bg-white rounded-3xl max-w-5xl w-full p-4 sm:p-6 shadow-2xl space-y-4 max-h-[96vh] sm:max-h-[90vh] flex flex-col border border-stone-200 animate-scale-in"
       >
         <div className="flex justify-between items-center pb-3 border-b border-stone-100">
           <div className="flex items-center gap-2">
@@ -215,19 +215,19 @@ export const MenuModal: React.FC<MenuModalProps> = ({
         </div>
 
         {/* Modal Actions */}
-        <div className="pt-3 border-t border-stone-100 flex items-center justify-end gap-2 text-xs">
+        <div className="pt-3 border-t border-stone-100 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 text-xs">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
-            className="rounded-xl border-stone-300 text-stone-700 hover:bg-stone-100"
+            className="w-full sm:w-auto rounded-xl border-stone-300 text-stone-700 hover:bg-stone-100"
           >
             ยกเลิก
           </Button>
           <Button
             type="submit"
             variant="primary"
-            className="rounded-xl bg-stone-900 text-white hover:bg-stone-800"
+            className="w-full sm:w-auto rounded-xl bg-stone-900 text-white hover:bg-stone-800"
           >
             {editingItem ? 'บันทึกการแก้ไข' : 'สร้างเมนูและสูตร'}
           </Button>

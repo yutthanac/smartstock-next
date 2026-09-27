@@ -523,9 +523,9 @@ export function PurchaseOrdersClientView({
               </h3>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto">
               {/* Filter Tabs */}
-              <div className="inline-flex p-1 bg-stone-100 rounded-xl text-xs font-medium">
+              <div className="inline-flex p-1 bg-stone-100 rounded-xl text-xs font-medium max-w-full overflow-x-auto no-scrollbar shrink-0">
                 <button
                   type="button"
                   onClick={() => setStatusFilter('all')}
@@ -576,7 +576,7 @@ export function PurchaseOrdersClientView({
                 onClick={handleOpenBlankCreate}
                 icon={<Plus className="w-4 h-4" />}
                 size="md"
-                className="shrink-0 whitespace-nowrap shadow-xs cursor-pointer rounded-xl bg-stone-900 text-white hover:bg-stone-800"
+                className="w-full sm:w-auto shrink-0 whitespace-nowrap shadow-xs cursor-pointer rounded-xl bg-stone-900 text-white hover:bg-stone-800"
               >
                 สร้างลิสต์ไปซื้อของใหม่
               </Button>

@@ -204,7 +204,7 @@ export default function BrandingSettings() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-xs">
+      <div className="bg-white rounded-3xl p-4 sm:p-6 border border-stone-200/90 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-stone-100">
           <div className="flex items-center gap-3">
             <div>
@@ -225,7 +225,7 @@ export default function BrandingSettings() {
           </div>
 
           {stores.length > 1 && (
-            <div className="flex items-center gap-2 bg-stone-50 p-1.5 rounded-2xl border border-stone-200/80 shrink-0">
+            <div className="flex items-center justify-between sm:justify-start gap-2 bg-stone-50 p-1.5 rounded-2xl border border-stone-200/80 shrink-0">
               <span className="text-xs font-normal text-stone-600 pl-1">ร้าน:</span>
               <Dropdown
                 value={selectedStoreId || currentStore.id}
@@ -269,30 +269,60 @@ export default function BrandingSettings() {
                       className={`object-contain p-3 ${
                         img.key === 'og_image' ? 'max-h-32 w-full' : 'max-h-24 max-w-24'
                       }`}
+                      onError={(e) => {
+                        // Fallback on load error
+                        (e.target as HTMLElement).style.display = 'none';
+                        const parent = (e.target as HTMLElement).parentElement;
+                        if (parent) {
+                          const fallback = parent.querySelector('.img-fallback-placeholder');
+                          if (fallback) fallback.classList.remove('hidden');
+                        }
+                      }}
                     />
-                  ) : (
-                    <div className="flex flex-col items-center gap-2 text-stone-300">
-                      {img.key === 'og_image' ? (
-                        <Globe className="w-10 h-10" />
-                      ) : (
-                        <ImageIcon className="w-10 h-10" />
-                      )}
-                      <span className="text-[10px] font-medium text-stone-400">ยังไม่มีรูป</span>
-                    </div>
-                  )}
+                  ) : null}
 
-                  {/* Upload overlay on hover */}
+                  <div
+                    className={`img-fallback-placeholder flex flex-col items-center gap-2 text-stone-300 ${
+                      displayUrl ? 'hidden' : ''
+                    }`}
+                  >
+                    {img.key === 'og_image' ? (
+                      <Globe className="w-10 h-10" />
+                    ) : (
+                      <ImageIcon className="w-10 h-10" />
+                    )}
+                    <span className="text-[10px] font-medium text-stone-400">
+                      {displayUrl ? 'โหลดรูปไม่สำเร็จ' : 'ยังไม่มีรูป'}
+                    </span>
+                  </div>
+
+                  {/* Upload overlay on hover and visible on touch */}
                   <button
                     type="button"
                     onClick={() => fileRefs.current[img.key]?.click()}
                     disabled={saving}
                     className="absolute inset-0 flex items-center justify-center bg-stone-900/0 hover:bg-stone-900/60 transition-all cursor-pointer group"
                   >
-                    <span className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 text-white text-xs font-medium bg-stone-900/80 px-3 py-1.5 rounded-full backdrop-blur-sm">
+                    <span className="opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center gap-1.5 text-white text-xs font-medium bg-stone-900/85 px-3 py-1.5 rounded-full backdrop-blur-sm shadow-xs">
                       <Upload className="w-3.5 h-3.5" />
                       {displayUrl ? 'เปลี่ยนรูป' : 'เลือกรูป'}
                     </span>
                   </button>
+
+                  {/* Cancel pending button */}
+                  {pending && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCancelPending(img.key);
+                      }}
+                      className="absolute top-2 right-2 z-10 p-1 rounded-full bg-white/90 text-stone-600 hover:text-stone-900 hover:bg-white shadow-xs border border-stone-200 transition-all"
+                      title="ยกเลิกรูปที่เลือก"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
 
                 {/* Info */}
@@ -301,7 +331,7 @@ export default function BrandingSettings() {
                     <span className="font-semibold text-stone-900 text-xs">{img.label}</span>
                     {pending ? (
                       <span className="inline-flex items-center gap-1 text-[10px] text-amber-700 font-medium bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                        เลือกรูปแล้ว
+                        รอการบันทึก
                       </span>
                     ) : img.currentUrl ? (
                       <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-600 font-medium bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-200">
@@ -310,9 +340,8 @@ export default function BrandingSettings() {
                     ) : null}
                   </div>
                   <p className="text-[11px] text-stone-500 leading-relaxed">{img.description}</p>
-                  <div className="flex items-center gap-3 text-[10px] text-stone-400 pt-1">
-                    <span>แนะนำ: {img.recommended}</span>
-                    <span>&middot;</span>
+                  <div className="flex items-center justify-between text-[10px] text-stone-400 pt-1">
+                    <span>{img.recommended}</span>
                     <span>ไม่เกิน {img.maxSize}</span>
                   </div>
                 </div>
@@ -332,15 +361,16 @@ export default function BrandingSettings() {
 
         {/* Save Bar */}
         {hasPendingChanges && (
-          <div className="mt-6 pt-4 border-t border-stone-100 flex items-center justify-between bg-stone-50 p-4 rounded-2xl border border-stone-200/80 animate-in fade-in duration-200">
-            <div className="flex items-center gap-2 text-xs text-stone-600">
+          <div className="mt-6 pt-4 border-t border-stone-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between bg-stone-50 p-3.5 sm:p-4 rounded-2xl border border-stone-200/80 animate-in fade-in duration-200 gap-3">
+            <div className="text-xs text-stone-600 font-medium">
+              มีรูปภาพรอการบันทึก ({Object.keys(pendingFiles).length} รูป)
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2">
               <button
                 type="button"
                 onClick={() => setPendingFiles({})}
                 disabled={saving}
-                className="px-3 py-1.5 text-xs text-stone-600 hover:text-stone-800 hover:bg-stone-200/60 rounded-xl transition-colors cursor-pointer"
+                className="px-3 py-2 text-xs text-stone-600 hover:text-stone-800 hover:bg-stone-200/60 rounded-xl transition-colors cursor-pointer text-center min-h-[38px]"
               >
                 ยกเลิกทั้งหมด
               </button>
@@ -349,7 +379,7 @@ export default function BrandingSettings() {
                 size="sm"
                 onClick={handleSaveAll}
                 disabled={saving}
-                className="gap-1.5"
+                className="gap-1.5 justify-center min-h-[38px]"
               >
                 {saving ? (
                   <>

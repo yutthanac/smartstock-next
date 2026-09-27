@@ -17,31 +17,30 @@ export function DynamicBranding() {
 
     // 1. Update Favicon dynamically
     if (activeStore.favicon_url) {
-      // Browsers aggressively cache favicons; removing old elements and appending a fresh one with timestamp forces update
-      const existingIcons = document.querySelectorAll<HTMLLinkElement>(
-        "link[rel='icon'], link[rel='shortcut icon'], link[rel='alternate icon'], link[rel='apple-touch-icon']"
-      );
-      existingIcons.forEach((el) => el.remove());
+      try {
+        const urlWithCacheBust = activeStore.favicon_url.includes('?')
+          ? `${activeStore.favicon_url}&v=${Date.now()}`
+          : `${activeStore.favicon_url}?v=${Date.now()}`;
 
-      const urlWithCacheBust = activeStore.favicon_url.includes('?')
-        ? `${activeStore.favicon_url}&v=${Date.now()}`
-        : `${activeStore.favicon_url}?v=${Date.now()}`;
+        let linkIcon = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
+        if (!linkIcon) {
+          linkIcon = document.createElement('link');
+          linkIcon.rel = 'icon';
+          document.head.appendChild(linkIcon);
+        }
+        linkIcon.type = activeStore.favicon_url.endsWith('.ico') ? 'image/x-icon' : 'image/png';
+        linkIcon.href = urlWithCacheBust;
 
-      const linkIcon = document.createElement('link');
-      linkIcon.rel = 'icon';
-      linkIcon.type = activeStore.favicon_url.endsWith('.ico') ? 'image/x-icon' : 'image/png';
-      linkIcon.href = urlWithCacheBust;
-      document.head.appendChild(linkIcon);
-
-      const linkShortcut = document.createElement('link');
-      linkShortcut.rel = 'shortcut icon';
-      linkShortcut.href = urlWithCacheBust;
-      document.head.appendChild(linkShortcut);
-
-      const linkApple = document.createElement('link');
-      linkApple.rel = 'apple-touch-icon';
-      linkApple.href = urlWithCacheBust;
-      document.head.appendChild(linkApple);
+        let linkApple = document.querySelector<HTMLLinkElement>("link[rel='apple-touch-icon']");
+        if (!linkApple) {
+          linkApple = document.createElement('link');
+          linkApple.rel = 'apple-touch-icon';
+          document.head.appendChild(linkApple);
+        }
+        linkApple.href = urlWithCacheBust;
+      } catch {
+        // Safe fallback
+      }
     }
 
     // 2. Update Open Graph Image

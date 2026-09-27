@@ -236,40 +236,40 @@ export function SalesReportClientView({
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-4 rounded-2xl border border-stone-200/80 shadow-2xs">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200/80 shadow-2xs">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-stone-500">ยอดขายรวม</span>
               <BarChart3 className="w-4 h-4 text-stone-400" />
             </div>
-            <div className="text-2xl font-bold text-stone-900 font-mono tabular-nums">฿{(refundStats?.gross_sales ?? totalSales).toLocaleString()}</div>
+            <div className="text-lg sm:text-2xl font-bold text-stone-900 font-mono tabular-nums">฿{(refundStats?.gross_sales ?? totalSales).toLocaleString()}</div>
             <div className="text-xs text-stone-400 mt-1 font-mono">{totalOrderCount} บิล</div>
           </div>
 
-          <div className="bg-white p-4 rounded-2xl border border-stone-200/80 shadow-2xs">
+          <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200/80 shadow-2xs">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-stone-500">กำไรสุทธิ</span>
               <TrendingUp className="w-4 h-4 text-stone-400" />
             </div>
-            <div className="text-2xl font-bold text-stone-900 font-mono tabular-nums">฿{totalProfit.toLocaleString()}</div>
+            <div className="text-lg sm:text-2xl font-bold text-stone-900 font-mono tabular-nums">฿{totalProfit.toLocaleString()}</div>
             <div className="text-xs text-stone-500 mt-1 font-semibold">Margin {profitMargin}%</div>
           </div>
 
-          <div className="bg-white p-4 rounded-2xl border border-rose-200/80 shadow-2xs">
+          <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-rose-200/80 shadow-2xs">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-rose-500">ยอดคืนเงิน</span>
               <ArrowDownLeft className="w-4 h-4 text-rose-400" />
             </div>
-            <div className="text-2xl font-bold text-rose-600 font-mono tabular-nums">-฿{Math.max(0, (refundStats?.refund_total ?? 0) - mistakeStats.total).toLocaleString()}</div>
+            <div className="text-lg sm:text-2xl font-bold text-rose-600 font-mono tabular-nums">-฿{Math.max(0, (refundStats?.refund_total ?? 0) - mistakeStats.total).toLocaleString()}</div>
             <div className="text-xs text-rose-400 mt-1 font-mono">{Math.max(0, (refundStats?.refund_count ?? 0) - mistakeStats.count)} บิล</div>
           </div>
 
-          <div className="bg-white p-4 rounded-2xl border border-stone-200/80 shadow-2xs">
+          <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200/80 shadow-2xs">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-stone-500">ยอดขายสุทธิ</span>
               <Receipt className="w-4 h-4 text-stone-400" />
             </div>
-            <div className="text-2xl font-bold text-stone-900 font-mono tabular-nums">฿{(refundStats?.net_sales ?? totalSales).toLocaleString()}</div>
+            <div className="text-lg sm:text-2xl font-bold text-stone-900 font-mono tabular-nums">฿{(refundStats?.net_sales ?? totalSales).toLocaleString()}</div>
             <div className="text-xs text-stone-400 mt-1">หลังหักยอดคืน</div>
           </div>
         </div>

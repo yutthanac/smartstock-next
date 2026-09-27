@@ -183,32 +183,39 @@ export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
       <div className="print-modal-card bg-white rounded-2xl max-w-4xl w-full shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[92vh] print:max-h-none print:shadow-none print:border-none print:rounded-none">
         
         {/* Top Control Bar (Screen only) */}
-        <div className="flex items-center justify-between px-6 py-4 bg-stone-50 border-b border-stone-200 print:hidden">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-stone-100 border border-stone-200/80 text-stone-700 flex items-center justify-center font-normal">
-              <ShoppingBag className="w-5 h-5" />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-3 sm:px-6 sm:py-4 bg-stone-50 border-b border-stone-200 print:hidden gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-stone-100 border border-stone-200/80 text-stone-700 flex items-center justify-center shrink-0">
+                <ShoppingBag className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-semibold text-stone-900 text-sm sm:text-base truncate">
+                  ใบจ่ายตลาด: <span className="font-bold">{po.store_name}</span>
+                </h3>
+                <p className="text-[11px] sm:text-xs text-stone-500">
+                  เลขที่: <span className="font-mono tabular-nums font-semibold">{po.id}</span> • วันที่: <span className="font-mono tabular-nums">{po.date}</span>
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-semibold text-stone-900 text-base flex items-center gap-2">
-                ใบจ่ายตลาด: <span className="text-stone-900 font-semibold">{po.store_name}</span>
-              </h3>
-              <p className="text-xs text-stone-500">
-                เลขที่: <span className="font-mono tabular-nums font-semibold">{po.id}</span> • วันที่: <span className="font-mono tabular-nums">{po.date}</span>
-                <span className="hidden sm:inline text-stone-400 ml-2">• เลือก "บันทึกเป็น PDF" ในหน้าต่างพิมพ์</span>
-              </p>
-            </div>
+            <button
+              onClick={onClose}
+              className="sm:hidden p-1.5 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer shrink-0"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-end gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap">
             {po.status === 'pending' && onMarkCompleted && (
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => onMarkCompleted(po.id)}
-                icon={<CheckCircle2 className="w-4 h-4 text-emerald-600" />}
-                className="hidden sm:inline-flex rounded-xl border-stone-200 text-stone-700 hover:bg-stone-100"
+                icon={<CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
+                className="rounded-xl border-stone-200 text-stone-700 hover:bg-stone-100 text-xs py-1.5"
               >
-                ซื้อของครบแล้ว
+                ซื้อครบแล้ว
               </Button>
             )}
 
@@ -216,26 +223,26 @@ export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
               variant="outline"
               size="sm"
               onClick={handleExportCSV}
-              icon={<Download className="w-4 h-4 text-stone-600" />}
-              className="rounded-xl border-stone-200 text-stone-700 hover:bg-stone-100"
+              icon={<Download className="w-3.5 h-3.5 text-stone-600" />}
+              className="rounded-xl border-stone-200 text-stone-700 hover:bg-stone-100 text-xs py-1.5"
             >
-              Export CSV
+              CSV
             </Button>
 
             <Button
               variant="primary"
               size="sm"
               onClick={handlePrint}
-              icon={<Printer className="w-4 h-4" />}
-              className="rounded-xl bg-stone-900 text-white hover:bg-stone-800"
+              icon={<Printer className="w-3.5 h-3.5" />}
+              className="rounded-xl bg-stone-900 text-white hover:bg-stone-800 text-xs py-1.5 flex-1 sm:flex-initial justify-center"
               title="พิมพ์เอกสาร หรือเลือก 'บันทึกเป็น PDF (Save as PDF)'"
             >
-              พิมพ์ / บันทึก PDF (Print)
+              พิมพ์ / PDF
             </Button>
 
             <button
               onClick={onClose}
-              className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
+              className="hidden sm:inline-flex p-1.5 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -244,35 +251,35 @@ export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
 
         {/* Printable Shopping List Document */}
         <div 
-          className="print-sheet p-6 sm:p-8 overflow-y-auto print:overflow-visible print:p-0 bg-white text-stone-800 text-sm leading-normal space-y-4 print:space-y-4"
+          className="print-sheet p-4 sm:p-8 overflow-y-auto print:overflow-visible print:p-0 bg-white text-stone-800 text-sm leading-normal space-y-4 print:space-y-4"
           style={{ fontFamily: "var(--font-sarabun), 'TH Sarabun New', 'TH Sarabun PSK', Sarabun, sans-serif" }}
         >
           
           {/* Header Title */}
-          <div className="flex justify-between items-start border-b-2 border-stone-900 pb-3">
+          <div className="flex justify-between items-start border-b-2 border-stone-900 pb-3 gap-2">
             <div>
-              <p className="text-xs uppercase font-bold text-stone-500 tracking-wider">SmartStock System</p>
-              <h1 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight mt-0.5">
+              <p className="text-[11px] sm:text-xs uppercase font-bold text-stone-500 tracking-wider">SmartStock System</p>
+              <h1 className="text-lg sm:text-2xl font-black text-stone-900 tracking-tight mt-0.5">
                 ใบรายการไปซื้อของ / จ่ายตลาด
               </h1>
-              <p className="text-stone-500 text-xs mt-0.5">Shopping Checklist สำหรับพกพาหรือมอบหมายพนักงาน</p>
+              <p className="text-stone-500 text-[11px] sm:text-xs mt-0.5">Shopping Checklist สำหรับพกพาหรือมอบหมายพนักงาน</p>
             </div>
 
-            <div className="text-right space-y-1">
-              <p className="font-mono tabular-nums font-bold text-sm sm:text-base text-stone-900">
+            <div className="text-right space-y-0.5 sm:space-y-1 shrink-0">
+              <p className="font-mono tabular-nums font-bold text-xs sm:text-base text-stone-900">
                 เลขที่: <span className="font-extrabold">{po.id}</span>
               </p>
-              <p className="text-stone-600 text-xs sm:text-sm">
+              <p className="text-stone-600 text-[11px] sm:text-sm">
                 วันที่ซื้อ: <span className="font-bold text-stone-800 font-mono tabular-nums">{po.date}</span>
               </p>
-              <p className="text-xs text-stone-500 font-medium">
+              <p className="text-[11px] sm:text-xs text-stone-500 font-medium">
                 สถานะ: {po.status === 'completed' ? '✓ ซื้อครบแล้ว' : '⏳ รอออกไปซื้อ'}
               </p>
             </div>
           </div>
 
           {/* Quick Info Bar */}
-          <div className="grid grid-cols-3 gap-3 p-3.5 rounded-xl bg-stone-50 border border-stone-200 text-xs sm:text-sm print:bg-white">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 p-3.5 rounded-xl bg-stone-50 border border-stone-200 text-xs sm:text-sm print:bg-white print:grid-cols-3">
             <div>
               <span className="text-stone-500 block text-xs">ร้านค้า / ตลาดเป้าหมาย:</span>
               <span className="font-bold text-stone-900 text-sm sm:text-base block mt-0.5">
@@ -285,7 +292,7 @@ export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
                 {po.buyer_name || 'พนักงานร้าน'}
               </span>
             </div>
-            <div className="text-right">
+            <div className="sm:text-right">
               <span className="text-stone-500 block text-xs">งบประมาณโดยประมาณ:</span>
               <span className="font-black text-[#78350f] text-sm sm:text-base block mt-0.5 font-mono tabular-nums print:text-black">
                 {poTotalAmount > 0
@@ -296,8 +303,8 @@ export const POPrintViewModal: React.FC<POPrintViewModalProps> = ({
           </div>
 
           {/* Checklist Items Table */}
-          <div className="border border-stone-200 rounded-xl overflow-hidden">
-            <table className="w-full text-left border-collapse text-xs sm:text-sm">
+          <div className="border border-stone-200 rounded-xl overflow-x-auto print:overflow-visible">
+            <table className="w-full min-w-[550px] print:min-w-0 text-left border-collapse text-xs sm:text-sm">
               <thead>
                 <tr className="bg-stone-100 border-b border-stone-200 text-stone-800 font-semibold text-xs uppercase">
                   <th className="py-2.5 px-3 w-12 text-center">ติ๊ก</th>

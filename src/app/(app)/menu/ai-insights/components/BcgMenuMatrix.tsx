@@ -468,7 +468,7 @@ export function BcgMenuMatrix({
 
         {/* Table View */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <table className="w-full min-w-[640px] text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-stone-200/80 text-[11px] text-stone-500 font-semibold bg-stone-50/60">
                 <th className="py-3 px-4">ชื่อเมนู</th>

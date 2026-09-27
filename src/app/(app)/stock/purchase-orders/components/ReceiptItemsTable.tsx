@@ -72,8 +72,8 @@ export const ReceiptItemsTable: React.FC<ReceiptItemsTableProps> = ({
       </div>
 
       {/* Table Container */}
-      <div className="border border-stone-200 rounded-xl overflow-hidden shadow-2xs">
-        <table className="w-full text-left text-xs">
+      <div className="border border-stone-200 rounded-xl overflow-x-auto shadow-2xs">
+        <table className="w-full min-w-[620px] text-left text-xs">
           <thead>
             <tr className="bg-stone-100 text-stone-800 font-semibold border-b border-stone-200 uppercase text-[11px]">
               <th className="py-2.5 px-3">จับคู่วัตถุดิบในคลัง</th>

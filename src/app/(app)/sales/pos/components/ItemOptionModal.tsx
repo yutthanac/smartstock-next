@@ -323,10 +323,10 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
       <form
         onSubmit={handleSave}
-        className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs border border-stone-200 animate-scale-in"
+        className="bg-white rounded-2xl max-w-md w-full p-4 sm:p-6 shadow-2xl space-y-4 text-xs border border-stone-200 animate-scale-in max-h-[94vh] overflow-y-auto my-auto"
       >
         <div className="flex items-center justify-between pb-3 border-b border-stone-100">
           <div className="flex items-center gap-2.5">
@@ -661,15 +661,15 @@ export const ItemOptionModal: React.FC<ItemOptionModalProps> = ({
           </div>
         </div>
 
-        <div className="pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
+        <div className="pt-3 border-t border-stone-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sticky bottom-0 bg-white/95 backdrop-blur-xs -mb-2 pb-1">
           <span className="text-xs text-stone-500">
             ราคารวม: <span className="font-bold text-stone-900 font-mono tabular-nums text-sm">฿{currentPrice.toFixed(2)}</span>
           </span>
-          <div className="flex gap-2">
-            <Button type="button" variant="outline" onClick={onClose} className="rounded-xl border-stone-300 text-stone-700 hover:bg-stone-100">
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button type="button" variant="outline" onClick={onClose} className="flex-1 sm:flex-initial rounded-xl border-stone-300 text-stone-700 hover:bg-stone-100">
               ยกเลิก
             </Button>
-            <Button type="submit" variant="primary" className="rounded-xl bg-stone-900 text-white hover:bg-stone-800">
+            <Button type="submit" variant="primary" className="flex-1 sm:flex-initial rounded-xl bg-stone-900 text-white hover:bg-stone-800">
               ยืนยัน
             </Button>
           </div>

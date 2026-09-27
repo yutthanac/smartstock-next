@@ -415,11 +415,11 @@ export function RolesClientView({ initialRolesData }: RolesClientViewProps) {
         )}
 
         {/* Top Control Bar: Store Selector + View Mode + Add Role */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white rounded-2xl border border-stone-200/90 shadow-2xs p-3.5">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-stone-100 border border-stone-200 text-stone-700 text-xs font-medium">
-              <StoreIcon className="w-3.5 h-3.5 text-stone-500" />
-              <span>ร้าน:</span>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white rounded-2xl border border-stone-200/90 shadow-2xs p-3 sm:p-3.5">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-stone-100 border border-stone-200 text-stone-700 text-xs font-medium max-w-full">
+              <StoreIcon className="w-3.5 h-3.5 text-stone-500 shrink-0" />
+              <span className="shrink-0">ร้าน:</span>
               {isAdmin && stores.length > 1 ? (
                 <select
                   value={selectedStoreId || ''}
@@ -428,7 +428,7 @@ export function RolesClientView({ initialRolesData }: RolesClientViewProps) {
                     setSelectedStoreId(sid);
                     fetchRoleData(sid);
                   }}
-                  className="bg-transparent font-bold text-stone-900 focus:outline-none cursor-pointer pr-1"
+                  className="bg-transparent font-bold text-stone-900 focus:outline-none cursor-pointer pr-1 text-xs truncate max-w-[160px] sm:max-w-none"
                 >
                   {stores.map((s) => (
                     <option key={s.id} value={s.id}>
@@ -437,32 +437,32 @@ export function RolesClientView({ initialRolesData }: RolesClientViewProps) {
                   ))}
                 </select>
               ) : (
-                <span className="font-bold text-stone-900">{currentStoreName}</span>
+                <span className="font-bold text-stone-900 truncate">{currentStoreName}</span>
               )}
             </div>
 
             {isAdmin ? (
               <span className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">
-                Admin: สิทธิ์จัดการทุกร้าน
+                Admin: สิทธิ์ทุกร้าน
               </span>
             ) : (
               <span className="text-[11px] text-stone-500 bg-stone-50 border border-stone-200 px-2 py-0.5 rounded-full font-medium">
-                จัดการเฉพาะร้านของคุณ
+                ร้านของคุณ
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-2 self-end sm:self-auto">
+          <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
             <button
               type="button"
               onClick={() => setIsAddModalOpen(true)}
-              className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-stone-900 text-white hover:bg-stone-800 transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+              className="flex-1 sm:flex-initial px-3 py-1.5 rounded-xl text-xs font-semibold bg-stone-900 text-white hover:bg-stone-800 transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer min-h-[36px]"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>เพิ่มตำแหน่งใหม่</span>
+              <Plus className="w-3.5 h-3.5 shrink-0" />
+              <span className="whitespace-nowrap">เพิ่มตำแหน่ง</span>
             </button>
 
-            <div className="inline-flex rounded-xl border border-stone-200/80 p-1 bg-stone-100 gap-1">
+            <div className="inline-flex rounded-xl border border-stone-200/80 p-1 bg-stone-100 gap-1 shrink-0">
               <button
                 type="button"
                 onClick={() => setViewMode('card')}
@@ -472,7 +472,7 @@ export function RolesClientView({ initialRolesData }: RolesClientViewProps) {
                     : 'text-stone-500 hover:text-stone-800'
                 }`}
               >
-                ดูตามบทบาท
+                ตามบทบาท
               </button>
               <button
                 type="button"
@@ -483,7 +483,7 @@ export function RolesClientView({ initialRolesData }: RolesClientViewProps) {
                     : 'text-stone-500 hover:text-stone-800'
                 }`}
               >
-                ตารางสิทธิ์รวม
+                ตารางสิทธิ์
               </button>
             </div>
           </div>
@@ -491,9 +491,45 @@ export function RolesClientView({ initialRolesData }: RolesClientViewProps) {
 
         {/* CARD VIEW */}
         {viewMode === 'card' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Left Column: Role Selector */}
-            <div className="lg:col-span-4 space-y-3">
+          <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-12 lg:gap-6">
+            {/* Mobile Role Switcher (horizontal scroll) */}
+            <div className="lg:hidden space-y-1.5">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-stone-500">
+                  เลือกตำแหน่ง ({roles.length})
+                </span>
+                <span className="text-[10px] text-stone-400">เลื่อนซ้าย-ขวา</span>
+              </div>
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                {roles.map((role) => {
+                  const isSelected = selectedRole?.id === role.id;
+                  return (
+                    <button
+                      key={role.id}
+                      type="button"
+                      onClick={() => handleSelectRole(role)}
+                      className={`shrink-0 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center gap-2 min-h-[40px] cursor-pointer ${
+                        isSelected
+                          ? 'bg-stone-900 text-white border-stone-900 shadow-sm'
+                          : 'bg-white text-stone-700 border-stone-200 hover:border-stone-300'
+                      }`}
+                    >
+                      <span className="whitespace-nowrap">{role.display_name}</span>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${
+                          isSelected ? 'bg-stone-800 text-stone-200' : 'bg-stone-100 text-stone-600'
+                        }`}
+                      >
+                        {role.permissions?.length || 0}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Left Column: Desktop Role Selector */}
+            <div className="hidden lg:block lg:col-span-4 space-y-3">
               <div className="flex items-center justify-between px-1">
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-500">
                   ตำแหน่งทั้งหมด ({roles.length})
@@ -573,7 +609,7 @@ export function RolesClientView({ initialRolesData }: RolesClientViewProps) {
             </div>
 
             {/* Right Column: Permission Details & Editor */}
-            <div className="lg:col-span-8 bg-white rounded-3xl p-6 border border-stone-200/90 shadow-xs space-y-6">
+            <div className="lg:col-span-8 bg-white rounded-3xl p-4 sm:p-6 border border-stone-200/90 shadow-xs space-y-6">
               {selectedRole ? (
                 <>
                   {/* Selected Role Header / Inline Editor */}
@@ -581,7 +617,7 @@ export function RolesClientView({ initialRolesData }: RolesClientViewProps) {
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                       <div className="flex-1 w-full space-y-1.5">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+                          <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider shrink-0">
                             ตำแหน่ง:
                           </span>
                           <input
@@ -589,7 +625,7 @@ export function RolesClientView({ initialRolesData }: RolesClientViewProps) {
                             value={editDisplayName}
                             onChange={(e) => setEditDisplayName(e.target.value)}
                             disabled={selectedRole.name === 'admin'}
-                            className="text-lg font-bold text-stone-900 border-b border-dashed border-stone-300 focus:border-stone-900 focus:outline-none bg-transparent px-1 py-0.5 w-full max-w-sm disabled:border-transparent"
+                            className="text-base sm:text-lg font-bold text-stone-900 border-b border-dashed border-stone-300 focus:border-stone-900 focus:outline-none bg-transparent px-1 py-0.5 w-full max-w-sm disabled:border-transparent"
                             placeholder="ชื่อตำแหน่ง..."
                           />
                         </div>
@@ -603,16 +639,29 @@ export function RolesClientView({ initialRolesData }: RolesClientViewProps) {
                         />
                       </div>
 
-                      <Button
-                        onClick={handleSavePermissions}
-                        disabled={saving || selectedRole.name === 'admin'}
-                        isLoading={saving}
-                        variant="primary"
-                        icon={<Save className="w-4 h-4" />}
-                        className="shrink-0 whitespace-nowrap cursor-pointer"
-                      >
-                        บันทึกการเปลี่ยนแปลง
-                      </Button>
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        {!selectedRole.is_system && (
+                          <button
+                            type="button"
+                            onClick={() => setRoleToDelete(selectedRole)}
+                            className="lg:hidden px-3 py-2.5 rounded-xl text-xs font-medium text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100 transition-colors flex items-center justify-center gap-1.5 shrink-0 min-h-[40px] cursor-pointer"
+                            title="ลบตำแหน่งนี้"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>ลบ</span>
+                          </button>
+                        )}
+                        <Button
+                          onClick={handleSavePermissions}
+                          disabled={saving || selectedRole.name === 'admin'}
+                          isLoading={saving}
+                          variant="primary"
+                          icon={<Save className="w-4 h-4" />}
+                          className="w-full sm:w-auto shrink-0 whitespace-nowrap cursor-pointer justify-center min-h-[40px]"
+                        >
+                          บันทึกการเปลี่ยนแปลง
+                        </Button>
+                      </div>
                     </div>
 
                     {selectedRole.name === 'admin' && (
@@ -773,8 +822,8 @@ export function RolesClientView({ initialRolesData }: RolesClientViewProps) {
 
       {/* MODAL: Add New Role */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-2xl max-w-md w-full space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/40 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-3xl p-4 sm:p-6 border border-stone-200 shadow-2xl max-w-md w-full space-y-4 max-h-[96vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-stone-100">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-stone-900" />
@@ -783,7 +832,7 @@ export function RolesClientView({ initialRolesData }: RolesClientViewProps) {
               <button
                 type="button"
                 onClick={() => setIsAddModalOpen(false)}
-                className="text-stone-400 hover:text-stone-600 cursor-pointer"
+                className="text-stone-400 hover:text-stone-600 cursor-pointer p-1 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -834,11 +883,12 @@ export function RolesClientView({ initialRolesData }: RolesClientViewProps) {
                 </select>
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-2">
+              <div className="pt-2 flex flex-col-reverse sm:flex-row items-stretch sm:items-center sm:justify-end gap-2">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setIsAddModalOpen(false)}
+                  className="w-full sm:w-auto justify-center"
                 >
                   ยกเลิก
                 </Button>
@@ -846,6 +896,7 @@ export function RolesClientView({ initialRolesData }: RolesClientViewProps) {
                   type="submit"
                   variant="primary"
                   isLoading={isCreatingRole}
+                  className="w-full sm:w-auto justify-center"
                 >
                   สร้างตำแหน่ง
                 </Button>
@@ -857,8 +908,8 @@ export function RolesClientView({ initialRolesData }: RolesClientViewProps) {
 
       {/* MODAL: Delete Confirmation */}
       {roleToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-2xl max-w-sm w-full space-y-4 text-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/40 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-3xl p-5 sm:p-6 border border-stone-200 shadow-2xl max-w-sm w-full space-y-4 text-center max-h-[96vh] overflow-y-auto">
             <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
               <AlertTriangle className="w-6 h-6" />
             </div>
@@ -870,11 +921,12 @@ export function RolesClientView({ initialRolesData }: RolesClientViewProps) {
               </p>
             </div>
 
-            <div className="flex items-center justify-center gap-2 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center sm:justify-center gap-2 pt-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setRoleToDelete(null)}
+                className="w-full sm:w-auto justify-center"
               >
                 ยกเลิก
               </Button>
@@ -883,6 +935,7 @@ export function RolesClientView({ initialRolesData }: RolesClientViewProps) {
                 variant="danger"
                 isLoading={isDeletingRole}
                 onClick={handleDeleteRole}
+                className="w-full sm:w-auto justify-center"
               >
                 ลบตำแหน่ง
               </Button>

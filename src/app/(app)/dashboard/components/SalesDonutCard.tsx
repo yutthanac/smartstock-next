@@ -50,50 +50,51 @@ export const SalesDonutCard: React.FC<SalesDonutCardProps> = ({
   const totalCalculated = hasSales ? segments.reduce((sum, s) => sum + s.value, 0) : 0;
 
   return (
-    <div className="bg-white rounded-2xl border border-stone-200/90 shadow-xs p-6 flex flex-col justify-between">
+    <div className="bg-white rounded-3xl border border-stone-200/90 shadow-2xs p-6 flex flex-col justify-between h-full">
+      {/* Header */}
       <div className="flex items-center justify-between gap-2 mb-4">
-        <div>
-          <h3 className="font-bold text-stone-900 text-base flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-stone-100 border border-stone-200/80 flex items-center justify-center text-stone-700">
-              <PieChartIcon className="w-5 h-5" />
-            </div>
-            สัดส่วนรายได้ & ต้นทุน
-          </h3>
-        </div>
-        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#f5efe6] text-[#78350f] border border-[#e8ded0]">
+        <h3 className="font-semibold text-stone-900 text-base flex items-center gap-2.5">
+          <div className="w-10 h-10 rounded-2xl bg-stone-50 border border-stone-200/80 flex items-center justify-center text-stone-700 shadow-2xs">
+            <PieChartIcon className="w-5 h-5 text-stone-700" />
+          </div>
+          สัดส่วนรายได้ & ต้นทุน
+        </h3>
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#fbf7f0] text-[#78350f] border border-[#f0e6d6]">
           กำไร {marginPercent}%
         </span>
       </div>
 
       {/* Donut Chart Display */}
-      <div className="flex flex-col sm:flex-row items-center justify-around gap-6 my-2">
-        <DonutChart
-          data={segments}
-          size={210}
-          strokeWidth={22}
-          animationDuration={1.2}
-          onSegmentHover={setHovered}
-          centerContent={
-            <div className="text-center">
-              <span className="text-xs font-medium text-stone-400 uppercase tracking-wider block">
-                {hovered ? hovered.label.split(' ')[0] : 'ยอดขายรวม'}
-              </span>
-              <span className="text-2xl font-bold text-stone-900 block mt-0.5 font-mono tabular-nums">
-                ฿{hovered && hasSales ? hovered.value.toLocaleString() : totalCalculated.toLocaleString()}
-              </span>
-              <span className="text-xs text-stone-600 font-medium block mt-0.5">
-                {hasSales
-                  ? hovered
-                    ? `${Math.round((hovered.value / (totalCalculated || 1)) * 100)}% ของทั้งหมด`
-                    : `อัตรากำไร ${marginPercent}%`
-                  : 'ยังไม่มีออเดอร์วันนี้'}
-              </span>
-            </div>
-          }
-        />
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-6 my-auto py-2">
+        <div className="flex justify-center shrink-0">
+          <DonutChart
+            data={segments}
+            size={190}
+            strokeWidth={22}
+            animationDuration={1.2}
+            onSegmentHover={setHovered}
+            centerContent={
+              <div className="text-center px-2">
+                <span className="text-[11px] font-medium text-stone-400 block tracking-tight">
+                  {hovered ? hovered.label : 'ยอดขายรวม'}
+                </span>
+                <span className="text-2xl font-bold text-stone-900 block mt-0.5 font-mono tabular-nums leading-none">
+                  ฿{hovered && hasSales ? hovered.value.toLocaleString() : totalCalculated.toLocaleString()}
+                </span>
+                <span className="text-[11px] text-stone-500 font-medium block mt-1">
+                  {hasSales
+                    ? hovered
+                      ? `${Math.round((hovered.value / (totalCalculated || 1)) * 100)}% ของทั้งหมด`
+                      : `อัตรากำไร ${marginPercent}%`
+                    : 'ยังไม่มีออเดอร์วันนี้'}
+                </span>
+              </div>
+            }
+          />
+        </div>
 
-        {/* Legend list */}
-        <div className="space-y-3 w-full sm:w-auto">
+        {/* Legend list - Matches reference design */}
+        <div className="space-y-4 w-full sm:w-auto min-w-[140px]">
           {hasSales ? (
             segments.map((seg, idx) => {
               const isHighlighted = hovered?.label === seg.label;
@@ -101,24 +102,25 @@ export const SalesDonutCard: React.FC<SalesDonutCardProps> = ({
               return (
                 <div
                   key={idx}
-                  className={`p-3 rounded-xl transition-all ${
-                    isHighlighted ? 'bg-stone-100/90 ring-1 ring-stone-300' : 'hover:bg-stone-50'
+                  className={`flex items-center justify-between gap-4 py-1.5 px-2 rounded-xl transition-all ${
+                    isHighlighted ? 'bg-stone-100/80 ring-1 ring-stone-200' : 'hover:bg-stone-50/70'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-5 text-sm">
-                    <div className="flex items-center gap-2.5">
-                      <span
-                        className="w-3.5 h-3.5 rounded-full shrink-0 shadow-xs"
-                        style={{ backgroundColor: seg.color }}
-                      />
-                      <span className="font-medium text-stone-800">{seg.label}</span>
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="w-3.5 h-3.5 rounded-full shrink-0 shadow-2xs"
+                      style={{ backgroundColor: seg.color }}
+                    />
+                    <div className="text-xs font-semibold text-stone-900 leading-tight">
+                      <div>{seg.label === 'กำไรสุทธิ' ? 'กำไร' : 'ต้นทุน'}</div>
+                      <div className="text-stone-700 font-normal">{seg.label === 'กำไรสุทธิ' ? 'สุทธิ' : 'วัตถุดิบ'}</div>
                     </div>
-                    <div className="text-right">
-                      <span className="font-mono tabular-nums font-semibold text-stone-900 block text-sm">
-                        ฿{seg.value.toLocaleString()}
-                      </span>
-                      <span className="text-xs text-stone-400 font-normal">({pct}%)</span>
-                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-mono tabular-nums font-bold text-stone-900 block text-sm leading-tight">
+                      ฿{seg.value.toLocaleString()}
+                    </span>
+                    <span className="text-[11px] text-stone-400 font-medium">({pct}%)</span>
                   </div>
                 </div>
               );

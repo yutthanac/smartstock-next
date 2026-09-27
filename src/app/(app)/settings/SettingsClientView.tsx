@@ -111,10 +111,10 @@ export function SettingsClientView({ initialUnits, initialStores }: SettingsClie
 
       <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-1.5 p-1 bg-stone-100 rounded-2xl w-fit border border-stone-200/80">
+        <div className="flex items-center gap-1.5 p-1 bg-stone-100 rounded-2xl w-full sm:w-fit border border-stone-200/80 max-w-full overflow-x-auto no-scrollbar">
           <button
             onClick={() => setActiveTab('sidebar')}
-            className={`px-4 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
+            className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === 'sidebar'
                 ? 'bg-stone-900 text-white shadow-xs'
                 : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
@@ -125,7 +125,7 @@ export function SettingsClientView({ initialUnits, initialStores }: SettingsClie
           </button>
           <button
             onClick={() => setActiveTab('branding')}
-            className={`px-4 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
+            className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === 'branding'
                 ? 'bg-stone-900 text-white shadow-xs'
                 : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
@@ -136,7 +136,7 @@ export function SettingsClientView({ initialUnits, initialStores }: SettingsClie
           </button>
           <button
             onClick={() => setActiveTab('stores')}
-            className={`px-4 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
+            className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === 'stores'
                 ? 'bg-stone-900 text-white shadow-xs'
                 : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
@@ -147,7 +147,7 @@ export function SettingsClientView({ initialUnits, initialStores }: SettingsClie
           </button>
           <button
             onClick={() => setActiveTab('units')}
-            className={`px-4 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
+            className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === 'units'
                 ? 'bg-stone-900 text-white shadow-xs'
                 : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'

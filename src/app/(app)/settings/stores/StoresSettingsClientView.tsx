@@ -252,14 +252,14 @@ export function StoresSettingsClientView({ initialStores }: StoresSettingsClient
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="p-3.5 sm:p-6 max-w-6xl mx-auto space-y-5 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-extrabold text-stone-900 flex items-center gap-2">
+          <h1 className="text-lg sm:text-xl font-extrabold text-stone-900 flex items-center gap-2">
             จัดการระบบร้านค้า & สิทธิ์เมนู
           </h1>
-          <p className="text-sm text-stone-500 mt-0.5">
+          <p className="text-xs sm:text-sm text-stone-500 mt-0.5">
             สร้างร้านใหม่, ปรับแต่งหน้ากาก/โลโก้, กำหนดสิทธิ์เมนู และจัดการสมาชิก
           </p>
         </div>
@@ -295,12 +295,13 @@ export function StoresSettingsClientView({ initialStores }: StoresSettingsClient
                 }`}
               >
                 {/* Store Main Row */}
-                <div className="p-4 flex items-center gap-4">
-                  {/* Store Logo or Icon */}
-                  <div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden shadow-2xs border border-stone-200/90"
-                    style={{ backgroundColor: `${sColor}15` }}
-                  >
+                <div className="p-3.5 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                  <div className="flex items-center gap-3 w-full sm:w-auto">
+                    {/* Store Logo or Icon */}
+                    <div
+                      className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden shadow-2xs border border-stone-200/90"
+                      style={{ backgroundColor: `${sColor}15` }}
+                    >
                     {store.logo_url ? (
                       <img
                         src={store.logo_url}
@@ -347,9 +348,10 @@ export function StoresSettingsClientView({ initialStores }: StoresSettingsClient
                       {store.description || 'ไม่มีคำอธิบาย'} • /{store.slug}
                     </p>
                   </div>
+                </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto flex-wrap">
                     {!isActive && (
                       <Button
                         variant="outline"

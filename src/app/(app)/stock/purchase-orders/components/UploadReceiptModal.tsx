@@ -142,32 +142,32 @@ export const UploadReceiptModal: React.FC<UploadReceiptModalProps> = ({
     <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
       <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-stone-200 overflow-hidden flex flex-col animate-scale-in">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-stone-50 border-b border-stone-200">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-stone-100 border border-stone-200 text-stone-700 flex items-center justify-center">
+        <div className="flex items-center justify-between p-4 sm:px-6 sm:py-4 bg-stone-50 border-b border-stone-200">
+          <div className="flex items-center gap-2.5 min-w-0 pr-2">
+            <div className="w-9 h-9 rounded-xl bg-stone-100 border border-stone-200 text-stone-700 flex items-center justify-center shrink-0">
               <Camera className="w-4 h-4 text-stone-700" />
             </div>
-            <div>
-              <h3 className="font-semibold text-stone-900 text-sm sm:text-base">
+            <div className="min-w-0">
+              <h3 className="font-semibold text-stone-900 text-sm sm:text-base truncate">
                 อัปโหลดรูปใบเสร็จ / บิลซื้อของ
               </h3>
-              <p className="text-xs text-stone-500">
-                สามารถแนบได้หลายรูป (เช่น บิลหลายแผ่น หรือใบเสร็จหลายร้าน)
+              <p className="text-[11px] sm:text-xs text-stone-500 truncate">
+                สามารถแนบได้หลายรูป (บิลหลายแผ่น/หลายร้าน)
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4 text-xs">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 text-xs max-h-[85vh] overflow-y-auto">
           {/* PO Info Bar */}
-          <div className="p-3 rounded-xl bg-stone-50 border border-stone-200 flex items-center justify-between">
+          <div className="p-3 rounded-xl bg-stone-50 border border-stone-200 flex items-center justify-between gap-2">
             <div>
               <div className="font-bold text-stone-900 font-mono tabular-nums text-xs">{po.id}</div>
               <div className="text-xs text-stone-500 mt-0.5">
@@ -328,19 +328,19 @@ export const UploadReceiptModal: React.FC<UploadReceiptModalProps> = ({
           </div>
 
           {/* Footer Actions */}
-          <div className="pt-3 border-t border-stone-200 flex justify-end gap-2">
+          <div className="pt-3 border-t border-stone-200 flex flex-col-reverse sm:flex-row items-stretch sm:items-center sm:justify-end gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
-              className="rounded-xl border-stone-300 text-stone-700 hover:bg-stone-100"
+              className="w-full sm:w-auto rounded-xl border-stone-300 text-stone-700 hover:bg-stone-100 justify-center min-h-[40px]"
             >
               ยกเลิก
             </Button>
             <Button
               type="submit"
               disabled={receiptImages.length === 0}
-              className="rounded-xl bg-stone-900 text-white hover:bg-stone-800"
+              className="w-full sm:w-auto rounded-xl bg-stone-900 text-white hover:bg-stone-800 justify-center min-h-[40px]"
             >
               ส่งใบเสร็จ ({receiptImages.length} รูป)
             </Button>
