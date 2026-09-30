@@ -6,6 +6,7 @@ import {
   ArrowDownRight,
   Target,
   Coffee,
+  TrendingUp,
 } from 'lucide-react';
 import { ThaiBaht } from '@/components/icons/ThaiBaht';
 import { useAuth } from '@/lib/AuthContext';
@@ -13,6 +14,8 @@ import {
   getStoredBreakEvenConfig,
   calculateBreakEven,
   BEP_UPDATED_EVENT,
+  isBreakEvenTabEnabled,
+  BEP_TAB_TOGGLE_EVENT,
 } from '@/lib/breakEven';
 import { DashboardKPI } from '@/types';
 
@@ -24,6 +27,31 @@ interface KpiCardsProps {
 export const KpiCards: React.FC<KpiCardsProps> = ({ dashboard, view = 'hero-layout' }) => {
   const { activeStore } = useAuth();
   const storeId = activeStore?.id || 'default';
+
+  // Check if Break-Even feature is published / enabled in settings
+  const [isBepEnabled, setIsBepEnabled] = useState<boolean>(() =>
+    isBreakEvenTabEnabled(activeStore?.id, activeStore?.menu_config)
+  );
+
+  useEffect(() => {
+    setIsBepEnabled(isBreakEvenTabEnabled(activeStore?.id, activeStore?.menu_config));
+  }, [activeStore?.id, activeStore?.menu_config]);
+
+  useEffect(() => {
+    const handleToggle = () => {
+      setIsBepEnabled(isBreakEvenTabEnabled(activeStore?.id, activeStore?.menu_config));
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener(BEP_TAB_TOGGLE_EVENT, handleToggle);
+      window.addEventListener('storage', handleToggle);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener(BEP_TAB_TOGGLE_EVENT, handleToggle);
+        window.removeEventListener('storage', handleToggle);
+      }
+    };
+  }, [activeStore?.id, activeStore?.menu_config]);
 
   // Load and listen for Break-Even configuration updates
   const [bepConfig, setBepConfig] = useState(() => getStoredBreakEvenConfig(storeId));
@@ -74,6 +102,12 @@ export const KpiCards: React.FC<KpiCardsProps> = ({ dashboard, view = 'hero-layo
       ? Math.min(100, Math.round((actualCupsToday / breakEvenCupsDaily) * 100))
       : 0;
 
+  const avgCupsPerOrder =
+    (dashboard.total_orders_today ?? 0) > 0
+      ? (actualCupsToday / (dashboard.total_orders_today || 1)).toFixed(1)
+      : '0';
+
+  // Left Hero Card: ยอดขายวันนี้
   const salesHeroCard = (
     <div className="bg-white rounded-3xl p-6 sm:p-8 relative overflow-hidden group w-full h-full flex flex-col justify-between border border-stone-200/90 shadow-2xs hover:border-stone-300 transition-all">
       {/* Top Header */}
@@ -124,7 +158,7 @@ export const KpiCards: React.FC<KpiCardsProps> = ({ dashboard, view = 'hero-layo
     </div>
   );
 
-  // Card 1: Progress (ความคืบหน้าจุดคุ้มทุน)
+  // Card 1 (When BEP Enabled): ความคืบหน้าจุดคุ้มทุน
   const progressCard = (
     <div className="bg-white rounded-3xl p-5 sm:p-6 relative overflow-hidden group w-full flex-1 flex flex-col justify-between border border-stone-200/90 shadow-2xs hover:border-stone-300 transition-all">
       {/* Top Header */}
@@ -167,7 +201,7 @@ export const KpiCards: React.FC<KpiCardsProps> = ({ dashboard, view = 'hero-layo
     </div>
   );
 
-  // Card 2: นับแก้ว (จำนวนแก้ววันนี้)
+  // Card 2 (When BEP Enabled): จำนวนแก้ววันนี้ (เทียบกับเป้าหมาย BEP)
   const cupsCountCard = (
     <div className="bg-white rounded-3xl p-5 sm:p-6 relative overflow-hidden group w-full flex-1 flex flex-col justify-between border border-stone-200/90 shadow-2xs hover:border-stone-300 transition-all">
       {/* Top Header */}
@@ -196,6 +230,73 @@ export const KpiCards: React.FC<KpiCardsProps> = ({ dashboard, view = 'hero-layo
     </div>
   );
 
+  // Card 1 (When BEP Disabled): กำไรสุทธิวันนี้
+  const profitCard = (
+    <div className="bg-white rounded-3xl p-5 sm:p-6 relative overflow-hidden group w-full flex-1 flex flex-col justify-between border border-stone-200/90 shadow-2xs hover:border-stone-300 transition-all">
+      {/* Top Header */}
+      <div className="flex items-center justify-between">
+        <span className="text-sm sm:text-base font-semibold text-stone-700">
+          กำไรสุทธิวันนี้
+        </span>
+        <div className="w-10 h-10 rounded-2xl bg-stone-900 text-stone-100 flex items-center justify-center shadow-xs">
+          <TrendingUp className="w-5 h-5 text-emerald-400" />
+        </div>
+      </div>
+
+      {/* Center Number */}
+      <div className="my-auto py-2">
+        <div className="text-3xl sm:text-4xl lg:text-5xl font-black text-stone-900 font-mono tracking-tight tabular-nums">
+          ฿{(dashboard.today_profit ?? 0).toLocaleString()}
+        </div>
+      </div>
+
+      {/* Bottom Summary Bar */}
+      <div className="pt-3 border-t border-stone-100 flex items-center justify-between text-xs text-stone-500 flex-wrap gap-2">
+        <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded-full font-semibold font-mono tabular-nums">
+          มาร์จิ้น {dashboard.profit_margin ?? 0}%
+        </span>
+        <span className="font-mono tabular-nums text-stone-500">
+          ต้นทุน ฿{(dashboard.today_cost ?? 0).toLocaleString()}
+        </span>
+      </div>
+    </div>
+  );
+
+  // Card 2 (When BEP Disabled): จำนวนแก้วที่ขายได้วันนี้ (โหมดปกติ)
+  const regularCupsCard = (
+    <div className="bg-white rounded-3xl p-5 sm:p-6 relative overflow-hidden group w-full flex-1 flex flex-col justify-between border border-stone-200/90 shadow-2xs hover:border-stone-300 transition-all">
+      {/* Top Header */}
+      <div className="flex items-center justify-between">
+        <span className="text-sm sm:text-base font-semibold text-stone-700">
+          จำนวนแก้ววันนี้
+        </span>
+        <div className="w-10 h-10 rounded-2xl bg-stone-900 text-stone-100 flex items-center justify-center shadow-xs">
+          <Coffee className="w-5 h-5 text-stone-100" />
+        </div>
+      </div>
+
+      {/* Center Number */}
+      <div className="my-auto py-2 flex items-baseline gap-2">
+        <span className="text-3xl sm:text-4xl lg:text-5xl font-black text-stone-900 font-mono tracking-tight tabular-nums">
+          {actualCupsToday.toLocaleString()}
+        </span>
+        <span className="text-base sm:text-lg font-bold text-stone-500 font-medium">
+          แก้ว
+        </span>
+      </div>
+
+      {/* Bottom Summary Bar */}
+      <div className="pt-3 border-t border-stone-100 flex items-center justify-between text-xs text-stone-500 flex-wrap gap-2">
+        <span className="bg-stone-100 text-stone-700 border border-stone-200 px-2.5 py-0.5 rounded-full font-medium font-mono tabular-nums">
+          เฉลี่ย {avgCupsPerOrder} แก้ว/บิล
+        </span>
+        <span className="font-mono tabular-nums text-stone-500">
+          ทั้งหมด <strong className="text-stone-800 font-semibold">{dashboard.total_orders_today ?? 0}</strong> บิล
+        </span>
+      </div>
+    </div>
+  );
+
   if (view === 'sales-hero') {
     return salesHeroCard;
   }
@@ -203,20 +304,39 @@ export const KpiCards: React.FC<KpiCardsProps> = ({ dashboard, view = 'hero-layo
   if (view === 'secondary-metrics') {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">
-        {progressCard}
-        {cupsCountCard}
+        {isBepEnabled ? (
+          <>
+            {progressCard}
+            {cupsCountCard}
+          </>
+        ) : (
+          <>
+            {profitCard}
+            {regularCupsCard}
+          </>
+        )}
       </div>
     );
   }
 
-  // Hero layout: Left (Sales Hero) & Right (Card 1: Progress, Card 2: นับแก้ว)
+  // Hero layout: Left (Sales Hero) & Right (Card 1 & Card 2)
   return (
     <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
       <div className="flex">{salesHeroCard}</div>
       <div className="flex flex-col gap-4 sm:gap-5 justify-between">
-        {progressCard}
-        {cupsCountCard}
+        {isBepEnabled ? (
+          <>
+            {progressCard}
+            {cupsCountCard}
+          </>
+        ) : (
+          <>
+            {profitCard}
+            {regularCupsCard}
+          </>
+        )}
       </div>
     </section>
   );
 };
+

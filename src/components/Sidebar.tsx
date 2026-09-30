@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -30,6 +30,7 @@ import {
   Eye,
   Menu,
   X,
+  Search,
 } from 'lucide-react';
 import { useStock } from '@/lib/StockContext';
 import { useAuth, StoreInfo } from '@/lib/AuthContext';
@@ -71,7 +72,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
   const closeMobileSidebar = onMobileClose || sidebarContext.closeMobileSidebar;
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isStoreDropdownOpen, setIsStoreDropdownOpen] = useState(false);
+  const [storeSearchQuery, setStoreSearchQuery] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-close mobile drawer on route navigation
   useEffect(() => {
@@ -85,17 +88,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
     }
   }, []);
 
-  // Close dropdown on click outside
+  // Close dropdown on click outside or Escape key
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setIsStoreDropdownOpen(false);
+        setStoreSearchQuery('');
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isStoreDropdownOpen) {
+        setIsStoreDropdownOpen(false);
+        setStoreSearchQuery('');
       }
     };
     if (isStoreDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [isStoreDropdownOpen]);
 
   const toggleCollapse = () => {
@@ -135,6 +149,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
   const handleSelectStore = (store: StoreInfo) => {
     setActiveStore(store);
     setIsStoreDropdownOpen(false);
+    setStoreSearchQuery('');
     router.push('/dashboard');
   };
 
@@ -300,11 +315,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
     },
   ], [dashboard.low_stock_count]);
 
-  // Store switching is restricted to admin only
+  // Store search & filtering
+  const filteredStores = useMemo(() => {
+    if (!storeSearchQuery.trim()) return stores;
+    const q = storeSearchQuery.trim().toLowerCase();
+    return stores.filter((s) => {
+      const nameMatch = s.name?.toLowerCase().includes(q);
+      const typeMatch = getStoreTypeName(s.type)?.toLowerCase().includes(q) || s.type?.toLowerCase().includes(q);
+      const descMatch = s.description?.toLowerCase().includes(q);
+      const addressMatch = s.address?.toLowerCase().includes(q);
+      return Boolean(nameMatch || typeMatch || descMatch || addressMatch);
+    });
+  }, [stores, storeSearchQuery]);
+
+  // Store switching and search allowed for admin, owner, or whenever stores exist
   const canSwitchStore = Boolean(
     hasRole('admin') ||
     user?.role === 'admin' ||
-    effectiveRole === 'admin'
+    effectiveRole === 'admin' ||
+    effectiveRole === 'owner' ||
+    hasRole('owner') ||
+    user?.role === 'owner' ||
+    stores.length > 0
   );
 
   return (
@@ -319,64 +351,41 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
         ref={dropdownRef}
         className="h-16 flex items-center justify-between px-3 border-b border-slate-200/80 relative"
       >
-        {!isCollapsed ? (
-          <button
-            onClick={() => canSwitchStore && setIsStoreDropdownOpen(!isStoreDropdownOpen)}
-            disabled={!canSwitchStore}
-            className={`flex items-center gap-2.5 overflow-hidden text-left p-1.5 rounded-2xl transition-all flex-1 min-w-0 ${
-              canSwitchStore
-                ? 'hover:bg-slate-200/50 cursor-pointer group/switcher'
-                : 'cursor-default'
-            }`}
-            title={canSwitchStore ? 'คลิกเพื่อสลับร้านค้า / เลือกระบบ' : (activeStore?.name || 'ร้านค้า')}
-          >
-            {/* Store Logo or Default Circular Logo */}
-            <div className="w-9 h-9 rounded-full items-center justify-center shrink-0 overflow-hidden bg-white text-slate-900 border border-slate-200 p-0.5 flex shadow-2xs">
-              {activeStore?.logo_url ? (
-                <img
-                  src={activeStore.logo_url}
-                  alt={activeStore.name}
-                  className="w-full h-full object-cover rounded-full"
-                  onError={(e) => {
-                    (e.target as HTMLElement).style.display = 'none';
-                  }}
-                />
-              ) : (
-                <img
-                  src="/images/logo_ss.png"
-                  alt="SmartStock Logo"
-                  className="w-full h-full object-contain"
-                />
-              )}
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <div className="font-semibold text-slate-900 tracking-tight text-sm flex items-center gap-1.5 whitespace-nowrap">
-                <span className="truncate">{activeStore?.name || 'SmartStock'}</span>
-                {canSwitchStore && (
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 text-slate-400 group-hover/switcher:text-slate-700 transition-transform duration-200 shrink-0 ${
-                      isStoreDropdownOpen ? 'rotate-180' : ''
-                    }`}
-                  />
-                )}
-              </div>
-            </div>
-          </button>
-        ) : (
-          <button
-            onClick={() => canSwitchStore && setIsStoreDropdownOpen(!isStoreDropdownOpen)}
-            disabled={!canSwitchStore}
-            title={canSwitchStore ? (activeStore ? `สลับร้าน: ${activeStore.name}` : 'สลับร้าน') : (activeStore?.name || 'ร้านค้า')}
-            className={`w-9 h-9 rounded-full items-center justify-center shrink-0 overflow-hidden bg-white text-slate-900 border border-slate-200 p-0.5 flex shadow-2xs ${
-              canSwitchStore ? 'hover:scale-105 transition-transform cursor-pointer' : 'cursor-default'
-            }`}
-          >
+        {/* Store Logo Switcher Button (Logo only - no name) */}
+        <button
+          type="button"
+          onClick={() => {
+            if (canSwitchStore) {
+              const nextState = !isStoreDropdownOpen;
+              setIsStoreDropdownOpen(nextState);
+              if (nextState) {
+                setStoreSearchQuery('');
+                setTimeout(() => searchInputRef.current?.focus(), 80);
+              }
+            }
+          }}
+          disabled={!canSwitchStore}
+          className={`flex items-center gap-1.5 p-1 rounded-2xl transition-all ${
+            canSwitchStore
+              ? 'hover:bg-slate-200/60 cursor-pointer group/switcher'
+              : 'cursor-default'
+          }`}
+          title={
+            canSwitchStore
+              ? `สลับร้านค้า (${activeStore?.name || 'ร้านค้า'})`
+              : (activeStore?.name || 'ร้านค้า')
+          }
+        >
+          {/* Store Logo Avatar */}
+          <div className="w-10 h-10 rounded-2xl items-center justify-center shrink-0 overflow-hidden bg-white text-slate-900 border border-slate-200 p-0.5 flex shadow-2xs group-hover/switcher:border-slate-300 group-hover/switcher:shadow-xs group-hover/switcher:scale-105 transition-all">
             {activeStore?.logo_url ? (
               <img
                 src={activeStore.logo_url}
                 alt={activeStore.name}
-                className="w-full h-full object-cover rounded-full"
+                className="w-full h-full object-cover rounded-xl"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
               />
             ) : (
               <img
@@ -385,11 +394,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
                 className="w-full h-full object-contain"
               />
             )}
-          </button>
-        )}
+          </div>
+
+          {/* Subtle dropdown indicator when not collapsed */}
+          {!isCollapsed && canSwitchStore && (
+            <div className="w-5 h-5 rounded-full flex items-center justify-center text-slate-400 group-hover/switcher:text-slate-700 transition-colors">
+              <ChevronDown
+                className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                  isStoreDropdownOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </div>
+          )}
+        </button>
 
         {/* Toggle Collapse button */}
         <button
+          type="button"
           onClick={toggleCollapse}
           title={isCollapsed ? 'ขยายแถบเมนู' : 'ย่อเมนูเหลือแต่ไอคอน'}
           className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all shrink-0 cursor-pointer ml-1"
@@ -397,82 +418,86 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onMobileClose }) =
           {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
 
-        {/* Store Quick Switcher Dropdown Modal / Popover */}
+        {/* Store Quick Switcher & Search Dropdown Modal / Popover */}
         {isStoreDropdownOpen && canSwitchStore && (
           <div
-            className={`absolute top-full z-50 mt-1 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 animate-scale-in ${
-              isCollapsed ? 'left-2 w-64' : 'left-3 right-3'
+            className={`absolute top-full z-50 mt-1.5 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 animate-scale-in w-72 ${
+              isCollapsed ? 'left-2' : 'left-2'
             }`}
           >
-            <div className="px-3 py-1.5 border-b border-stone-200 flex items-center justify-between">
-              <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
-                สลับร้านค้า / เลือกระบบ
-              </span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-medium">
+            {/* Header with store count */}
+            <div className="px-3 py-2 border-b border-stone-100 flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-stone-700">
+                <span>เลือกร้านค้า</span>
+              </div>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-mono font-medium">
                 {stores.length} ร้าน
               </span>
             </div>
 
-            <div className="max-h-60 overflow-y-auto p-1.5 space-y-0.5 no-scrollbar">
-              {stores.map((s) => {
-                const isCurrent = s.id === activeStore?.id;
-                const SIcon = getStoreIcon(s.type);
-                const sColor = s.theme_color || '#059669';
+            {/* Stores List */}
+            <div className="max-h-60 overflow-y-auto p-1.5 space-y-1 no-scrollbar">
+              {filteredStores.length > 0 ? (
+                filteredStores.map((s) => {
+                  const isCurrent = s.id === activeStore?.id;
+                  const SIcon = getStoreIcon(s.type);
+                  const sColor = s.theme_color || '#059669';
 
-                return (
-                  <button
-                    key={s.id}
-                    onClick={() => handleSelectStore(s)}
-                    className={`w-full flex items-center gap-2.5 p-2 rounded-xl text-left transition-all cursor-pointer ${
-                      isCurrent
-                        ? 'bg-stone-100 border border-stone-200 font-medium text-stone-900'
-                        : 'hover:bg-stone-50 text-stone-600'
-                    }`}
-                  >
-                    <div
-                      className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 overflow-hidden border border-stone-200"
-                      style={{ backgroundColor: `${sColor}15` }}
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => handleSelectStore(s)}
+                      className={`w-full flex items-center gap-2.5 p-2 rounded-xl text-left transition-all cursor-pointer ${
+                        isCurrent
+                          ? 'bg-stone-100 border border-stone-200/90 font-medium text-stone-900 shadow-2xs'
+                          : 'hover:bg-stone-50 text-stone-600 border border-transparent'
+                      }`}
                     >
-                      {s.logo_url ? (
-                        <img
-                          src={s.logo_url}
-                          alt={s.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <SIcon className="w-3.5 h-3.5" style={{ color: sColor }} />
-                      )}
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="text-xs font-medium text-stone-800 truncate flex items-center gap-1.5">
-                        <span className="truncate">{s.name}</span>
-                        {isCurrent && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                      <div
+                        className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 overflow-hidden border border-stone-200 bg-white shadow-2xs"
+                        style={{ backgroundColor: `${sColor}10` }}
+                      >
+                        {s.logo_url ? (
+                          <img
+                            src={s.logo_url}
+                            alt={s.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <SIcon className="w-4 h-4" style={{ color: sColor }} />
                         )}
                       </div>
-                      <div className="text-[10px] text-stone-600 truncate">
-                        {getStoreTypeName(s.type)}
+
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-semibold text-stone-900 truncate flex items-center gap-1.5">
+                          <span className="truncate">{s.name}</span>
+                          {isCurrent && (
+                            <span className="inline-flex items-center text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded-full font-medium border border-emerald-200 shrink-0">
+                              ร้านนี้
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[10px] text-stone-500 truncate">
+                          {getStoreTypeName(s.type)}
+                        </div>
                       </div>
-                    </div>
 
-                    {isCurrent && (
-                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="pt-1.5 mt-1 border-t border-slate-100 px-2 flex flex-col gap-1">
-              <Link
-                href="/settings/stores"
-                onClick={() => setIsStoreDropdownOpen(false)}
-                className="flex items-center gap-2 p-1.5 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>เพิ่มร้านใหม่ / จัดการสิทธิ์ร้านค้า</span>
-              </Link>
+                      {isCurrent && (
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                      )}
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="py-6 text-center px-4">
+                  <Store className="w-6 h-6 text-stone-300 mx-auto mb-1.5" />
+                  <p className="text-xs font-medium text-stone-600">ไม่พบร้านค้าที่ค้นหา</p>
+                  <p className="text-[11px] text-stone-400 mt-0.5">
+                    ลองค้นหาด้วยชื่อหรือประเภทอื่น
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}
