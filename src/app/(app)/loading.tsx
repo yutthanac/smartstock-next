@@ -18,7 +18,7 @@ export default function Loading() {
       </header>
 
       {/* Main Page Skeleton */}
-      <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full animate-fade-in">
+      <main className="p-4 sm:p-6 lg:p-8 space-y-6 mx-auto w-full animate-fade-in">
         {/* Top actions/filter bar skeleton */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-stone-200/90 shadow-2xs">
           <Skeleton className="h-9 w-64 rounded-xl" />

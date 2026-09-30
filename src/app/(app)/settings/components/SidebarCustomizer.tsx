@@ -13,10 +13,12 @@ import {
   Store as StoreIcon,
   Filter,
   ArrowRight,
+  Scale,
 } from 'lucide-react';
 import { ICON_MAP, AVAILABLE_ICONS } from './iconMap';
 import { Dropdown } from '@/components/Dropdown';
 import { Button } from '@/components/Button';
+import { isBreakEvenTabEnabled, setBreakEvenTabEnabled } from '@/lib/breakEven';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
@@ -100,6 +102,7 @@ export default function SidebarCustomizer() {
   const [customIcons, setCustomIcons] = useState<Record<string, string>>({});
   const [publishMap, setPublishMap] = useState<Record<string, boolean>>({});
   const [filterPublish, setFilterPublish] = useState<'all' | 'published' | 'hidden'>('all');
+  const [enableBreakEvenTab, setEnableBreakEvenTab] = useState<boolean>(true);
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -127,6 +130,7 @@ export default function SidebarCustomizer() {
       pMap[it.key] = cfg[it.key] !== false;
     });
     setPublishMap(pMap);
+    setEnableBreakEvenTab(isBreakEvenTabEnabled(currentStore?.id, cfg));
   }, [selectedStoreId, currentStore]);
 
   // Click outside to close icon picker
@@ -193,6 +197,10 @@ export default function SidebarCustomizer() {
         next[it.key] = true;
       });
       setPublishMap(next);
+      setEnableBreakEvenTab(true);
+      if (currentStore?.id) {
+        setBreakEvenTabEnabled(true, currentStore.id);
+      }
     }
   };
 
@@ -208,6 +216,7 @@ export default function SidebarCustomizer() {
         ...publishMap,
         custom_labels: customLabels,
         custom_icons: customIcons,
+        enable_breakeven_tab: enableBreakEvenTab,
       };
 
       const res = await fetch(`${API_BASE_URL}/stores/${currentStore.id}/menu-config`, {
@@ -221,6 +230,7 @@ export default function SidebarCustomizer() {
       });
 
       if (res.ok) {
+        setBreakEvenTabEnabled(enableBreakEvenTab, currentStore.id);
         if (activeStore && activeStore.id === currentStore.id) {
           setActiveStore({ ...activeStore, menu_config: updatedConfig });
         }
@@ -486,162 +496,272 @@ export default function SidebarCustomizer() {
                 const isCustomized = Boolean(customLabels[item.key] || customIcons[item.key]);
 
                 return (
-                  <tr
-                    key={item.key}
-                    className={`transition-colors relative ${
-                      !isPublished
-                        ? 'bg-stone-50/70 text-stone-400 hover:bg-stone-100/70'
-                        : isCustomized
-                        ? 'bg-stone-50/50 hover:bg-stone-50/80 text-stone-700'
-                        : 'hover:bg-stone-50/60 text-stone-600'
-                    }`}
-                  >
-                    {/* 1. Index */}
-                    <td className="py-3 px-3 text-center font-mono tabular-nums text-stone-400 text-xs">
-                      {index + 1}
-                    </td>
+                  <React.Fragment key={item.key}>
+                    <tr
+                      className={`transition-colors relative ${
+                        !isPublished
+                          ? 'bg-stone-50/70 text-stone-400 hover:bg-stone-100/70'
+                          : isCustomized
+                          ? 'bg-stone-50/50 hover:bg-stone-50/80 text-stone-700'
+                          : 'hover:bg-stone-50/60 text-stone-600'
+                      }`}
+                    >
+                      {/* 1. Index */}
+                      <td className="py-3 px-3 text-center font-mono tabular-nums text-stone-400 text-xs">
+                        {index + 1}
+                      </td>
 
-                    {/* 2. Category */}
-                    <td className="py-3 px-3 whitespace-nowrap">
-                      <span className="text-xs font-normal text-stone-600 bg-stone-100 px-2 py-0.5 rounded-lg">
-                        {item.category}
-                      </span>
-                    </td>
+                      {/* 2. Category */}
+                      <td className="py-3 px-3 whitespace-nowrap">
+                        <span className="text-xs font-normal text-stone-600 bg-stone-100 px-2 py-0.5 rounded-lg">
+                          {item.category}
+                        </span>
+                      </td>
 
-                    {/* 3. Icon */}
-                    <td className="py-3 px-3 text-center relative">
-                      <div className="flex justify-center relative">
-                        <button
-                          type="button"
-                          onClick={() => setPickerKey(pickerKey === item.key ? null : item.key)}
-                          className="w-9 h-9 rounded-xl bg-white border border-stone-200 shadow-2xs flex items-center justify-center hover:scale-105 hover:border-stone-400 transition-all cursor-pointer text-stone-700"
-                          title="เปลี่ยนไอคอน"
-                        >
-                          {IconComponent && (
-                            <IconComponent className="w-4 h-4 text-stone-700" />
+                      {/* 3. Icon */}
+                      <td className="py-3 px-3 text-center relative">
+                        <div className="flex justify-center relative">
+                          <button
+                            type="button"
+                            onClick={() => setPickerKey(pickerKey === item.key ? null : item.key)}
+                            className="w-9 h-9 rounded-xl bg-white border border-stone-200 shadow-2xs flex items-center justify-center hover:scale-105 hover:border-stone-400 transition-all cursor-pointer text-stone-700"
+                            title="เปลี่ยนไอคอน"
+                          >
+                            {IconComponent && (
+                              <IconComponent className="w-4 h-4 text-stone-700" />
+                            )}
+                          </button>
+
+                          {/* Icon Picker Popover */}
+                          {pickerKey === item.key && (
+                            <div
+                              ref={popoverRef}
+                              className="absolute left-0 top-11 z-50 bg-white rounded-2xl shadow-2xl border border-stone-200 p-3 w-72 text-left"
+                            >
+                              <div className="flex items-center justify-between pb-2 mb-2 border-b border-stone-100">
+                                <span className="text-xs font-medium text-stone-700">เลือกไอคอน</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setPickerKey(null)}
+                                  className="text-stone-400 hover:text-stone-600 cursor-pointer"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+
+                              <div className="grid grid-cols-6 gap-1.5 max-h-48 overflow-y-auto no-scrollbar p-1">
+                                {AVAILABLE_ICONS.map((ic) => {
+                                  const IconEl = ic.icon;
+                                  const isSelected = currentIconKey === ic.key;
+
+                                  return (
+                                    <button
+                                      key={ic.key}
+                                      type="button"
+                                      onClick={() => selectIcon(item.key, ic.key)}
+                                      className={`p-2 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
+                                        isSelected
+                                          ? 'bg-stone-900 text-white shadow-xs scale-105'
+                                          : 'hover:bg-stone-100 text-stone-600'
+                                      }`}
+                                      title={ic.label}
+                                    >
+                                      <IconEl className="w-4 h-4" />
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
                           )}
-                        </button>
+                        </div>
+                      </td>
 
-                        {/* Icon Picker Popover */}
-                        {pickerKey === item.key && (
-                          <div
-                            ref={popoverRef}
-                            className="absolute left-0 top-11 z-50 bg-white rounded-2xl shadow-2xl border border-stone-200 p-3 w-72 text-left"
-                          >
-                            <div className="flex items-center justify-between pb-2 mb-2 border-b border-stone-100">
-                              <span className="text-xs font-medium text-stone-700">เลือกไอคอน</span>
-                              <button
-                                type="button"
-                                onClick={() => setPickerKey(null)}
-                                className="text-stone-400 hover:text-stone-600 cursor-pointer"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
+                      {/* 4. Menu Name Input */}
+                      <td className="py-3 px-4">
+                        <input
+                          type="text"
+                          value={currentLabel}
+                          onChange={(e) => setLabel(item.key, e.target.value)}
+                          placeholder={item.defaultLabel}
+                          className="w-full text-xs font-normal px-3 py-1.5 rounded-xl bg-white border border-stone-200 focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 text-stone-800"
+                        />
+                      </td>
 
-                            <div className="grid grid-cols-6 gap-1.5 max-h-48 overflow-y-auto no-scrollbar p-1">
-                              {AVAILABLE_ICONS.map((ic) => {
-                                const IconEl = ic.icon;
-                                const isSelected = currentIconKey === ic.key;
-
-                                return (
-                                  <button
-                                    key={ic.key}
-                                    type="button"
-                                    onClick={() => selectIcon(item.key, ic.key)}
-                                    className={`p-2 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
-                                      isSelected
-                                        ? 'bg-stone-900 text-white shadow-xs scale-105'
-                                        : 'hover:bg-stone-100 text-stone-600'
-                                    }`}
-                                    title={ic.label}
-                                  >
-                                    <IconEl className="w-4 h-4" />
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* 4. Menu Name Input */}
-                    <td className="py-3 px-4">
-                      <input
-                        type="text"
-                        value={currentLabel}
-                        onChange={(e) => setLabel(item.key, e.target.value)}
-                        placeholder={item.defaultLabel}
-                        className="w-full text-xs font-normal px-3 py-1.5 rounded-xl bg-white border border-stone-200 focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 text-stone-800"
-                      />
-                    </td>
-
-                    {/* 5. Live Sidebar Preview */}
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-normal ${
-                          isPublished
-                            ? 'bg-stone-100 text-stone-800 border border-stone-200/80 shadow-2xs'
-                            : 'bg-stone-100/60 text-stone-400 line-through'
-                        }`}
-                      >
-                        {IconComponent && <IconComponent className="w-3.5 h-3.5 text-stone-600" />}
-                        <span className="truncate max-w-[130px]">{currentLabel}</span>
-                      </span>
-                    </td>
-
-                    {/* 6. STATUS SWITCH (PLACED ON THE RIGHT SIDE) */}
-                    <td className="py-3 px-4 text-center whitespace-nowrap">
-                      <div className="inline-flex items-center justify-center">
-                        <button
-                          type="button"
-                          onClick={() => togglePublish(item.key)}
-                          className="flex items-center gap-2 cursor-pointer p-1 rounded-xl hover:bg-stone-100 transition-all"
+                      {/* 5. Live Sidebar Preview */}
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-normal ${
+                            isPublished
+                              ? 'bg-stone-100 text-stone-800 border border-stone-200/80 shadow-2xs'
+                              : 'bg-stone-100/60 text-stone-400 line-through'
+                          }`}
                         >
-                          {/* iOS Toggle Switch */}
-                          <div
-                            className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200 ${
-                              isPublished ? 'bg-stone-900' : 'bg-stone-200'
-                            }`}
+                          {IconComponent && <IconComponent className="w-3.5 h-3.5 text-stone-600" />}
+                          <span className="truncate max-w-[130px]">{currentLabel}</span>
+                        </span>
+                      </td>
+
+                      {/* 6. STATUS SWITCH (PLACED ON THE RIGHT SIDE) */}
+                      <td className="py-3 px-4 text-center whitespace-nowrap">
+                        <div className="inline-flex items-center justify-center">
+                          <button
+                            type="button"
+                            onClick={() => togglePublish(item.key)}
+                            className="flex items-center gap-2 cursor-pointer p-1 rounded-xl hover:bg-stone-100 transition-all"
                           >
-                            <span
-                              className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-xs transition-transform duration-200 ${
-                                isPublished ? 'translate-x-4.5' : 'translate-x-0.5'
+                            {/* iOS Toggle Switch */}
+                            <div
+                              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200 ${
+                                isPublished ? 'bg-stone-900' : 'bg-stone-200'
                               }`}
-                            />
-                          </div>
+                            >
+                              <span
+                                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-xs transition-transform duration-200 ${
+                                  isPublished ? 'translate-x-4.5' : 'translate-x-0.5'
+                                }`}
+                              />
+                            </div>
 
-                          {/* Status Badge */}
+                            {/* Status Badge */}
+                            <span
+                              className={`text-xs font-normal px-2 py-0.5 rounded-lg w-12 text-center ${
+                                isPublished
+                                  ? 'bg-stone-100 text-stone-900 border border-stone-200'
+                                  : 'bg-stone-100 text-stone-400'
+                              }`}
+                            >
+                              {isPublished ? 'เปิด' : 'ปิด'}
+                            </span>
+                          </button>
+                        </div>
+                      </td>
+
+                      {/* 7. Action Reset */}
+                      <td className="py-3 px-3 text-right whitespace-nowrap">
+                        {isCustomized ? (
+                          <button
+                            type="button"
+                            onClick={() => resetItem(item.key)}
+                            className="text-xs font-normal text-stone-400 hover:text-rose-600 px-2 py-1 rounded-lg hover:bg-stone-100 transition-colors cursor-pointer"
+                            title="คืนค่าเดิมเฉพาะเมนูนี้"
+                          >
+                            รีเซ็ต
+                          </button>
+                        ) : (
+                          <span className="text-xs text-stone-300">-</span>
+                        )}
+                      </td>
+                    </tr>
+
+                    {/* Sub-feature: Break-Even Point Tab under reports_profit */}
+                    {item.key === 'reports_profit' && (
+                      <tr
+                        key="sub_reports_profit_bep"
+                        className="bg-stone-50/60 hover:bg-stone-100/50 border-b border-stone-200/60 transition-colors"
+                      >
+                        {/* 1. Indent mark */}
+                        <td className="py-2.5 px-3 text-center font-mono text-stone-400 text-xs">
+                          ↳
+                        </td>
+
+                        {/* 2. Category */}
+                        <td className="py-2.5 px-3 whitespace-nowrap">
+                          <span className="text-[11px] font-normal text-stone-500 bg-stone-200/70 px-2 py-0.5 rounded-md">
+                            แท็บย่อย
+                          </span>
+                        </td>
+
+                        {/* 3. Icon */}
+                        <td className="py-2.5 px-3 text-center">
+                          <div className="w-8 h-8 rounded-lg bg-white border border-stone-200 flex items-center justify-center mx-auto text-stone-600 shadow-2xs">
+                            <Scale className="w-3.5 h-3.5" />
+                          </div>
+                        </td>
+
+                        {/* 4. Name & Description */}
+                        <td className="py-2.5 px-4">
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-semibold text-stone-800">
+                                แท็บคำนวณจุดคุ้มทุน
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* 5. Live preview */}
+                        <td className="py-2.5 px-4 whitespace-nowrap">
                           <span
-                            className={`text-xs font-normal px-2 py-0.5 rounded-lg w-12 text-center ${
-                              isPublished
-                                ? 'bg-stone-100 text-stone-900 border border-stone-200'
-                                : 'bg-stone-100 text-stone-400'
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-normal ${
+                              enableBreakEvenTab
+                                ? 'bg-white text-stone-800 border border-stone-200 shadow-2xs'
+                                : 'bg-stone-100 text-stone-400 line-through'
                             }`}
                           >
-                            {isPublished ? 'เปิด' : 'ปิด'}
+                            <Scale className="w-3.5 h-3.5 text-stone-500" />
+                            <span>คำนวณจุดคุ้มทุน</span>
                           </span>
-                        </button>
-                      </div>
-                    </td>
+                        </td>
 
-                    {/* 7. Action Reset */}
-                    <td className="py-3 px-3 text-right whitespace-nowrap">
-                      {isCustomized ? (
-                        <button
-                          type="button"
-                          onClick={() => resetItem(item.key)}
-                          className="text-xs font-normal text-stone-400 hover:text-rose-600 px-2 py-1 rounded-lg hover:bg-stone-100 transition-colors cursor-pointer"
-                          title="คืนค่าเดิมเฉพาะเมนูนี้"
-                        >
-                          รีเซ็ต
-                        </button>
-                      ) : (
-                        <span className="text-xs text-stone-300">-</span>
-                      )}
-                    </td>
-                  </tr>
+                        {/* 6. Status switch */}
+                        <td className="py-2.5 px-4 text-center whitespace-nowrap">
+                          <div className="inline-flex items-center justify-center">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const nextVal = !enableBreakEvenTab;
+                                setEnableBreakEvenTab(nextVal);
+                                if (currentStore?.id) {
+                                  setBreakEvenTabEnabled(nextVal, currentStore.id);
+                                }
+                              }}
+                              className="flex items-center gap-2 cursor-pointer p-1 rounded-xl hover:bg-stone-200/50 transition-all"
+                            >
+                              <div
+                                className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200 ${
+                                  enableBreakEvenTab ? 'bg-stone-900' : 'bg-stone-200'
+                                }`}
+                              >
+                                <span
+                                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-xs transition-transform duration-200 ${
+                                    enableBreakEvenTab ? 'translate-x-4.5' : 'translate-x-0.5'
+                                  }`}
+                                />
+                              </div>
+                              <span
+                                className={`text-xs font-normal px-2 py-0.5 rounded-lg w-12 text-center ${
+                                  enableBreakEvenTab
+                                    ? 'bg-stone-100 text-stone-900 border border-stone-200'
+                                    : 'bg-stone-100 text-stone-400'
+                                }`}
+                              >
+                                {enableBreakEvenTab ? 'เปิด' : 'ปิด'}
+                              </span>
+                            </button>
+                          </div>
+                        </td>
+
+                        {/* 7. Action */}
+                        <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                          {!enableBreakEvenTab ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEnableBreakEvenTab(true);
+                                if (currentStore?.id) setBreakEvenTabEnabled(true, currentStore.id);
+                              }}
+                              className="text-xs font-normal text-stone-400 hover:text-stone-900 px-2 py-1 rounded-lg hover:bg-stone-100 transition-colors cursor-pointer"
+                              title="คืนค่าเป็นเปิดใช้งาน"
+                            >
+                              รีเซ็ต
+                            </button>
+                          ) : (
+                            <span className="text-xs text-stone-300">-</span>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 );
               })}
             </tbody>

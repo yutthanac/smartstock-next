@@ -238,7 +238,7 @@ export function MenuClientView({
     <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
       <Topbar title="จัดการเมนู & สูตร" />
 
-      <main className="p-4 sm:p-6 lg:p-8 space-y-5 max-w-7xl mx-auto w-full">
+      <main className="p-4 sm:p-6 lg:p-8 space-y-5 mx-auto w-full">
         {/* Toolbar: Search, Category Filter, Card/List Switcher & Create button */}
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200/90 shadow-2xs">
           {/* Left Controls: Search & Category Filter */}

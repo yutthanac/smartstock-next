@@ -609,7 +609,7 @@ export function StockClientView({
     <div className="flex-1 flex flex-col min-h-screen bg-stone-50/50">
       <Topbar title="จัดการสต็อกวัตถุดิบ" />
 
-      <main className="p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-5">
+      <main className="p-4 sm:p-6 lg:p-8 w-full mx-auto space-y-5">
         {/* Navigation Tabs Bar */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-stone-100 p-1.5 rounded-2xl border border-stone-200/80 shadow-2xs">
           <div className="flex items-center gap-1 overflow-x-auto no-scrollbar w-full sm:w-auto">

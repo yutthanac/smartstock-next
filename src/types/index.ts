@@ -144,6 +144,7 @@ export interface DashboardKPI {
   today_waste_count?: number;
   low_stock_count: number;
   total_orders_today: number;
+  today_cups_sold?: number;
   sales_7days: {
     day: string;
     sales: number;

@@ -313,7 +313,7 @@ export function StaffClientView({ initialUsers, initialRoles }: StaffClientViewP
     <div className="flex flex-col min-h-screen bg-[#faf9f5]">
       <Topbar title="จัดการพนักงาน & ตำแหน่ง" />
 
-      <main className="flex-1 p-6 space-y-6 max-w-7xl mx-auto w-full">
+      <main className="flex-1 p-6 space-y-6 mx-auto w-full">
         {/* Header Bar: Staff Count and Quick Link to Roles & Permissions */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200/80 pb-3">
           <div className="flex items-center gap-2">

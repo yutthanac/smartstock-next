@@ -652,7 +652,7 @@ export function AIInsightsClientView({
     <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
       <Topbar title="AI วิเคราะห์ตลาด" />
 
-      <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
+      <main className="p-4 sm:p-6 lg:p-8 space-y-6 mx-auto w-full">
         {/* Executive Action Cards (Top High-Impact Action Items) */}
         <ExecutiveActionCards
           menuItems={menuItems}

@@ -10,6 +10,7 @@ import {
 
 import { Dropdown } from '@/components/Dropdown';
 import { Button } from '@/components/Button';
+import { setBreakEvenTabEnabled } from '@/lib/breakEven';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
@@ -240,6 +241,9 @@ export function StoresSettingsClientView({ initialStores }: StoresSettingsClient
         body: JSON.stringify({ menu_config: editingMenuConfig }),
       });
       if (res.ok) {
+        if (editingMenuConfig.enable_breakeven_tab !== undefined) {
+          setBreakEvenTabEnabled(editingMenuConfig.enable_breakeven_tab !== false, storeId);
+        }
         await fetchStores();
         await refreshStores();
         alert('บันทึกการตั้งค่าสิทธิ์เมนูเรียบร้อยแล้ว');
@@ -451,27 +455,51 @@ export function StoresSettingsClientView({ initialStores }: StoresSettingsClient
                             const isEnabled = editingMenuConfig[mod.key] !== false;
 
                             return (
-                              <label
-                                key={mod.key}
-                                className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-xs font-normal cursor-pointer transition-all ${
-                                  isEnabled
-                                    ? 'bg-white border-stone-400 shadow-2xs text-stone-800'
-                                    : 'bg-stone-100/70 border-stone-200 text-stone-400 line-through'
-                                }`}
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={isEnabled}
-                                  onChange={(e) => {
-                                    setEditingMenuConfig((prev) => ({
-                                      ...prev,
-                                      [mod.key]: e.target.checked,
-                                    }));
-                                  }}
-                                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-400 accent-emerald-600"
-                                />
-                                <span className="truncate">{mod.label}</span>
-                              </label>
+                              <React.Fragment key={mod.key}>
+                                <label
+                                  className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-xs font-normal cursor-pointer transition-all ${
+                                    isEnabled
+                                      ? 'bg-white border-stone-400 shadow-2xs text-stone-800'
+                                      : 'bg-stone-100/70 border-stone-200 text-stone-400 line-through'
+                                  }`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={isEnabled}
+                                    onChange={(e) => {
+                                      setEditingMenuConfig((prev) => ({
+                                        ...prev,
+                                        [mod.key]: e.target.checked,
+                                      }));
+                                    }}
+                                    className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-400 accent-emerald-600"
+                                  />
+                                  <span className="truncate">{mod.label}</span>
+                                </label>
+
+                                {mod.key === 'reports_profit' && (
+                                  <label
+                                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-xs font-normal cursor-pointer transition-all ${
+                                      editingMenuConfig.enable_breakeven_tab !== false
+                                        ? 'bg-emerald-50/70 border-emerald-300 text-emerald-950 font-medium'
+                                        : 'bg-stone-100/70 border-stone-200 text-stone-400 line-through'
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={editingMenuConfig.enable_breakeven_tab !== false}
+                                      onChange={(e) => {
+                                        setEditingMenuConfig((prev) => ({
+                                          ...prev,
+                                          enable_breakeven_tab: e.target.checked,
+                                        }));
+                                      }}
+                                      className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-400 accent-emerald-600"
+                                    />
+                                    <span className="truncate">↳ แท็บจุดคุ้มทุน (BEP)</span>
+                                  </label>
+                                )}
+                              </React.Fragment>
                             );
                           })}
                         </div>

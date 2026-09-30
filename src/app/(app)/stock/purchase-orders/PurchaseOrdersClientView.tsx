@@ -451,6 +451,13 @@ export function PurchaseOrdersClientView({
     setViewingPO(null);
   };
 
+  // Handle updating PO (such as item checked status when walking in market)
+  const handleUpdatePO = (updatedPO: PurchaseOrder) => {
+    const updated = poList.map((p) => (p.id === updatedPO.id ? updatedPO : p));
+    saveOrders(updated);
+    setViewingPO(updatedPO);
+  };
+
   // Delete PO
   const handleDeletePO = (poId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -478,7 +485,7 @@ export function PurchaseOrdersClientView({
     <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
       <Topbar title="รายการซื้อของ & ใบเสร็จ" />
 
-      <main className="p-4 sm:p-6 md:p-8 space-y-5 max-w-7xl mx-auto w-full print:hidden">
+      <main className="p-4 sm:p-6 md:p-8 space-y-5       mx-auto w-full print:hidden">
         {/* PO Spending Summary KPI Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs p-4 flex flex-col justify-between">
@@ -795,6 +802,7 @@ export function PurchaseOrdersClientView({
         ingredients={ingredients}
         onClose={() => setViewingPO(null)}
         onMarkCompleted={handleMarkCompleted}
+        onUpdatePO={handleUpdatePO}
       />
     </div>
   );

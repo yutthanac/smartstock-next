@@ -388,7 +388,7 @@ export function RolesClientView({ initialRolesData }: RolesClientViewProps) {
     <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
       <Topbar title="กำหนดบทบาท & สิทธิ์การใช้งาน (RBAC)" />
 
-      <main className="p-4 sm:p-6 lg:p-8 space-y-5 max-w-7xl mx-auto w-full">
+      <main className="p-4 sm:p-6 lg:p-8 space-y-5 mx-auto w-full">
         {/* Success / Error Notification */}
         {successMsg && (
           <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-between text-sm animate-fade-in shadow-xs">

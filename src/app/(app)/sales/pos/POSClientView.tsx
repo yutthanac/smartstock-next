@@ -8,6 +8,7 @@ import {
   Plus,
   Minus,
   CheckCircle2,
+  AlertCircle,
   Eye,
   CreditCard,
   QrCode,
@@ -19,8 +20,14 @@ import {
   SlidersHorizontal,
   X,
   ChevronUp,
+  ChevronDown,
+  Maximize2,
+  Minimize2,
+  Clock,
+  Sparkles,
 } from 'lucide-react';
 import { useStock } from '@/lib/StockContext';
+import { useAuth } from '@/lib/AuthContext';
 import { Topbar } from '@/components/Topbar';
 import { MenuItem, Ingredient, MenuOptionIngredient } from '@/types';
 import { CartItemOption } from './hooks/useItemOptions';
@@ -163,15 +170,15 @@ function CartItemRow({
   const note = formatOptionNote(entry.options);
 
   return (
-    <div className="p-3 rounded-xl bg-stone-50 border border-stone-200/60 text-sm space-y-1.5">
+    <div className="p-3 rounded-2xl bg-stone-50/90 border border-stone-200/70 text-sm space-y-1.5 hover:border-stone-300 transition-colors">
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-stone-900 text-sm flex items-center gap-1.5 flex-wrap">
+          <div className="font-bold text-stone-900 text-xs sm:text-sm flex items-center gap-1.5 flex-wrap">
             <span>{entry.item.name}</span>
             {entry.options.temperature && (
-              <span className={`text-xs px-1.5 py-0.5 rounded-md font-semibold ${
+              <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-md font-semibold ${
                 entry.options.temperature === 'ร้อน'
-                  ? 'bg-[#f5efe6] text-[#78350f] border border-[#e8ded0]'
+                  ? 'bg-amber-100 text-amber-900 border border-amber-200'
                   : entry.options.temperature === 'ปั่น (+10฿)'
                   ? 'bg-stone-200 text-stone-800 border border-stone-300'
                   : 'bg-stone-100 text-stone-700 border border-stone-200'
@@ -180,43 +187,54 @@ function CartItemRow({
               </span>
             )}
           </div>
-          <div className="text-xs text-stone-500 font-mono tabular-nums">
-            ฿{effectivePrice} × {entry.quantity} = <strong className="text-stone-900">฿{effectivePrice * entry.quantity}</strong>
+          <div className="text-xs text-stone-500 font-mono tabular-nums mt-0.5">
+            ฿{effectivePrice} × {entry.quantity} = <strong className="text-stone-900 font-bold">฿{effectivePrice * entry.quantity}</strong>
           </div>
         </div>
-        {/* Qty stepper */}
+
+        {/* Qty stepper with large touch targets for iPad */}
         <div className="flex items-center gap-1 shrink-0">
-          <div className="flex items-center bg-white border border-stone-200 px-1 py-0.5 rounded-lg shadow-2xs">
+          <div className="flex items-center bg-white border border-stone-200/90 rounded-xl shadow-2xs overflow-hidden">
             <button
+              type="button"
               onClick={() => onUpdate(entry.cartId, -1)}
-              className="w-6 h-6 flex items-center justify-center text-stone-600 hover:text-stone-900 cursor-pointer"
+              className="w-8 h-8 flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-50 active:bg-stone-100 cursor-pointer transition-colors"
+              aria-label="ลดจำนวน"
             >
-              <Minus className="w-3 h-3" />
+              <Minus className="w-3.5 h-3.5" />
             </button>
-            <span className="w-5 text-center font-bold text-stone-900 font-mono tabular-nums">{entry.quantity}</span>
+            <span className="w-7 text-center font-bold text-stone-900 font-mono tabular-nums text-xs sm:text-sm">
+              {entry.quantity}
+            </span>
             <button
+              type="button"
               onClick={() => onUpdate(entry.cartId, 1)}
-              className="w-6 h-6 flex items-center justify-center text-stone-600 hover:text-stone-900 cursor-pointer"
+              className="w-8 h-8 flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-50 active:bg-stone-100 cursor-pointer transition-colors"
+              aria-label="เพิ่มจำนวน"
             >
-              <Plus className="w-3 h-3" />
+              <Plus className="w-3.5 h-3.5" />
             </button>
           </div>
           <button
+            type="button"
             onClick={() => onDelete(entry.cartId)}
-            className="p-1 text-stone-400 hover:text-rose-600 cursor-pointer"
+            className="p-1.5 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer transition-colors"
+            title="ลบรายการ"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       </div>
-      {/* Note & edit */}
+
+      {/* Note & edit button */}
       <div className="flex items-center justify-between pt-1 border-t border-stone-200/60 text-xs">
-        <span className="text-stone-500 truncate max-w-[190px]">
+        <span className="text-stone-500 truncate max-w-[200px] text-[11px] sm:text-xs">
           {note || 'ตัดแก้วพลาสติก • หวาน 100%'}
         </span>
         <button
+          type="button"
           onClick={() => onEdit(entry.item, entry.cartId)}
-          className="text-stone-600 hover:text-stone-900 font-medium text-xs shrink-0 cursor-pointer ml-2"
+          className="text-stone-700 hover:text-stone-900 font-semibold text-xs shrink-0 cursor-pointer ml-2 px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 transition-colors"
         >
           แก้ไข
         </button>
@@ -233,7 +251,10 @@ function BillSummary({
   setPaymentMethod,
   onCheckout,
   onClear,
+  tableNo,
+  setTableNo,
   compact = false,
+  isSubmitting = false,
 }: {
   cartItems: CartEntry[];
   grandTotal: number;
@@ -241,20 +262,57 @@ function BillSummary({
   setPaymentMethod: (m: 'cash' | 'qr_promptpay' | 'credit_card') => void;
   onCheckout: () => void;
   onClear: () => void;
+  tableNo?: string;
+  setTableNo?: (t: string) => void;
   compact?: boolean;
+  isSubmitting?: boolean;
 }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5">
       {/* Subtotal */}
-      <div className="flex justify-between font-bold text-stone-900 text-sm pt-1">
-        <span>ยอดรวม</span>
-        <span className="font-mono tabular-nums text-base">฿{grandTotal.toFixed(2)}</span>
+      <div className="flex justify-between items-baseline font-bold text-stone-900 text-sm pt-0.5">
+        <span className="text-stone-600 text-xs sm:text-sm font-semibold">ยอดรวมทั้งสิ้น</span>
+        <span className="font-mono tabular-nums text-lg sm:text-xl font-black text-stone-900">
+          ฿{grandTotal.toFixed(2)}
+        </span>
       </div>
 
+      {/* Table / Order Info Selector */}
+      {tableNo !== undefined && setTableNo && (
+        <div className="flex items-center justify-between gap-1.5 text-xs text-stone-600 bg-stone-50 px-2.5 py-1.5 rounded-xl border border-stone-200/70">
+          <span className="font-semibold shrink-0 text-stone-700 text-[11px] sm:text-xs">โต๊ะ / รับกลับ:</span>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <input
+              type="text"
+              value={tableNo}
+              onChange={(e) => setTableNo(e.target.value)}
+              placeholder="T-01"
+              className="bg-white border border-stone-200 rounded-lg px-2 py-0.5 text-xs font-bold text-stone-900 font-mono w-20 text-center focus:outline-none focus:border-stone-400"
+            />
+            <div className="flex items-center gap-1">
+              {['T-01', 'T-02', 'กลับบ้าน'].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setTableNo(preset)}
+                  className={`px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer ${
+                    tableNo === preset
+                      ? 'bg-stone-900 text-white font-semibold'
+                      : 'bg-white hover:bg-stone-200 text-stone-600 border border-stone-200'
+                  }`}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Payment methods */}
-      <div className="space-y-1.5">
-        <span className="text-xs font-medium text-stone-500 block">วิธีชำระเงิน</span>
-        <div className="grid grid-cols-3 gap-2">
+      <div className="space-y-1">
+        <span className="text-[11px] font-medium text-stone-500 block">วิธีชำระเงิน</span>
+        <div className="grid grid-cols-3 gap-1.5">
           {([
             { key: 'qr_promptpay', icon: <QrCode className="w-4 h-4" />, label: 'พร้อมเพย์' },
             { key: 'cash', icon: <Banknote className="w-4 h-4" />, label: 'เงินสด' },
@@ -264,14 +322,14 @@ function BillSummary({
               key={key}
               type="button"
               onClick={() => setPaymentMethod(key)}
-              className={`h-14 px-2 rounded-xl text-xs font-medium flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
+              className={`h-12 sm:h-13 px-2 rounded-xl text-xs font-medium flex flex-col items-center justify-center gap-1 transition-all cursor-pointer select-none active:scale-95 ${
                 paymentMethod === key
                   ? 'bg-stone-900 text-white shadow-xs font-semibold'
                   : 'bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200/80'
               }`}
             >
               {icon}
-              <span>{label}</span>
+              <span className="text-[11px] leading-none">{label}</span>
             </button>
           ))}
         </div>
@@ -280,14 +338,16 @@ function BillSummary({
       {/* Checkout button */}
       <button
         type="button"
-        disabled={cartItems.length === 0}
+        disabled={cartItems.length === 0 || isSubmitting}
         onClick={onCheckout}
-        className={`w-full px-4 rounded-xl bg-stone-900 hover:bg-stone-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-xs active:scale-[0.98] cursor-pointer ${compact ? 'h-14 text-base' : 'h-11'}`}
+        className={`w-full px-4 rounded-xl bg-stone-900 hover:bg-stone-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.98] cursor-pointer ${
+          compact ? 'h-13 text-base' : 'h-11 sm:h-12'
+        }`}
       >
-        <CheckCircle2 className="w-4 h-4" />
-        <span>ยืนยันชำระเงิน</span>
-        {cartItems.length > 0 && (
-          <span className="font-mono tabular-nums text-xs opacity-90 pl-1">฿{grandTotal.toFixed(2)}</span>
+        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+        <span>{isSubmitting ? 'กำลังบันทึกออเดอร์...' : 'ยืนยันชำระเงิน'}</span>
+        {cartItems.length > 0 && !isSubmitting && (
+          <span className="font-mono tabular-nums text-xs opacity-90 pl-1 font-bold">฿{grandTotal.toFixed(2)}</span>
         )}
       </button>
     </div>
@@ -321,6 +381,7 @@ export function POSClientView({
     }
   }, [initialMenuItems, initialIngredients, hydrateData]);
 
+  const { activeStore, user } = useAuth();
   const menuItems = ctxMenuItems && ctxMenuItems.length > 0 ? ctxMenuItems : initialMenuItems || [];
   const ingredients = ctxIngredients && ctxIngredients.length > 0 ? ctxIngredients : initialIngredients || [];
 
@@ -328,12 +389,51 @@ export function POSClientView({
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
   const [cartItems, setCartItems] = useState<CartEntry[]>([]);
-  const [tableNo] = useState('T-01');
+  const [tableNo, setTableNo] = useState('T-01');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'qr_promptpay' | 'credit_card'>('qr_promptpay');
   const [previewMenu, setPreviewMenu] = useState<MenuItem | null>(null);
   const [optionTargetMenu, setOptionTargetMenu] = useState<MenuItem | null>(null);
   const [editingCartId, setEditingCartId] = useState<string | null>(null);
   const [lastOrderSuccess, setLastOrderSuccess] = useState<any | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState<boolean>(false);
+  const [showBOMImpact, setShowBOMImpact] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [currentTime, setCurrentTime] = useState<string>('');
+
+  // Load fullscreen preference from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('smartstock_pos_fullscreen');
+      if (saved === 'true') {
+        setIsFullscreen(true);
+      }
+    } catch {}
+  }, []);
+
+  const toggleFullscreen = () => {
+    setIsFullscreen((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('smartstock_pos_fullscreen', String(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  // Clock for Fullscreen POS mode
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setCurrentTime(
+        now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+      );
+    };
+    updateTime();
+    const timer = setInterval(updateTime, 10000);
+    return () => clearInterval(timer);
+  }, []);
+
   // Mobile-only sheet states
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMobileOptionOpen, setIsMobileOptionOpen] = useState(false);
@@ -531,20 +631,33 @@ export function POSClientView({
 
   /* ── Checkout ── */
   const handleCheckout = async () => {
-    if (cartItems.length === 0) return;
-    const orderData = cartItems.map((c) => ({
-      menu_item_id: c.item.id,
-      quantity: c.quantity,
-      note: formatOptionNote(c.options),
-      options: c.options,
-    }));
-    const result = await createOrder(tableNo, orderData, paymentMethod);
-    if (result) {
-      setLastOrderSuccess(result);
-      clearCart();
-      setIsCartOpen(false);
-    } else {
-      alert('บันทึกออเดอร์ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+    if (cartItems.length === 0 || isSubmittingOrder) return;
+    setIsSubmittingOrder(true);
+    setCheckoutError(null);
+    try {
+      const orderData = cartItems.map((c) => ({
+        menu_item_id: c.item.id,
+        quantity: c.quantity,
+        note: formatOptionNote(c.options),
+        options: c.options,
+      }));
+      const result = await createOrder(tableNo, orderData, paymentMethod);
+      if (result) {
+        setLastOrderSuccess(result);
+        clearCart();
+        setIsCartOpen(false);
+      } else {
+        setCheckoutError('บันทึกออเดอร์ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+      }
+    } catch (err: any) {
+      console.error('POS Checkout Error:', err);
+      let msg = err?.message || 'เกิดข้อผิดพลาดในการบันทึกออเดอร์';
+      if (msg.includes('SQLSTATE') || msg.includes('Data too long') || msg.includes('22001')) {
+        msg = 'ข้อมูลรายการในออเดอร์ยาวเกินกำหนด หรือมีข้อผิดพลาดในระบบฐานข้อมูล';
+      }
+      setCheckoutError(msg);
+    } finally {
+      setIsSubmittingOrder(false);
     }
   };
 
@@ -553,23 +666,67 @@ export function POSClientView({
 
   /* ─────────── RENDER ─────────── */
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
-      <Topbar title="ขายหน้าร้าน" />
+    <div className={isFullscreen ? "fixed inset-0 z-50 bg-[#faf9f5] flex flex-col overflow-hidden" : "flex-1 flex flex-col min-h-screen bg-[#faf9f5]"}>
+      {/* Fullscreen Cashier Header */}
+      {isFullscreen ? (
+        <header className="bg-white border-b border-stone-200/90 px-3.5 sm:px-5 py-2 sm:py-2.5 flex items-center justify-between shrink-0 shadow-2xs z-30">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-stone-900 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+              POS
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h2 className="font-bold text-stone-900 text-sm truncate">
+                  {activeStore?.name || 'SmartStock'}
+                </h2>
+                <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                  โหมดแคชเชียร์ iPad
+                </span>
+              </div>
+              <p className="text-[11px] text-stone-400 truncate">
+                แคชเชียร์: <span className="font-semibold text-stone-600">{user?.name || 'พนักงานหน้าร้าน'}</span>
+              </p>
+            </div>
+          </div>
 
-      <main className="p-3 sm:p-4 lg:p-6 flex-1 flex flex-col lg:flex-row gap-4 lg:gap-5 w-full items-start pb-24 md:pb-6">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {currentTime && (
+              <div className="hidden sm:flex items-center gap-1.5 text-xs text-stone-600 bg-stone-100 px-2.5 py-1 rounded-xl font-mono font-medium border border-stone-200/70">
+                <Clock className="w-3.5 h-3.5 text-stone-400" />
+                <span>{currentTime}</span>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              className="h-8 px-2.5 sm:px-3 rounded-xl border border-stone-200 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Minimize2 className="w-3.5 h-3.5 text-stone-600" />
+              <span className="hidden sm:inline">ออกจากเต็มจอ</span>
+              <span className="sm:hidden">ย่อจอ</span>
+            </button>
+          </div>
+        </header>
+      ) : (
+        <Topbar title="ขายหน้าร้าน" />
+      )}
+
+      <main className={`p-2.5 sm:p-4 lg:p-5 flex-1 flex flex-col md:flex-row gap-3 sm:gap-4 w-full items-start ${
+        isFullscreen ? 'h-[calc(100vh-3.5rem)] overflow-hidden pb-3' : 'pb-24 md:pb-6'
+      }`}>
 
         {/* ═══════════════════ LEFT: Menu Area ═══════════════════ */}
-        <div className="flex-1 flex flex-col gap-3 min-w-0 w-full">
+        <div className="flex-1 flex flex-col gap-2.5 sm:gap-3 min-w-0 w-full h-full">
 
           {/* Filter Bar */}
-          <div className="bg-white p-3 rounded-2xl border border-stone-200/90 shadow-2xs flex flex-col gap-2.5">
+          <div className="bg-white p-2.5 sm:p-3 rounded-2xl border border-stone-200/90 shadow-2xs flex flex-col gap-2 sm:gap-2.5 shrink-0">
             {/* Category Pills */}
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
               {dynamicCategories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`h-8 px-3 rounded-xl text-xs font-medium whitespace-nowrap transition-all cursor-pointer shrink-0 ${
+                  className={`h-9 px-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap transition-all cursor-pointer shrink-0 select-none active:scale-95 ${
                     selectedCategory === cat
                       ? 'bg-stone-900 text-white shadow-xs font-semibold'
                       : 'bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200/60'
@@ -580,7 +737,7 @@ export function POSClientView({
               ))}
             </div>
 
-            {/* Search + View Mode */}
+            {/* Search + View Mode + Fullscreen Toggle */}
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -589,15 +746,50 @@ export function POSClientView({
                   placeholder="ค้นหาเมนู..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-9 w-full pl-8 pr-3 text-sm rounded-xl border border-stone-200/90 bg-stone-50 text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-stone-400 focus:bg-white transition-colors"
+                  className="h-9 sm:h-10 w-full pl-8 pr-8 text-xs sm:text-sm rounded-xl border border-stone-200/90 bg-stone-50 text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-stone-400 focus:bg-white transition-colors"
                 />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-stone-400 hover:text-stone-700 cursor-pointer"
+                    title="ล้างข้อความค้นหา"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
+
+              {/* Fullscreen POS Button for iPad */}
+              <button
+                type="button"
+                onClick={toggleFullscreen}
+                className={`h-9 sm:h-10 px-2.5 sm:px-3 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 ${
+                  isFullscreen
+                    ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
+                    : 'bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200/70'
+                }`}
+                title={isFullscreen ? 'ย่อหน้าต่างกลับสู่ระบบปกติ' : 'เปิดโหมดเต็มจอ POS (เหมาะกับ iPad / แท็บเล็ต)'}
+              >
+                {isFullscreen ? (
+                  <>
+                    <Minimize2 className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">ย่อจอ</span>
+                  </>
+                ) : (
+                  <>
+                    <Maximize2 className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">เต็มจอ POS</span>
+                  </>
+                )}
+              </button>
+
               {/* View toggle */}
               <div className="bg-stone-100 p-1 rounded-xl flex items-center gap-1 shrink-0 border border-stone-200/60">
                 <button
                   type="button"
                   onClick={() => setViewMode('card')}
-                  className={`flex items-center justify-center w-7 h-7 rounded-lg text-xs transition-all cursor-pointer ${
+                  className={`flex items-center justify-center w-7 sm:w-8 h-7 sm:h-8 rounded-lg text-xs transition-all cursor-pointer ${
                     viewMode === 'card' ? 'bg-stone-900 text-white shadow-2xs' : 'text-stone-500 hover:text-stone-800'
                   }`}
                   title="การ์ด"
@@ -607,7 +799,7 @@ export function POSClientView({
                 <button
                   type="button"
                   onClick={() => setViewMode('list')}
-                  className={`flex items-center justify-center w-7 h-7 rounded-lg text-xs transition-all cursor-pointer ${
+                  className={`flex items-center justify-center w-7 sm:w-8 h-7 sm:h-8 rounded-lg text-xs transition-all cursor-pointer ${
                     viewMode === 'list' ? 'bg-stone-900 text-white shadow-2xs' : 'text-stone-500 hover:text-stone-800'
                   }`}
                   title="รายการ"
@@ -620,39 +812,62 @@ export function POSClientView({
 
           {/* Menu Grid / List */}
           {filteredMenu.length === 0 ? (
-            <div className="p-12 text-center bg-white rounded-2xl border border-stone-200/90 text-stone-400 text-sm shadow-xs">
+            <div className="p-12 text-center bg-white rounded-2xl border border-stone-200/90 text-stone-400 text-sm shadow-xs flex-1 flex flex-col items-center justify-center">
               <Coffee className="w-8 h-8 mx-auto mb-2 opacity-40" />
-              ไม่พบรายการในหมวดหมู่นี้
+              <p>ไม่พบรายการในหมวดหมู่นี้</p>
             </div>
           ) : viewMode === 'card' ? (
             // ─── Card View ───
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            <div className={`grid gap-2.5 sm:gap-3 flex-1 overflow-y-auto pr-0.5 no-scrollbar ${
+              isFullscreen
+                ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                : 'grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4'
+            }`}>
               {filteredMenu.map((menu) => {
                 const totalInCart = cartItems.filter((c) => c.item.id === menu.id).reduce((s, c) => s + c.quantity, 0);
                 const isAvailable = menu.status !== 'sold_out';
                 return (
                   <div
                     key={menu.id}
-                    className={`bg-white rounded-2xl border border-stone-200/90 shadow-2xs hover:shadow-xs transition-all overflow-hidden flex flex-col justify-between ${!isAvailable ? 'opacity-60' : ''}`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => isAvailable && handleOpenOptionModal(menu)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        if (isAvailable) handleOpenOptionModal(menu);
+                      }
+                    }}
+                    className={`bg-white rounded-2xl border border-stone-200/90 shadow-2xs hover:shadow-xs transition-all overflow-hidden flex flex-col justify-between cursor-pointer select-none active:scale-[0.98] ${
+                      !isAvailable ? 'opacity-60 cursor-not-allowed' : ''
+                    }`}
                   >
                     {/* Image */}
-                    <div className="relative h-28 sm:h-36 bg-stone-100 overflow-hidden group">
+                    <div className="relative h-28 sm:h-32 bg-stone-100 overflow-hidden group">
                       <img
                         src={menu.image || '/images/logo_ss.png'}
                         alt={menu.name}
                         className={`w-full h-full ${menu.image ? 'object-cover group-hover:scale-105 transition-transform duration-300' : 'object-contain p-4 opacity-30 grayscale'}`}
                       />
                       {/* Top-right buttons */}
-                      <div className="absolute top-1.5 right-1.5 flex gap-1">
+                      <div className="absolute top-1.5 right-1.5 flex gap-1 z-10">
                         <button
-                          onClick={() => handleOpenOptionModal(menu)}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenOptionModal(menu);
+                          }}
                           className="p-1.5 rounded-lg bg-white/90 hover:bg-white text-stone-700 shadow-2xs transition-colors cursor-pointer"
                           title="ตัวเลือก"
                         >
                           <SlidersHorizontal className="w-3 h-3" />
                         </button>
                         <button
-                          onClick={() => setPreviewMenu(menu)}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPreviewMenu(menu);
+                          }}
                           className="p-1.5 rounded-lg bg-white/90 hover:bg-white text-stone-700 shadow-2xs transition-colors cursor-pointer"
                           title="ดูสูตร"
                         >
@@ -673,19 +888,23 @@ export function POSClientView({
                     </div>
 
                     {/* Body */}
-                    <div className="p-3">
+                    <div className="p-2.5 sm:p-3">
                       <div className="flex items-start justify-between gap-1 mb-1">
-                        <h3 className="font-bold text-stone-900 text-xs leading-tight line-clamp-2">{menu.name}</h3>
-                        <span className="font-bold text-xs text-stone-900 shrink-0 font-mono tabular-nums">฿{menu.price.toFixed(0)}</span>
+                        <h3 className="font-bold text-stone-900 text-xs sm:text-sm leading-snug line-clamp-2">{menu.name}</h3>
+                        <span className="font-bold text-xs sm:text-sm text-stone-900 shrink-0 font-mono tabular-nums">฿{menu.price.toFixed(0)}</span>
                       </div>
                     </div>
 
                     {/* Add button */}
-                    <div className="px-3 pb-3">
+                    <div className="px-2.5 pb-2.5 sm:px-3 sm:pb-3">
                       <button
+                        type="button"
                         disabled={!isAvailable}
-                        onClick={() => handleOpenOptionModal(menu)}
-                        className="w-full h-9 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.97] cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenOptionModal(menu);
+                        }}
+                        className="w-full h-9 sm:h-10 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.97] cursor-pointer"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         <span>สั่ง {totalInCart > 0 && `(${totalInCart})`}</span>
@@ -697,13 +916,19 @@ export function POSClientView({
             </div>
           ) : (
             // ─── List View ───
-            <div className="bg-white rounded-2xl overflow-hidden border border-stone-200/90 shadow-xs">
+            <div className="bg-white rounded-2xl overflow-hidden border border-stone-200/90 shadow-xs flex-1 overflow-y-auto no-scrollbar">
               <div className="divide-y divide-stone-100">
                 {filteredMenu.map((menu) => {
                   const totalInCart = cartItems.filter((c) => c.item.id === menu.id).reduce((s, c) => s + c.quantity, 0);
                   const isAvailable = menu.status !== 'sold_out';
                   return (
-                    <div key={menu.id} className={`flex items-center gap-3 p-3 hover:bg-stone-50/80 transition-colors ${!isAvailable ? 'opacity-60' : ''}`}>
+                    <div
+                      key={menu.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => isAvailable && handleOpenOptionModal(menu)}
+                      className={`flex items-center gap-3 p-2.5 sm:p-3 hover:bg-stone-50/80 transition-colors cursor-pointer ${!isAvailable ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    >
                       {/* Thumbnail */}
                       <div className="w-12 h-12 rounded-xl bg-stone-50 border border-stone-200/80 overflow-hidden shrink-0">
                         <img
@@ -720,20 +945,28 @@ export function POSClientView({
                       {/* Price */}
                       <span className="font-bold text-sm text-stone-900 font-mono tabular-nums shrink-0">฿{menu.price.toFixed(0)}</span>
                       {/* Actions */}
-                      <div className="flex items-center gap-1 shrink-0">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         <button
-                          onClick={() => setPreviewMenu(menu)}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPreviewMenu(menu);
+                          }}
                           className="p-1.5 rounded-lg bg-stone-100 border border-stone-200 text-stone-600 hover:bg-stone-200 cursor-pointer"
                         >
                           <Eye className="w-3.5 h-3.5" />
                         </button>
                         <button
+                          type="button"
                           disabled={!isAvailable}
-                          onClick={() => handleOpenOptionModal(menu)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenOptionModal(menu);
+                          }}
                           className="h-8 px-3 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.97] cursor-pointer"
                         >
                           <Plus className="w-3 h-3" />
-                          สั่ง {totalInCart > 0 && `(${totalInCart})`}
+                          <span>สั่ง {totalInCart > 0 && `(${totalInCart})`}</span>
                         </button>
                       </div>
                     </div>
@@ -744,10 +977,9 @@ export function POSClientView({
           )}
         </div>
 
-        {/* ═══════════════════ RIGHT: Desktop Cart ═══════════════════ */}
-        <div className="hidden md:flex w-72 lg:w-96 flex-col gap-4 shrink-0">
-          {/* Cart / Option Panel (desktop) */}
-          <div className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs p-4 sm:p-5 flex flex-col min-h-[560px]">
+        {/* ═══════════════════ RIGHT: Desktop & iPad Cart Column ═══════════════════ */}
+        <div className="hidden md:flex w-72 sm:w-80 lg:w-96 flex-col shrink-0 sticky top-3 sm:top-4 h-[calc(100vh-4.5rem)]">
+          <div className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs p-3.5 sm:p-4 flex flex-col h-full overflow-hidden">
             {showDesktopOptionPanel ? (
               <ItemOptionPanel
                 item={optionTargetMenu!}
@@ -763,14 +995,14 @@ export function POSClientView({
             ) : (
               <>
                 {/* Cart Header */}
-                <div className="flex items-center justify-between pb-3 border-b border-stone-100 shrink-0">
+                <div className="flex items-center justify-between pb-2.5 border-b border-stone-100 shrink-0">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-xl bg-stone-100 border border-stone-200/80 flex items-center justify-center text-stone-700">
                       <ShoppingCart className="w-4 h-4" />
                     </div>
                     <h3 className="font-bold text-stone-900 text-sm">รายการที่สั่ง</h3>
                     {cartItems.length > 0 && (
-                      <span className="px-1.5 py-0.5 bg-stone-900 text-white text-[10px] font-bold rounded-full">
+                      <span className="px-2 py-0.5 bg-stone-900 text-white text-xs font-bold rounded-full font-mono">
                         {cartItems.reduce((s, c) => s + c.quantity, 0)}
                       </span>
                     )}
@@ -778,19 +1010,20 @@ export function POSClientView({
                   {cartItems.length > 0 && (
                     <button
                       onClick={clearCart}
-                      className="text-xs text-rose-600 hover:text-rose-700 font-medium cursor-pointer"
+                      className="text-xs text-rose-600 hover:text-rose-700 font-medium cursor-pointer px-2 py-1 rounded-lg hover:bg-rose-50 transition-colors"
                     >
                       ล้างตะกร้า
                     </button>
                   )}
                 </div>
 
-                {/* Cart Items */}
-                <div className="flex-1 overflow-y-auto py-3 space-y-2.5 pr-1 no-scrollbar">
+                {/* Cart Items List */}
+                <div className="flex-1 overflow-y-auto py-2.5 space-y-2 pr-1 no-scrollbar min-h-0">
                   {cartItems.length === 0 ? (
                     <div className="h-full py-12 flex flex-col items-center justify-center text-stone-400 text-xs">
                       <Coffee className="w-10 h-10 mb-2 opacity-30" />
-                      <p className="font-medium">ยังไม่มีรายการ</p>
+                      <p className="font-medium text-stone-500">ยังไม่มีรายการที่สั่ง</p>
+                      <p className="text-[11px] text-stone-400 mt-0.5">แตะเลือกเมนูทางซ้ายเพื่อเพิ่มลงบิล</p>
                     </div>
                   ) : (
                     cartItems.map((entry) => (
@@ -805,8 +1038,8 @@ export function POSClientView({
                   )}
                 </div>
 
-                {/* Bill Summary */}
-                <div className="pt-3 border-t border-stone-100 mt-auto">
+                {/* Bill Summary & Sticky Checkout */}
+                <div className="pt-2.5 border-t border-stone-100 shrink-0 mt-auto">
                   <BillSummary
                     cartItems={cartItems}
                     grandTotal={grandTotal}
@@ -814,49 +1047,57 @@ export function POSClientView({
                     setPaymentMethod={setPaymentMethod}
                     onCheckout={handleCheckout}
                     onClear={clearCart}
+                    tableNo={tableNo}
+                    setTableNo={setTableNo}
+                    isSubmitting={isSubmittingOrder}
                   />
+
+                  {/* Collapsible BOM Accordion */}
+                  <div className="pt-2 border-t border-stone-100 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowBOMImpact((prev) => !prev)}
+                      className="w-full flex items-center justify-between py-1 px-2 rounded-lg hover:bg-stone-50 text-stone-600 text-xs font-medium cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <Layers className="w-3.5 h-3.5 text-stone-500" />
+                        <span>ตัดสต็อกวัตถุดิบ</span>
+                        {Object.keys(cartBOMImpact).length > 0 && (
+                          <span className="text-[10px] bg-stone-100 border border-stone-200 text-stone-700 px-1.5 py-0.2 rounded-full font-mono font-semibold">
+                            {Object.keys(cartBOMImpact).length}
+                          </span>
+                        )}
+                      </div>
+                      <ChevronDown className={`w-3.5 h-3.5 text-stone-400 transition-transform ${showBOMImpact ? 'rotate-180' : ''}`} />
+                    </button>
+                    {showBOMImpact && (
+                      <div className="mt-1 space-y-1 max-h-36 overflow-y-auto pr-1">
+                        {Object.keys(cartBOMImpact).length === 0 ? (
+                          <p className="text-[11px] text-stone-400 py-1 text-center">ยังไม่มีรายการตัดสต็อก</p>
+                        ) : (
+                          Object.values(cartBOMImpact).map((impact, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-center justify-between text-[11px] p-2 rounded-lg bg-stone-50 border border-stone-200/50"
+                            >
+                              <div className="min-w-0 pr-2">
+                                <span className="font-semibold text-stone-800 truncate block">{impact.name}</span>
+                                <div className="text-[10px] text-stone-400">เดิม {impact.current} {impact.unit}</div>
+                              </div>
+                              <div className="text-right shrink-0 font-mono tabular-nums">
+                                <span className="font-semibold text-stone-900">-{impact.used} {impact.unit}</span>
+                                <div className="text-[10px] text-stone-500">เหลือ {impact.remaining} {impact.unit}</div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </>
             )}
           </div>
-
-          {/* BOM Preview — desktop only */}
-          {!showDesktopOptionPanel && (
-            <div className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs p-4 space-y-2 text-xs">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-stone-800 font-semibold">
-                  <Layers className="w-4 h-4 text-stone-700" />
-                  <span>ตัดสต็อกวัตถุดิบ</span>
-                </div>
-                {Object.keys(cartBOMImpact).length > 0 && (
-                  <span className="text-xs font-medium text-stone-600 bg-stone-100 px-2 py-0.5 rounded-full border border-stone-200">
-                    {Object.keys(cartBOMImpact).length} รายการ
-                  </span>
-                )}
-              </div>
-              {Object.keys(cartBOMImpact).length === 0 ? (
-                <p className="text-xs text-stone-400 py-1">รายการตัดสต็อกจะแสดงเมื่อมีออเดอร์</p>
-              ) : (
-                <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
-                  {Object.values(cartBOMImpact).map((impact, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between text-xs p-2.5 rounded-xl bg-stone-50 border border-stone-200/60"
-                    >
-                      <div>
-                        <span className="font-semibold text-stone-900">{impact.name}</span>
-                        <div className="text-xs text-stone-400">เดิม {impact.current} {impact.unit}</div>
-                      </div>
-                      <div className="text-right">
-                        <span className="font-semibold text-stone-900 font-mono tabular-nums">-{impact.used} {impact.unit}</span>
-                        <div className="text-xs text-stone-500 font-mono tabular-nums">เหลือ {impact.remaining} {impact.unit}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </main>
 
@@ -914,6 +1155,9 @@ export function POSClientView({
                   setPaymentMethod={setPaymentMethod}
                   onCheckout={handleCheckout}
                   onClear={clearCart}
+                  tableNo={tableNo}
+                  setTableNo={setTableNo}
+                  isSubmitting={isSubmittingOrder}
                   compact
                 />
               </div>
@@ -1004,10 +1248,33 @@ export function POSClientView({
               <p className="text-xs text-stone-600 mt-1">ตัดสต็อกวัตถุดิบตามสูตรเรียบร้อย</p>
             </div>
             <Button
-              className="w-full rounded-xl bg-stone-900 text-white hover:bg-stone-800 h-12 text-base"
+              className="w-full rounded-xl bg-stone-900 text-white hover:bg-stone-800 h-12 text-base cursor-pointer"
               onClick={() => setLastOrderSuccess(null)}
             >
               รับออเดอร์ถัดไป
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════ Order Error Modal ═══════════════════ */}
+      {checkoutError && (
+        <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center space-y-4 border border-rose-200 animate-in fade-in-0 zoom-in-95 duration-150">
+            <div className="w-14 h-14 bg-rose-50 text-rose-600 rounded-2xl mx-auto flex items-center justify-center shadow-xs border border-rose-200">
+              <AlertCircle className="w-8 h-8" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-stone-900">บันทึกออเดอร์ไม่สำเร็จ</h3>
+              <p className="text-xs text-stone-600 mt-2 bg-rose-50/70 p-3 rounded-xl border border-rose-100 leading-relaxed text-left break-words">
+                {checkoutError}
+              </p>
+            </div>
+            <Button
+              className="w-full rounded-xl bg-stone-900 text-white hover:bg-stone-800 h-12 text-base cursor-pointer"
+              onClick={() => setCheckoutError(null)}
+            >
+              รับทราบ / ลองใหม่อีกครั้ง
             </Button>
           </div>
         </div>

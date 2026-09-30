@@ -689,16 +689,20 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'บันทึกออเดอร์ไม่สำเร็จ');
+        let errorMsg = 'บันทึกออเดอร์ไม่สำเร็จ';
+        try {
+          const errorData = await res.json();
+          errorMsg = errorData.message || errorMsg;
+        } catch {}
+        throw new Error(errorMsg);
       }
 
       const result = await res.json();
       await fetchData(); // Refresh fresh stock & dashboard numbers
       return result.data;
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error creating POS order:', e);
-      return null;
+      throw e;
     }
   };
 

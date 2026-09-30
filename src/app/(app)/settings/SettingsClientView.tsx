@@ -109,7 +109,7 @@ export function SettingsClientView({ initialUnits, initialStores }: SettingsClie
     <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
       <Topbar title="ตั้งค่าระบบ" />
 
-      <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
+      <main className="p-4 sm:p-6 lg:p-8 space-y-6 mx-auto w-full">
         {/* Navigation Tabs */}
         <div className="flex items-center gap-1.5 p-1 bg-stone-100 rounded-2xl w-full sm:w-fit border border-stone-200/80 max-w-full overflow-x-auto no-scrollbar">
           <button

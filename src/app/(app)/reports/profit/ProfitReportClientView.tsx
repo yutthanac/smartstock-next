@@ -1,12 +1,15 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { TrendingUp } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { TrendingUp, Scale } from 'lucide-react';
 import { useStock } from '@/lib/StockContext';
+import { useAuth } from '@/lib/AuthContext';
 import { Topbar } from '@/components/Topbar';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/Table';
 import { Badge } from '@/components/Badge';
+import { BreakEvenCalculator } from './components/BreakEvenCalculator';
 import { DashboardKPI, Ingredient } from '@/types';
+import { isBreakEvenTabEnabled, BEP_TAB_TOGGLE_EVENT } from '@/lib/breakEven';
 
 interface ProfitReportClientViewProps {
   initialDashboard?: DashboardKPI | null;
@@ -18,6 +21,30 @@ export function ProfitReportClientView({
   initialIngredients,
 }: ProfitReportClientViewProps) {
   const { dashboard: ctxDashboard, ingredients: ctxIngredients, hydrateData } = useStock();
+  const { activeStore } = useAuth();
+
+  const [showBreakEvenTab, setShowBreakEvenTab] = useState<boolean>(() => {
+    return isBreakEvenTabEnabled(activeStore?.id, activeStore?.menu_config);
+  });
+  const [activeTab, setActiveTab] = useState<'overview' | 'breakeven'>('overview');
+
+  useEffect(() => {
+    setShowBreakEvenTab(isBreakEvenTabEnabled(activeStore?.id, activeStore?.menu_config));
+  }, [activeStore?.id, activeStore?.menu_config]);
+
+  useEffect(() => {
+    const handleToggle = () => {
+      setShowBreakEvenTab(isBreakEvenTabEnabled(activeStore?.id, activeStore?.menu_config));
+    };
+    window.addEventListener(BEP_TAB_TOGGLE_EVENT, handleToggle);
+    return () => window.removeEventListener(BEP_TAB_TOGGLE_EVENT, handleToggle);
+  }, [activeStore?.id, activeStore?.menu_config]);
+
+  useEffect(() => {
+    if (!showBreakEvenTab && activeTab === 'breakeven') {
+      setActiveTab('overview');
+    }
+  }, [showBreakEvenTab, activeTab]);
 
   useEffect(() => {
     if (initialDashboard || initialIngredients) {
@@ -61,13 +88,47 @@ export function ProfitReportClientView({
     <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
       <Topbar title="รายงานต้นทุน & กำไร" />
 
-      <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
-        {/* Metric Cards (Real Computed Data: All-time & Today) */}
-        <div>
-          <div className="text-xs font-bold uppercase tracking-wider text-stone-600 mb-2.5 px-0.5">
-            ภาพรวมผลกำไรและต้นทุน
+      <main className="p-4 sm:p-6 lg:p-8 space-y-6 w-full">
+        {/* Navigation Tabs */}
+        {showBreakEvenTab && (
+          <div className="flex items-center gap-1.5 p-1 bg-stone-100 rounded-2xl w-full sm:w-fit border border-stone-200/80 max-w-full overflow-x-auto no-scrollbar">
+            <button
+              type="button"
+              onClick={() => setActiveTab('overview')}
+              className={`px-4 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap shrink-0 ${
+                activeTab === 'overview'
+                  ? 'bg-stone-900 text-white shadow-xs'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
+              }`}
+            >
+              <TrendingUp className="w-4 h-4" />
+              <span>ภาพรวมกำไร & มาร์จิ้น</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('breakeven')}
+              className={`px-4 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap shrink-0 ${
+                activeTab === 'breakeven'
+                  ? 'bg-stone-900 text-white shadow-xs'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
+              }`}
+            >
+              <Scale className="w-4 h-4" />
+              <span>คำนวณจุดคุ้มทุน (Break-Even Point)</span>
+            </button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        )}
+
+        {/* Tab 1: Overview */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            {/* Metric Cards (Real Computed Data: All-time & Today) */}
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wider text-stone-600 mb-2.5 px-0.5">
+                ภาพรวมผลกำไรและต้นทุน
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+
             {/* 1. กำไรทั้งหมด */}
             <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-2xs relative overflow-hidden flex flex-col justify-between">
               <div>
@@ -197,7 +258,12 @@ export function ProfitReportClientView({
               </TableBody>
             </Table>
           </div>
-        </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 2: Break-Even Point Calculator */}
+        {showBreakEvenTab && activeTab === 'breakeven' && <BreakEvenCalculator />}
       </main>
     </div>
   );

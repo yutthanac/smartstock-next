@@ -308,7 +308,7 @@ export function OrdersClientView({ initialOrders }: OrdersClientViewProps) {
     <div className="flex-1 flex flex-col min-h-screen bg-[#faf9f5]">
       <Topbar title="ประวัติคำสั่งซื้อ" />
 
-      <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
+      <main className="p-4 sm:p-6 lg:p-8 space-y-6 mx-auto w-full">
         {/* Date Filter Toolbar & KPI Summary Cards */}
         <OrdersFilterToolbar
           filterMode={filterMode}
