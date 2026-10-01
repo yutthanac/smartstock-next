@@ -279,32 +279,32 @@ function BillSummary({
 
       {/* Table / Order Info Selector */}
       {tableNo !== undefined && setTableNo && (
-        <div className="flex items-center justify-between gap-1.5 text-xs text-stone-600 bg-stone-50 px-2.5 py-1.5 rounded-xl border border-stone-200/70">
-          <span className="font-semibold shrink-0 text-stone-700 text-[11px] sm:text-xs">โต๊ะ / รับกลับ:</span>
-          <div className="flex items-center gap-1.5 min-w-0">
+        <div className="bg-stone-50 p-2 sm:p-2.5 rounded-xl border border-stone-200/70 space-y-1.5">
+          <div className="flex items-center justify-between gap-2 text-xs">
+            <span className="font-semibold text-stone-700 text-[11px]">โต๊ะ / รับกลับ:</span>
             <input
               type="text"
               value={tableNo}
               onChange={(e) => setTableNo(e.target.value)}
-              placeholder="T-01"
-              className="bg-white border border-stone-200 rounded-lg px-2 py-0.5 text-xs font-bold text-stone-900 font-mono w-20 text-center focus:outline-none focus:border-stone-400"
+              placeholder="ระบุโต๊ะ / กลับบ้าน"
+              className="bg-white border border-stone-200 rounded-lg px-2 py-0.5 text-xs font-bold text-stone-900 font-mono w-28 text-center focus:outline-none focus:border-stone-400"
             />
-            <div className="flex items-center gap-1">
-              {['T-01', 'T-02', 'กลับบ้าน'].map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => setTableNo(preset)}
-                  className={`px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer ${
-                    tableNo === preset
-                      ? 'bg-stone-900 text-white font-semibold'
-                      : 'bg-white hover:bg-stone-200 text-stone-600 border border-stone-200'
-                  }`}
-                >
-                  {preset}
-                </button>
-              ))}
-            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            {['T-01', 'T-02', 'T-03', 'กลับบ้าน'].map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => setTableNo(preset)}
+                className={`flex-1 py-1 rounded-lg text-[10px] font-medium transition-colors cursor-pointer text-center ${
+                  tableNo === preset
+                    ? 'bg-stone-900 text-white font-semibold shadow-2xs'
+                    : 'bg-white hover:bg-stone-200 text-stone-600 border border-stone-200'
+                }`}
+              >
+                {preset}
+              </button>
+            ))}
           </div>
         </div>
       )}
@@ -666,7 +666,11 @@ export function POSClientView({
 
   /* ─────────── RENDER ─────────── */
   return (
-    <div className={isFullscreen ? "fixed inset-0 z-50 bg-[#faf9f5] flex flex-col overflow-hidden" : "flex-1 flex flex-col min-h-screen bg-[#faf9f5]"}>
+    <div className={
+      isFullscreen
+        ? "fixed inset-0 z-50 bg-[#faf9f5] flex flex-col overflow-hidden"
+        : "flex-1 flex flex-col min-h-screen md:min-h-0 md:h-screen md:max-h-screen md:overflow-hidden bg-[#faf9f5]"
+    }>
       {/* Fullscreen Cashier Header */}
       {isFullscreen ? (
         <header className="bg-white border-b border-stone-200/90 px-3.5 sm:px-5 py-2 sm:py-2.5 flex items-center justify-between shrink-0 shadow-2xs z-30">
@@ -711,12 +715,14 @@ export function POSClientView({
         <Topbar title="ขายหน้าร้าน" />
       )}
 
-      <main className={`p-2.5 sm:p-4 lg:p-5 flex-1 flex flex-col md:flex-row gap-3 sm:gap-4 w-full items-start ${
-        isFullscreen ? 'h-[calc(100vh-3.5rem)] overflow-hidden pb-3' : 'pb-24 md:pb-6'
+      <main className={`p-2.5 sm:p-4 lg:p-5 flex-1 flex flex-col md:flex-row gap-3 sm:gap-4 w-full min-h-0 ${
+        isFullscreen
+          ? 'h-[calc(100vh-3.5rem)] overflow-hidden pb-3'
+          : 'h-auto md:h-full md:overflow-hidden pb-24 md:pb-4'
       }`}>
 
         {/* ═══════════════════ LEFT: Menu Area ═══════════════════ */}
-        <div className="flex-1 flex flex-col gap-2.5 sm:gap-3 min-w-0 w-full h-full">
+        <div className="flex-1 flex flex-col gap-2.5 sm:gap-3 min-w-0 w-full h-full min-h-0">
 
           {/* Filter Bar */}
           <div className="bg-white p-2.5 sm:p-3 rounded-2xl border border-stone-200/90 shadow-2xs flex flex-col gap-2 sm:gap-2.5 shrink-0">
@@ -818,10 +824,10 @@ export function POSClientView({
             </div>
           ) : viewMode === 'card' ? (
             // ─── Card View ───
-            <div className={`grid gap-2.5 sm:gap-3 flex-1 overflow-y-auto pr-0.5 no-scrollbar ${
+            <div className={`grid gap-2.5 sm:gap-3 flex-1 min-h-0 overflow-y-auto pr-1 no-scrollbar content-start auto-rows-max ${
               isFullscreen
-                ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
-                : 'grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4'
+                ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'
+                : 'grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4'
             }`}>
               {filteredMenu.map((menu) => {
                 const totalInCart = cartItems.filter((c) => c.item.id === menu.id).reduce((s, c) => s + c.quantity, 0);
@@ -838,12 +844,12 @@ export function POSClientView({
                         if (isAvailable) handleOpenOptionModal(menu);
                       }
                     }}
-                    className={`bg-white rounded-2xl border border-stone-200/90 shadow-2xs hover:shadow-xs transition-all overflow-hidden flex flex-col justify-between cursor-pointer select-none active:scale-[0.98] ${
+                    className={`group bg-white rounded-2xl border border-stone-200/90 shadow-2xs hover:shadow-xs transition-all overflow-hidden flex flex-col cursor-pointer select-none active:scale-[0.98] ${
                       !isAvailable ? 'opacity-60 cursor-not-allowed' : ''
                     }`}
                   >
                     {/* Image */}
-                    <div className="relative h-28 sm:h-32 bg-stone-100 overflow-hidden group">
+                    <div className="relative h-28 sm:h-32 bg-stone-100 overflow-hidden shrink-0">
                       <img
                         src={menu.image || '/images/logo_ss.png'}
                         alt={menu.name}
@@ -887,16 +893,13 @@ export function POSClientView({
                       )}
                     </div>
 
-                    {/* Body */}
-                    <div className="p-2.5 sm:p-3">
-                      <div className="flex items-start justify-between gap-1 mb-1">
+                    {/* Body & Action */}
+                    <div className="p-2.5 sm:p-3 flex-1 flex flex-col justify-between gap-2.5">
+                      <div className="flex items-start justify-between gap-1">
                         <h3 className="font-bold text-stone-900 text-xs sm:text-sm leading-snug line-clamp-2">{menu.name}</h3>
                         <span className="font-bold text-xs sm:text-sm text-stone-900 shrink-0 font-mono tabular-nums">฿{menu.price.toFixed(0)}</span>
                       </div>
-                    </div>
 
-                    {/* Add button */}
-                    <div className="px-2.5 pb-2.5 sm:px-3 sm:pb-3">
                       <button
                         type="button"
                         disabled={!isAvailable}
@@ -904,7 +907,7 @@ export function POSClientView({
                           e.stopPropagation();
                           handleOpenOptionModal(menu);
                         }}
-                        className="w-full h-9 sm:h-10 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.97] cursor-pointer"
+                        className="w-full h-8 sm:h-9 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.97] cursor-pointer mt-auto"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         <span>สั่ง {totalInCart > 0 && `(${totalInCart})`}</span>
@@ -978,8 +981,8 @@ export function POSClientView({
         </div>
 
         {/* ═══════════════════ RIGHT: Desktop & iPad Cart Column ═══════════════════ */}
-        <div className="hidden md:flex w-72 sm:w-80 lg:w-96 flex-col shrink-0 sticky top-3 sm:top-4 h-[calc(100vh-4.5rem)]">
-          <div className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs p-3.5 sm:p-4 flex flex-col h-full overflow-hidden">
+        <div className="hidden md:flex w-72 sm:w-80 lg:w-96 flex-col shrink-0 h-full min-h-0">
+          <div className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs p-3.5 sm:p-4 flex flex-col h-full min-h-0 overflow-hidden">
             {showDesktopOptionPanel ? (
               <ItemOptionPanel
                 item={optionTargetMenu!}
