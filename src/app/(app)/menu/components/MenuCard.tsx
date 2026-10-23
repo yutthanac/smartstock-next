@@ -24,9 +24,17 @@ export const MenuCard: React.FC<MenuCardProps> = ({ item, onEdit, onDelete }) =>
                 : 'object-contain p-7 bg-stone-50/50 opacity-30 grayscale contrast-75'
             }`}
           />
-          <span className="absolute top-3 left-3 text-xs font-medium px-2.5 py-1 rounded-full bg-stone-900/80 backdrop-blur-xs text-white">
-            {item.category}
-          </span>
+          <div className="absolute top-3 left-3 flex flex-col gap-1 items-start">
+            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-stone-900/80 backdrop-blur-xs text-white">
+              {item.category}
+            </span>
+            {item.is_grab && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-600 text-white shadow-xs flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                Grab ฿{(item.grab_price || item.price).toFixed(2)}
+              </span>
+            )}
+          </div>
           <div className="absolute top-3 right-3 flex items-center gap-1.5">
             <button
               onClick={() => onEdit(item)}
@@ -53,7 +61,14 @@ export const MenuCard: React.FC<MenuCardProps> = ({ item, onEdit, onDelete }) =>
                 <p className="text-xs text-stone-500 line-clamp-2 mt-0.5 leading-relaxed">{item.description}</p>
               )}
             </div>
-            <span className="text-base font-bold text-stone-900 shrink-0 font-mono tabular-nums">฿{item.price.toFixed(2)}</span>
+            <div className="text-right shrink-0">
+              <span className="text-base font-bold text-stone-900 block font-mono tabular-nums">฿{item.price.toFixed(2)}</span>
+              {item.is_grab && item.grab_price && item.grab_price !== item.price && (
+                <span className="text-[10px] text-emerald-700 font-semibold block font-mono">
+                  Grab ฿{item.grab_price.toFixed(2)}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* BOM Recipe Ingredients List */}
@@ -84,21 +99,42 @@ export const MenuCard: React.FC<MenuCardProps> = ({ item, onEdit, onDelete }) =>
       </div>
 
       {/* Card Footer: Cost & Margin summary */}
-      <div className="p-4 bg-stone-50/80 border-t border-stone-100 flex items-center justify-between text-xs rounded-b-2xl">
-        <div>
-          <div className="text-stone-400 text-xs">ต้นทุน</div>
-          <div className="font-semibold text-stone-700 font-mono tabular-nums">฿{item.recipe_cost}</div>
+      <div className="p-3.5 bg-stone-50/80 border-t border-stone-100 space-y-2 text-xs rounded-b-2xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-stone-400 text-xs">ต้นทุน</div>
+            <div className="font-semibold text-stone-700 font-mono tabular-nums">฿{Number(item.recipe_cost || 0).toFixed(2)}</div>
+          </div>
+          <div>
+            <div className="text-stone-400 text-xs">กำไร</div>
+            <div className="font-bold text-stone-900 font-mono tabular-nums">฿{(item.price - item.recipe_cost).toFixed(2)}</div>
+          </div>
+          <div className="text-right">
+            <div className="text-stone-400 text-xs mb-0.5">มาร์จิ้น</div>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-stone-100 text-stone-800 border border-stone-200 font-mono tabular-nums">
+              {item.margin_percent}%
+            </span>
+          </div>
         </div>
-        <div>
-          <div className="text-stone-400 text-xs">กำไร</div>
-          <div className="font-bold text-stone-900 font-mono tabular-nums">฿{(item.price - item.recipe_cost).toFixed(2)}</div>
-        </div>
-        <div className="text-right">
-          <div className="text-stone-400 text-xs mb-0.5">มาร์จิ้น</div>
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-stone-100 text-stone-800 border border-stone-200 font-mono tabular-nums">
-            {item.margin_percent}%
-          </span>
-        </div>
+
+        {item.is_grab && (() => {
+          const gPrice = item.grab_price || item.price;
+          const gp = item.grab_gp_percent || 30;
+          const netRev = gPrice * (1 - gp / 100);
+          const gProfit = netRev - item.recipe_cost;
+          const gMargin = gPrice > 0 ? ((gProfit / gPrice) * 100).toFixed(1) : '0';
+          return (
+            <div className="pt-2 border-t border-stone-200/60 flex items-center justify-between text-[11px] bg-emerald-50/70 -mx-3.5 -mb-3.5 p-2 px-3.5 rounded-b-2xl text-emerald-950">
+              <span className="font-semibold flex items-center gap-1 text-emerald-800">
+                <span className="w-3.5 h-3.5 rounded bg-emerald-600 text-white flex items-center justify-center font-bold text-[8px]">G</span>
+                Grab (GP {gp}%):
+              </span>
+              <span className="font-mono">
+                กำไร <strong className={gProfit < 0 ? 'text-rose-600 font-bold' : 'text-emerald-700 font-bold'}>฿{gProfit.toFixed(2)}</strong> ({gMargin}%)
+              </span>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

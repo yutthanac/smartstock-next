@@ -23,8 +23,8 @@ interface StockContextType {
   bulkUseIngredient: (id: number, amount?: number, note?: string) => Promise<boolean>;
   openPackage: (id: number, count?: number) => Promise<boolean>;
   addBackstock: (id: number, count: number, note?: string, packageSize?: number, updateDefault?: boolean) => Promise<boolean>;
-  addMenuItem: (menu: { name: string; category: string; price: number; image?: string; description?: string; recipes: { ingredient_id: number; quantity_used: number; waste_percent?: number }[]; option_ingredients?: { name: string; price?: number; ingredient_id: number; quantity: number }[] }) => Promise<boolean>;
-  updateMenuItem: (id: number, menu: { name?: string; category?: string; price?: number; image?: string; description?: string; recipes?: { ingredient_id: number; quantity_used: number; waste_percent?: number }[]; option_ingredients?: { name: string; price?: number; ingredient_id: number; quantity: number }[] }) => Promise<boolean>;
+  addMenuItem: (menu: { name: string; category: string; price: number; is_grab?: boolean; grab_price?: number | null; grab_gp_percent?: number; image?: string; description?: string; recipes: { ingredient_id: number; quantity_used: number; waste_percent?: number }[]; option_ingredients?: { name: string; price?: number; ingredient_id: number; quantity: number }[] }) => Promise<boolean>;
+  updateMenuItem: (id: number, menu: { name?: string; category?: string; price?: number; is_grab?: boolean; grab_price?: number | null; grab_gp_percent?: number; image?: string; description?: string; recipes?: { ingredient_id: number; quantity_used: number; waste_percent?: number }[]; option_ingredients?: { name: string; price?: number; ingredient_id: number; quantity: number }[] }) => Promise<boolean>;
   deleteMenuItem: (id: number) => Promise<boolean>;
   wasteAdjust: (id: number, data: { quantity: number; reason: string; tier?: 'bar' | 'backstock'; notes?: string }) => Promise<boolean>;
   fetchWasteStats: (period?: string) => Promise<WasteStatsResponse | null>;
@@ -542,7 +542,7 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Menu API calls
-  const addMenuItem = async (menu: { name: string; category: string; price: number; image?: string; description?: string; recipes: { ingredient_id: number; quantity_used: number; waste_percent?: number }[] }): Promise<boolean> => {
+  const addMenuItem = async (menu: { name: string; category: string; price: number; is_grab?: boolean; grab_price?: number | null; grab_gp_percent?: number; image?: string; description?: string; recipes: { ingredient_id: number; quantity_used: number; waste_percent?: number }[]; option_ingredients?: { name: string; price?: number; ingredient_id: number; quantity: number }[] }): Promise<boolean> => {
     try {
       const res = await fetch(`${API_BASE_URL}/menus`, {
         method: 'POST',
@@ -563,7 +563,7 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateMenuItem = async (id: number, menu: { name?: string; category?: string; price?: number; image?: string; description?: string; recipes?: { ingredient_id: number; quantity_used: number; waste_percent?: number }[] }): Promise<boolean> => {
+  const updateMenuItem = async (id: number, menu: { name?: string; category?: string; price?: number; is_grab?: boolean; grab_price?: number | null; grab_gp_percent?: number; image?: string; description?: string; recipes?: { ingredient_id: number; quantity_used: number; waste_percent?: number }[]; option_ingredients?: { name: string; price?: number; ingredient_id: number; quantity: number }[] }): Promise<boolean> => {
     try {
       const res = await fetch(`${API_BASE_URL}/menus/${id}`, {
         method: 'PUT',

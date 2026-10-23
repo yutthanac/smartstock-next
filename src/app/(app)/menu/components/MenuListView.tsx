@@ -86,7 +86,15 @@ function SortableMenuRow({ item, onEdit, onDelete }: SortableMenuRowProps) {
             />
           </div>
           <div>
-            <div className="font-semibold text-stone-900 text-sm group-hover:text-amber-800 transition-colors">{item.name}</div>
+            <div className="font-semibold text-stone-900 text-sm group-hover:text-amber-800 transition-colors flex items-center gap-1.5">
+              <span>{item.name}</span>
+              {item.is_grab && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                  Grab
+                </span>
+              )}
+            </div>
             {item.description && (
               <div className="text-xs text-stone-400 line-clamp-1 max-w-xs">{item.description}</div>
             )}
@@ -101,7 +109,10 @@ function SortableMenuRow({ item, onEdit, onDelete }: SortableMenuRowProps) {
       </TableCell>
 
       <TableCell className="text-right font-semibold text-stone-900 text-sm font-mono tabular-nums whitespace-nowrap">
-        ฿{item.price.toFixed(2)}
+        <div>฿{item.price.toFixed(2)}</div>
+        {item.is_grab && item.grab_price && item.grab_price !== item.price && (
+          <div className="text-[10px] text-emerald-700 font-medium">Grab: ฿{item.grab_price.toFixed(2)}</div>
+        )}
       </TableCell>
 
       <TableCell className="text-right font-medium text-stone-500 font-mono tabular-nums whitespace-nowrap">

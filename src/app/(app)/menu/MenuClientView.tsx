@@ -63,6 +63,9 @@ export function MenuClientView({
   const [description, setDescription] = useState('');
   const [recipes, setRecipes] = useState<RecipeItem[]>([]);
   const [optionIngredients, setOptionIngredients] = useState<{ id?: number; name: string; price?: number; ingredient_id: number; quantity: number }[]>([]);
+  const [isGrab, setIsGrab] = useState(false);
+  const [grabPrice, setGrabPrice] = useState<number | string>('');
+  const [grabGpPercent, setGrabGpPercent] = useState<number | string>(30);
 
   // Open modal for create
   const handleOpenCreate = () => {
@@ -74,6 +77,9 @@ export function MenuClientView({
     setDescription('');
     setRecipes([{ ingredient_id: ingredients[0]?.id || 1, quantity_used: 0 }]);
     setOptionIngredients([]);
+    setIsGrab(false);
+    setGrabPrice('');
+    setGrabGpPercent(30);
     setIsModalOpen(true);
   };
 
@@ -87,6 +93,9 @@ export function MenuClientView({
     setDescription(item.description || '');
     setRecipes(item.recipes && item.recipes.length > 0 ? [...item.recipes] : [{ ingredient_id: ingredients[0]?.id || 1, quantity_used: 0 }]);
     setOptionIngredients(item.option_ingredients && item.option_ingredients.length > 0 ? [...item.option_ingredients] : []);
+    setIsGrab(Boolean(item.is_grab));
+    setGrabPrice(item.grab_price !== null && item.grab_price !== undefined ? item.grab_price : item.price);
+    setGrabGpPercent(item.grab_gp_percent !== null && item.grab_gp_percent !== undefined ? item.grab_gp_percent : 30);
     setIsModalOpen(true);
   };
 
@@ -166,12 +175,22 @@ export function MenuClientView({
         quantity: Number(o.quantity || 1),
       }));
 
+    const numGrabPrice = isGrab
+      ? (grabPrice !== '' && grabPrice !== undefined ? Number(grabPrice) : numPrice)
+      : null;
+    const numGrabGp = isGrab
+      ? (grabGpPercent !== '' && grabGpPercent !== undefined ? Number(grabGpPercent) : 30)
+      : 30;
+
     let success = false;
     if (editingItem) {
       success = await updateMenuItem(editingItem.id, {
         name: name.trim(),
         category,
         price: numPrice,
+        is_grab: isGrab,
+        grab_price: numGrabPrice,
+        grab_gp_percent: numGrabGp,
         image: image.trim() || undefined,
         description: description.trim(),
         recipes: formattedRecipes,
@@ -182,6 +201,9 @@ export function MenuClientView({
         name: name.trim(),
         category,
         price: numPrice,
+        is_grab: isGrab,
+        grab_price: numGrabPrice,
+        grab_gp_percent: numGrabGp,
         image: image.trim() || undefined,
         description: description.trim(),
         recipes: formattedRecipes,
@@ -396,6 +418,12 @@ export function MenuClientView({
         onAddOptionRow={handleAddOptionRow}
         onRemoveOptionRow={handleRemoveOptionRow}
         onUpdateOptionRow={handleUpdateOptionRow}
+        isGrab={isGrab}
+        setIsGrab={setIsGrab}
+        grabPrice={grabPrice}
+        setGrabPrice={setGrabPrice}
+        grabGpPercent={grabGpPercent}
+        setGrabGpPercent={setGrabGpPercent}
       />
     </div>
   );

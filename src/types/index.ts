@@ -65,6 +65,9 @@ export interface MenuItem {
   name: string;
   category: string;
   price: number;
+  is_grab?: boolean;
+  grab_price?: number | null;
+  grab_gp_percent?: number;
   image?: string;
   description?: string;
   recipe_cost: number;
